@@ -1,9 +1,13 @@
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class Day02 implements IAocTask {
 
     private HashMap<Integer, Integer> asciiCountMap = new HashMap<>();
+
+    private HashSet<String> boxIdsWithoutOneLetter = new HashSet<>();
+
     private int doublesCounter = 0;
     private int triplesCounter = 0;
 
@@ -20,7 +24,28 @@ public class Day02 implements IAocTask {
 
     @Override
     public void solvePartTwo(List<String> lines) {
-        System.out.println("NOT SOLVED");
+        int idLength = lines.get(0).length();
+
+        for (int i = 0; i < idLength; i++) {
+            findCommonIdsExcludingCharacterAt(i, lines);
+        }
+    }
+
+    private void findCommonIdsExcludingCharacterAt(int characterPosition, List<String> lines) {
+        boxIdsWithoutOneLetter.clear();
+        for (String line : lines) {
+            String transformedId = line.substring(0, characterPosition);
+            if (line.length() - 1 != characterPosition) {
+                transformedId = transformedId + line.substring(characterPosition + 1);
+            }
+
+            if (boxIdsWithoutOneLetter.contains(transformedId)) {
+                System.out.println(transformedId);
+                break;
+            }
+
+            boxIdsWithoutOneLetter.add(transformedId);
+        }
     }
 
     private void updateCounters(String line) {
