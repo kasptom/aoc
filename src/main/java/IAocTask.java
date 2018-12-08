@@ -4,5 +4,7 @@ public interface IAocTask {
 
     String getFileName();
 
-    void solve(List<String> lines);
+    void solvePartOne(List<String> lines);
+
+    void solvePartTwo(List<String> lines);
 }

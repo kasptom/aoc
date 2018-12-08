@@ -1,7 +1,8 @@
 import java.util.HashSet;
 import java.util.List;
 
-public class Task02 implements IAocTask {
+@SuppressWarnings("unused")
+public class Day01 implements IAocTask {
 
     private HashSet<Integer> frequencies = new HashSet<>();
 
@@ -11,8 +12,19 @@ public class Task02 implements IAocTask {
     }
 
     @Override
-    public void solve(List<String> lines) {
+    public void solvePartOne(List<String> lines) {
 
+        int result = 0;
+
+        for (String line : lines) {
+            result += Integer.parseInt(line.trim());
+        }
+
+        System.out.println(result);
+    }
+
+    @Override
+    public void solvePartTwo(List<String> lines) {
         int currentFrequency = 0;
         frequencies.add(currentFrequency);
 

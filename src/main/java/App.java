@@ -8,9 +8,9 @@ import java.util.stream.Collectors;
 
 public class App {
     public static void main(String[] args) throws FileNotFoundException {
-//        IAocTask task = new Task01();
-//        IAocTask task = new Task02();
-        IAocTask task = new Task03();
+//        IAocTask task = new Day01();
+        IAocTask task = new Day02();
+
 
         ClassLoader classLoader = task.getClass().getClassLoader();
         File inputFile = new File(Objects.requireNonNull(classLoader.getResource(task.getFileName())).getFile());
@@ -18,6 +18,7 @@ public class App {
         BufferedReader reader = new BufferedReader(fileReader);
         List<String> lines = reader.lines().collect(Collectors.toList());
 
-        task.solve(lines);
+        task.solvePartOne(lines);
+        task.solvePartTwo(lines);
     }
 }

@@ -1,11 +1,11 @@
 import java.util.HashMap;
 import java.util.List;
 
-public class Task03 implements IAocTask {
+public class Day02 implements IAocTask {
 
     private HashMap<Integer, Integer> asciiCountMap = new HashMap<>();
     private int doublesCounter = 0;
-    private int trippelsCounter = 0;
+    private int triplesCounter = 0;
 
     @Override
     public String getFileName() {
@@ -13,12 +13,17 @@ public class Task03 implements IAocTask {
     }
 
     @Override
-    public void solve(List<String> lines) {
+    public void solvePartOne(List<String> lines) {
         lines.forEach(this::updateCounters);
-        System.out.println(String.format("D * T = R, %d * %d = %d", doublesCounter, trippelsCounter, doublesCounter * trippelsCounter));
+        System.out.println(String.format("D * T = R, %d * %d = %d", doublesCounter, triplesCounter, doublesCounter * triplesCounter));
     }
 
-    private boolean updateCounters(String line) {
+    @Override
+    public void solvePartTwo(List<String> lines) {
+        System.out.println("NOT SOLVED");
+    }
+
+    private void updateCounters(String line) {
         asciiCountMap.clear();
         line.chars().forEach(character -> {
             if (asciiCountMap.containsKey(character)) {
@@ -33,9 +38,7 @@ public class Task03 implements IAocTask {
         }
 
         if (asciiCountMap.containsValue(3)) {
-            trippelsCounter++;
+            triplesCounter++;
         }
-
-        return false;
     }
 }
