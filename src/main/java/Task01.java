@@ -1,26 +1,21 @@
-import java.io.File;
-import java.io.IOException;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.List;
 
-public class Task01 {
-    public static void main(String[] args) {
-        Task01 task01 = new Task01();
-        String fileName = "input_01.txt";
+public class Task01 implements IAocTask {
 
-        ClassLoader classLoader = task01.getClass().getClassLoader();
+    @Override
+    public String getFileName() {
+        return "input_01.txt";
+    }
 
-        File inputFile = new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
+    @Override
+    public void solve(List<String> lines) {
 
         int result = 0;
 
-        try (Scanner scanner = new Scanner(inputFile)) {
-            while (scanner.hasNextLine()) {
-                result += Integer.parseInt(scanner.nextLine().trim());
-            }
-            System.out.println(result);
-        } catch (IOException e) {
-            e.printStackTrace();
+        for (String line : lines) {
+            result += Integer.parseInt(line.trim());
         }
+
+        System.out.println(result);
     }
 }
