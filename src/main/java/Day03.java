@@ -1,5 +1,5 @@
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -11,7 +11,9 @@ public class Day03 implements IAocTask {
     private static final String CLAIM_REGEX = "#([0-9]+) @ ([0-9]+),([0-9]+): ([0-9]+)x([0-9]+)";
 
     private HashMap<Integer, Integer> fabricClaimCounts;
-    private HashMap<Integer, List<Integer>> fabricClaimsPerSquareInch;
+    private HashMap<Integer, HashSet<Integer>> fabricClaimsPerSquareInch;
+    private HashSet<Integer> fabricClaimsOverlappingWithAnyOther = new HashSet<>();
+    private HashSet<Integer> allFabricClaims = new HashSet<>();
 
     @Override
     public String getFileName() {
@@ -38,14 +40,28 @@ public class Day03 implements IAocTask {
         fabricClaimsPerSquareInch = initializeFabricClaimsPerSquareInch();
 
         Pattern pattern = Pattern.compile(CLAIM_REGEX);
+
+        IClaimUpdate claimUpdate = (claim, squareInchId) -> {
+            fabricClaimsPerSquareInch.get(squareInchId).add(claim.getClaimId());
+
+            if (fabricClaimsPerSquareInch.get(squareInchId).size() > 1) {
+                fabricClaimsOverlappingWithAnyOther.addAll(fabricClaimsPerSquareInch.get(squareInchId));
+            }
+            allFabricClaims.add(claim.getClaimId());
+        };
+
         for (String line : lines) {
             Matcher matcher = pattern.matcher(line);
             if (!matcher.find()) throw new RuntimeException(String.format("No claims found in line %s", line));
             FabricClaim fabricClaim = createFabricClaim(matcher);
-            updateFabricClaims(fabricClaim, (claim, squareInchId) -> fabricClaimsPerSquareInch.get(squareInchId).add(claim.getClaimId()));
+            updateFabricClaims(fabricClaim, claimUpdate);
         }
 
-        System.out.println(fabricClaimCounts.values().stream().filter(claimCount -> claimCount > 1).count());
+        for (Integer claimId : allFabricClaims) {
+            if (!fabricClaimsOverlappingWithAnyOther.contains(claimId)) {
+                System.out.println(claimId);
+            }
+        }
     }
 
     private FabricClaim createFabricClaim(Matcher matcher) {
@@ -85,11 +101,11 @@ public class Day03 implements IAocTask {
         return map;
     }
 
-    private HashMap<Integer, List<Integer>> initializeFabricClaimsPerSquareInch() {
-        HashMap<Integer, List<Integer>> map = new HashMap<>();
+    private HashMap<Integer, HashSet<Integer>> initializeFabricClaimsPerSquareInch() {
+        HashMap<Integer, HashSet<Integer>> map = new HashMap<>();
 
         for (int i = 0; i < SIDE_SIZE * SIDE_SIZE; i++) {
-            map.put(i, new ArrayList<>());
+            map.put(i, new HashSet<>());
         }
         return map;
     }
