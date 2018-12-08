@@ -9,7 +9,8 @@ import java.util.stream.Collectors;
 public class App {
     public static void main(String[] args) throws FileNotFoundException {
 //        IAocTask task = new Task01();
-        IAocTask task = new Task02();
+//        IAocTask task = new Task02();
+        IAocTask task = new Task03();
 
         ClassLoader classLoader = task.getClass().getClassLoader();
         File inputFile = new File(Objects.requireNonNull(classLoader.getResource(task.getFileName())).getFile());
