@@ -35,16 +35,30 @@ public class Day04 implements IAocTask {
                 String eventDetails = matcher.group(6);
 
                 try {
-                    addLog(year, month, day, hour, minute, eventDetails);
+                    addLog(year, month, day, hour, minute, eventDetails, line);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+            } else {
+                System.out.printf("Could not find log in line: %s\n", line);
             }
         }
 
+        System.out.printf("log size (before filling up): %d\n", guardLog.values().size());
+
         fillGuideIdsAndSetSleepingStatus();
 
+        printGuideLogs();
+
         findTheLaziestGuard();
+    }
+
+    private void printGuideLogs() {
+        for (GuardEvent guardEvent : guardLog.values()) {
+            if (guardEvent.isGenerated == false) {
+                System.out.println(guardEvent.print());
+            }
+        }
     }
 
 
@@ -69,10 +83,18 @@ public class Day04 implements IAocTask {
         }
 
         Map<Integer, Integer> sleepMinutes = new HashMap<>();
-        List<GuardEvent> laziestGuideSleepingEvents = guardLog
+
+        List<GuardEvent> laziestGuideAllEvents = guardLog
                 .values()
                 .stream()
-                .filter(guardEvent -> guardEvent.guardId == laziestGuardId && guardEvent.isSleeping)
+                .filter(guardEvent -> guardEvent.guardId == laziestGuardId)
+                .collect(Collectors.toList());
+
+        printGuideEvents(laziestGuideAllEvents);
+
+        List<GuardEvent> laziestGuideSleepingEvents = laziestGuideAllEvents
+                .stream()
+                .filter(guardEvent -> guardEvent.isSleeping)
                 .collect(Collectors.toList());
 
         laziestGuideSleepingEvents
@@ -99,6 +121,10 @@ public class Day04 implements IAocTask {
                 laziestGuardId, mostTimesAsleepMinute, laziestGuardId * mostTimesAsleepMinute));
     }
 
+    private void printGuideEvents(List<GuardEvent> laziestGuideAllEvents) {
+
+    }
+
     private void fillGuideIdsAndSetSleepingStatus() {
         TreeMap<Date, GuardEvent> guardLogNoGaps = new TreeMap<>();
 
@@ -118,7 +144,9 @@ public class Day04 implements IAocTask {
 
                 for (int i = 1; i < getNumberOfMinutesToFill(event, previousDate); i++) {
                     Date date = new GregorianCalendar(2018, previousDate.getMonth(), previousDate.getDate(), previousDate.getHours(), previousDate.getMinutes() + i).getTime();
-                    guardLogNoGaps.put(date, new GuardEvent(date, previousEvent.guardId, previousEvent.eventType != GuardEventType.BEGINS ? previousEvent.eventType : GuardEventType.WAKES_UP));
+                    GuardEvent toFill = new GuardEvent(date, previousEvent.guardId, previousEvent.eventType != GuardEventType.BEGINS ? previousEvent.eventType : GuardEventType.WAKES_UP);
+                    toFill.isGenerated = true;
+                    guardLogNoGaps.put(date, toFill);
                 }
 
                 guardLogNoGaps.put(event.date, event);
@@ -155,8 +183,8 @@ public class Day04 implements IAocTask {
         System.out.println("part 2 to do");
     }
 
-    private void addLog(String year, String month, String day, String hour, String minute, String eventDetails) {
-        Date date = new GregorianCalendar(2018, Integer.parseInt(month), Integer.parseInt(day), Integer.parseInt(hour), Integer.parseInt(minute)).getTime();
+    private void addLog(String year, String month, String day, String hour, String minute, String eventDetails, String rawLine) {
+        Date date = new GregorianCalendar(2018, Integer.parseInt(month) - 1, Integer.parseInt(day), Integer.parseInt(hour), Integer.parseInt(minute)).getTime();
 
         int guardId = 0;
         GuardEventType guardEventType = null;
@@ -169,7 +197,11 @@ public class Day04 implements IAocTask {
             guardEventType = GuardEventType.WAKES_UP;
         }
 
-        guardLog.put(date, new GuardEvent(date, guardId, guardEventType));
+        if (guardLog.containsKey(date)) {
+            throw new RuntimeException(String.format("duplicate log - two guards at the same time! %s\n%s\n%s\n", date, rawLine, guardLog.get(date).rawLine));
+        }
+
+        guardLog.put(date, new GuardEvent(date, guardId, guardEventType, rawLine));
     }
 
     private int getGuardIdFromLog(String eventDetails) {
@@ -181,19 +213,36 @@ public class Day04 implements IAocTask {
 
     class GuardEvent {
 
-        public boolean isSleeping;
+        private final String rawLine;
+        boolean isGenerated;
+        boolean isSleeping;
 
-        public GuardEvent(Date date, int guardId, GuardEventType eventType) {
+        GuardEvent(Date date, int guardId, GuardEventType eventType) {
+            this(date, guardId, eventType, null);
+        }
+
+        GuardEvent(Date date, int guardId, GuardEventType eventType, String rawLine) {
             this.date = date;
             this.guardId = guardId;
             this.eventType = eventType;
             this.isSleeping = eventType == GuardEventType.FALLS_ASLEEP;
+            this.isGenerated = false;
+            this.rawLine = rawLine;
         }
 
         Date date;
         int guardId;
         GuardEventType eventType;
 
+
+        String print() {
+            String dateLog = String.format("[%d-%02d-%02d %02d:%02d] ", 1518, date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+            String description = eventType == GuardEventType.FALLS_ASLEEP
+                    ? "falls asleep" : eventType == GuardEventType.WAKES_UP
+                    ? "wakes up" : String.format("Guard #%d begins shift", guardId);
+            return isGenerated ?
+                    "----> " + dateLog + description : dateLog + description;
+        }
     }
 
     enum GuardEventType {
