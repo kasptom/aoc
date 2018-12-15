@@ -1,9 +1,7 @@
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class Day04 implements IAocTask {
 
@@ -14,7 +12,7 @@ public class Day04 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "input_04_small.txt";
+        return "input_04.txt";
     }
 
     @Override
@@ -51,32 +49,54 @@ public class Day04 implements IAocTask {
 
 
     private void findTheLaziestGuard() {
-//        Map<Integer, Integer> guardSleepTime = new HashMap<>();
-//        guardLog.values()
-//                .forEach(guardEvent -> {
-//                    if (!guardSleepTime.containsKey(guardEvent.guardId)) {
-//                        guardSleepTime.put(guardEvent.guardId, 0);    // BEGINS
-//                    } else if (guardEvent.isSleeping) {
-//                        guardSleepTime.put(guardEvent.guardId, guardSleepTime.get(guardEvent.guardId) + 1);
-//                    }
-//                });
-//
-//        int maxAsleepTime = guardSleepTime.values().stream().max(Integer::compareTo).orElse(-1);
-//
-//        for (Integer key : guardSleepTime.keySet()) {
-//            if (guardSleepTime.get(key) == maxAsleepTime) {
-//                laziestGuardId = key;
-//            }
-//        }
-//
-//        Map<Integer, Integer> sleepMinutes = new HashMap<>();
-//        mostTimesAsleepMinute = guardLog.values()
-//                    .forEach(guardEvent -> {
-//                        int eventMinute = !sleepMinutes.containsKey(guardEvent.date.getMinutes();
-//                      if ()) {
-//                          sleepMinutes.put()
-//                      }
-//                    });
+        Map<Integer, Integer> guardSleepTime = new HashMap<>();
+        guardLog.values()
+                .forEach(guardEvent -> {
+                    if (!guardSleepTime.containsKey(guardEvent.guardId)) {
+                        guardSleepTime.put(guardEvent.guardId, 0);    // BEGINS
+                    } else if (guardEvent.isSleeping) {
+                        guardSleepTime.put(guardEvent.guardId, guardSleepTime.get(guardEvent.guardId) + 1);
+                    }
+                });
+
+        int maxAsleepTime;
+        maxAsleepTime = guardSleepTime.values().stream().max(Integer::compareTo).orElse(-1);
+
+        for (Integer key : guardSleepTime.keySet()) {
+            if (guardSleepTime.get(key) == maxAsleepTime) {
+                laziestGuardId = key;
+            }
+        }
+
+        Map<Integer, Integer> sleepMinutes = new HashMap<>();
+        List<GuardEvent> laziestGuideSleepingEvents = guardLog
+                .values()
+                .stream()
+                .filter(guardEvent -> guardEvent.guardId == laziestGuardId && guardEvent.isSleeping)
+                .collect(Collectors.toList());
+
+        laziestGuideSleepingEvents
+                .forEach(guardEvent -> {
+                    int minute = guardEvent.date.getMinutes();
+
+                    if (!sleepMinutes.containsKey(minute)) {
+                        sleepMinutes.put(minute, 1);
+                    } else {
+                        sleepMinutes.put(minute, sleepMinutes.get(minute) + 1);
+                    }
+                });
+
+        int mostMinuteRepeats = sleepMinutes.values().stream().max(Integer::compareTo).orElse(-1);
+
+        for (Integer minute : sleepMinutes.keySet()) {
+            if (sleepMinutes.get(minute) == mostMinuteRepeats) {
+                mostTimesAsleepMinute = minute;
+                break;
+            }
+        }
+
+        System.out.println(String.format("laziest guard #%d was sleeping most often during the %d minute (%d)",
+                laziestGuardId, mostTimesAsleepMinute, laziestGuardId * mostTimesAsleepMinute));
     }
 
     private void fillGuideIdsAndSetSleepingStatus() {
@@ -86,15 +106,8 @@ public class Day04 implements IAocTask {
         for (GuardEvent event : guardLog.values()) {
             if (event.eventType == GuardEventType.BEGINS) {
                 currentGuideId = event.guardId;
-                event.isSleeping = false;
             } else {
                 event.guardId = currentGuideId;
-            }
-
-            if (event.eventType == GuardEventType.FALLS_ASLEEP) {
-                event.isSleeping = true;
-            } else if (event.eventType == GuardEventType.WAKES_UP) {
-                event.isSleeping = false;
             }
 
             event = normalizeEvent(event);
@@ -174,6 +187,7 @@ public class Day04 implements IAocTask {
             this.date = date;
             this.guardId = guardId;
             this.eventType = eventType;
+            this.isSleeping = eventType == GuardEventType.FALLS_ASLEEP;
         }
 
         Date date;
