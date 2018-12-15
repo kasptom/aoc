@@ -17,6 +17,27 @@ public class Day04 implements IAocTask {
 
     @Override
     public void solvePartOne(List<String> lines) {
+        initializeGuardLog(lines);
+
+        System.out.printf("log size (before filling up): %d\n", guardLog.values().size());
+
+        fillGuardIdsAndSetSleepingStatus();
+
+        printGuardLogs();
+
+        findTheLaziestGuard();
+    }
+
+    @Override
+    public void solvePartTwo(List<String> lines) {
+        initializeGuardLog(lines);
+
+        fillGuardIdsAndSetSleepingStatus();
+
+        findGuardWithHighestSleepPerMinuteRatio();
+    }
+
+    private void initializeGuardLog(List<String> lines) {
         guardLog = new TreeMap<>();
 
         String EVENT_REGEX = "\\[([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2})] ([\\p{Print}\\s]+)";
@@ -43,22 +64,9 @@ public class Day04 implements IAocTask {
                 System.out.printf("Could not find log in line: %s\n", line);
             }
         }
-
-        System.out.printf("log size (before filling up): %d\n", guardLog.values().size());
-
-        fillGuideIdsAndSetSleepingStatus();
-
-        printGuideLogs();
-
-        findTheLaziestGuard();
     }
 
-    @Override
-    public void solvePartTwo(List<String> lines) {
-
-    }
-
-    private void printGuideLogs() {
+    private void printGuardLogs() {
         for (GuardEvent guardEvent : guardLog.values()) {
             if (!guardEvent.isGenerated) {
                 System.out.println(guardEvent.print());
@@ -88,27 +96,19 @@ public class Day04 implements IAocTask {
 
         Map<Integer, Integer> sleepMinutes = new HashMap<>();
 
-        List<GuardEvent> laziestGuideAllEvents = guardLog
+        List<GuardEvent> laziestGuardAllEvents = guardLog
                 .values()
                 .stream()
                 .filter(guardEvent -> guardEvent.guardId == laziestGuardId)
                 .collect(Collectors.toList());
 
-        List<GuardEvent> laziestGuideSleepingEvents = laziestGuideAllEvents
+        List<GuardEvent> laziestGuardSleepingEvents = laziestGuardAllEvents
                 .stream()
                 .filter(guardEvent -> guardEvent.isSleeping)
                 .collect(Collectors.toList());
 
-        laziestGuideSleepingEvents
-                .forEach(guardEvent -> {
-                    int minute = getMinutes(guardEvent.date);
-
-                    if (!sleepMinutes.containsKey(minute)) {
-                        sleepMinutes.put(minute, 1);
-                    } else {
-                        sleepMinutes.put(minute, sleepMinutes.get(minute) + 1);
-                    }
-                });
+        laziestGuardSleepingEvents
+                .forEach(guardEvent -> updateSleepMinutes(sleepMinutes, guardEvent));
 
         int mostMinuteRepeats = sleepMinutes.values().stream().max(Integer::compareTo).orElse(-1);
 
@@ -123,15 +123,25 @@ public class Day04 implements IAocTask {
                 laziestGuardId, mostTimesAsleepMinute, laziestGuardId * mostTimesAsleepMinute));
     }
 
-    private void fillGuideIdsAndSetSleepingStatus() {
+    private void updateSleepMinutes(Map<Integer, Integer> sleepMinutes, GuardEvent guardEvent) {
+        int minute = getMinutes(guardEvent.date);
+
+        if (!sleepMinutes.containsKey(minute)) {
+            sleepMinutes.put(minute, 1);
+        } else {
+            sleepMinutes.put(minute, sleepMinutes.get(minute) + 1);
+        }
+    }
+
+    private void fillGuardIdsAndSetSleepingStatus() {
         TreeMap<Date, GuardEvent> guardLogNoGaps = new TreeMap<>();
 
-        int currentGuideId = 0;
+        int currentGuardId = 0;
         for (GuardEvent event : guardLog.values()) {
             if (event.eventType == GuardEventType.BEGINS) {
-                currentGuideId = event.guardId;
+                currentGuardId = event.guardId;
             } else {
-                event.guardId = currentGuideId;
+                event.guardId = currentGuardId;
             }
 
             event = normalizeEvent(event);
@@ -224,6 +234,7 @@ public class Day04 implements IAocTask {
     class GuardEvent {
 
         private final String rawLine;
+
         boolean isGenerated;
         boolean isSleeping;
 
@@ -241,9 +252,9 @@ public class Day04 implements IAocTask {
         }
 
         Date date;
+
         int guardId;
         GuardEventType eventType;
-
 
         String print() {
             String dateLog = String.format("[%d-%02d-%02d %02d:%02d] ", 1518, getMonth(date), getCalendarDate(date), getHours(date), getMinutes(date));
@@ -253,12 +264,63 @@ public class Day04 implements IAocTask {
             return isGenerated ?
                     "----> " + dateLog + description : dateLog + description;
         }
+
     }
 
     enum GuardEventType {
         BEGINS,
         WAKES_UP,
         FALLS_ASLEEP
+    }
+
+    private void findGuardWithHighestSleepPerMinuteRatio() {
+        HashMap<Integer, HashMap<Integer, Integer>> guardSleepFrequencies = new HashMap<>();
+        guardLog.values()
+                .stream()
+                .filter(guardEvent -> guardEvent.isSleeping)
+                .forEach(guardEvent -> {
+                    if (!guardSleepFrequencies.containsKey(guardEvent.guardId)) {
+                        guardSleepFrequencies.put(guardEvent.guardId, new HashMap<>());
+                        return;
+                    }
+
+                    HashMap<Integer, Integer> minutesFrequencies = guardSleepFrequencies.get(guardEvent.guardId);
+                    updateSleepMinutes(minutesFrequencies, guardEvent);
+                });
+        HashMap<Integer, Integer> guardsFavouriteMinute = new HashMap<>();
+
+        guardSleepFrequencies.keySet().forEach(guardId -> guardsFavouriteMinute
+                .put(guardId, guardSleepFrequencies.get(guardId)
+                        .values()
+                        .stream()
+                        .max(Integer::compareTo).orElse(-1)));
+
+        int guardWithFavoriteMinute = -1;
+        int currentBest = 0;
+
+        for(Integer guardId : guardsFavouriteMinute.keySet()) {
+            int guardBestSleepMinute = guardsFavouriteMinute.get(guardId);
+            if (currentBest < guardsFavouriteMinute.get(guardId)) {
+                currentBest = guardBestSleepMinute;
+                guardWithFavoriteMinute = guardId;
+            }
+        }
+
+        int favouriteMinute = -1;
+
+        for(Integer minute : guardSleepFrequencies.get(guardWithFavoriteMinute).keySet()) {
+            if (guardSleepFrequencies.get(guardWithFavoriteMinute).get(minute) == currentBest) {
+                favouriteMinute = minute;
+                break;
+            }
+        }
+
+
+
+        System.out.printf("Guard most frequently asleep on the same minute (%d): #%d, %d",
+                favouriteMinute,
+                guardWithFavoriteMinute,
+                favouriteMinute * guardWithFavoriteMinute);
     }
 
     private int getHours(Date date) {
