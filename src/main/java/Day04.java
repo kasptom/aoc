@@ -26,7 +26,7 @@ public class Day04 implements IAocTask {
             Matcher matcher = pattern.matcher(line);
 
             if (matcher.find()) {
-                String year = matcher.group(1);
+//                String year = matcher.group(1);
                 String month = matcher.group(2);
                 String day = matcher.group(3);
                 String hour = matcher.group(4);
@@ -35,7 +35,7 @@ public class Day04 implements IAocTask {
                 String eventDetails = matcher.group(6);
 
                 try {
-                    addLog(year, month, day, hour, minute, eventDetails, line);
+                    addLog(month, day, hour, minute, eventDetails, line);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -53,14 +53,18 @@ public class Day04 implements IAocTask {
         findTheLaziestGuard();
     }
 
+    @Override
+    public void solvePartTwo(List<String> lines) {
+
+    }
+
     private void printGuideLogs() {
         for (GuardEvent guardEvent : guardLog.values()) {
-            if (guardEvent.isGenerated == false) {
+            if (!guardEvent.isGenerated) {
                 System.out.println(guardEvent.print());
             }
         }
     }
-
 
     private void findTheLaziestGuard() {
         Map<Integer, Integer> guardSleepTime = new HashMap<>();
@@ -90,8 +94,6 @@ public class Day04 implements IAocTask {
                 .filter(guardEvent -> guardEvent.guardId == laziestGuardId)
                 .collect(Collectors.toList());
 
-        printGuideEvents(laziestGuideAllEvents);
-
         List<GuardEvent> laziestGuideSleepingEvents = laziestGuideAllEvents
                 .stream()
                 .filter(guardEvent -> guardEvent.isSleeping)
@@ -99,7 +101,7 @@ public class Day04 implements IAocTask {
 
         laziestGuideSleepingEvents
                 .forEach(guardEvent -> {
-                    int minute = guardEvent.date.getMinutes();
+                    int minute = getMinutes(guardEvent.date);
 
                     if (!sleepMinutes.containsKey(minute)) {
                         sleepMinutes.put(minute, 1);
@@ -121,10 +123,6 @@ public class Day04 implements IAocTask {
                 laziestGuardId, mostTimesAsleepMinute, laziestGuardId * mostTimesAsleepMinute));
     }
 
-    private void printGuideEvents(List<GuardEvent> laziestGuideAllEvents) {
-
-    }
-
     private void fillGuideIdsAndSetSleepingStatus() {
         TreeMap<Date, GuardEvent> guardLogNoGaps = new TreeMap<>();
 
@@ -143,7 +141,7 @@ public class Day04 implements IAocTask {
                 GuardEvent previousEvent = guardLogNoGaps.get(previousDate);
 
                 for (int i = 1; i < getNumberOfMinutesToFill(event, previousDate); i++) {
-                    Date date = new GregorianCalendar(2018, previousDate.getMonth(), previousDate.getDate(), previousDate.getHours(), previousDate.getMinutes() + i).getTime();
+                    Date date = getTime(getMonth(previousDate), getCalendarDate(previousDate), getHours(previousDate), getMinutes(previousDate) + i);
                     GuardEvent toFill = new GuardEvent(date, previousEvent.guardId, previousEvent.eventType != GuardEventType.BEGINS ? previousEvent.eventType : GuardEventType.WAKES_UP);
                     toFill.isGenerated = true;
                     guardLogNoGaps.put(date, toFill);
@@ -160,31 +158,33 @@ public class Day04 implements IAocTask {
 
     private GuardEvent normalizeEvent(GuardEvent event) {
         Date date = new Date(event.date.getTime());
-        if (date.getHours() != 0) {
-            date.setHours(0);
-            date.setMinutes(0);
+        if (getHours(date) != 0) {
+            date = setHoursAndMinutes(date);
             date = new Date(date.getTime() + 24 * 60 * 60 * 1000);
         }
         return new GuardEvent(date, event.guardId, event.eventType);
     }
 
+    private Date setHoursAndMinutes(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        return calendar.getTime();
+    }
+
     private long getNumberOfMinutesToFill(GuardEvent event, Date previousDate) {
         Date currentDate = event.date;
 
-        if (currentDate.getDate() != previousDate.getDate()) {
-            return 60 - previousDate.getMinutes();
+        if (getCalendarDate(currentDate) != getCalendarDate(previousDate)) {
+            return 60 - getMinutes(previousDate);
         } else {
             return (currentDate.getTime() - previousDate.getTime()) / (1000 * 60);
         }
     }
 
-    @Override
-    public void solvePartTwo(List<String> lines) {
-        System.out.println("part 2 to do");
-    }
-
-    private void addLog(String year, String month, String day, String hour, String minute, String eventDetails, String rawLine) {
-        Date date = new GregorianCalendar(2018, Integer.parseInt(month) - 1, Integer.parseInt(day), Integer.parseInt(hour), Integer.parseInt(minute)).getTime();
+    private void addLog(String month, String day, String hour, String minute, String eventDetails, String rawLine) {
+        Date date = getTime(Integer.parseInt(month) - 1, Integer.parseInt(day), Integer.parseInt(hour), Integer.parseInt(minute));
 
         int guardId = 0;
         GuardEventType guardEventType = null;
@@ -204,11 +204,21 @@ public class Day04 implements IAocTask {
         guardLog.put(date, new GuardEvent(date, guardId, guardEventType, rawLine));
     }
 
+    private Date getTime(int month, int day, int hour, int minute) {
+        return new GregorianCalendar(2018, month, day, hour, minute).getTime();
+    }
+
     private int getGuardIdFromLog(String eventDetails) {
         String numberSubstring = eventDetails.substring(eventDetails.indexOf('#'));
         numberSubstring = numberSubstring.substring(1, numberSubstring.indexOf(' '));
 
         return Integer.parseInt(numberSubstring);
+    }
+
+    private int getMinutes(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return calendar.get(Calendar.MINUTE);
     }
 
     class GuardEvent {
@@ -236,7 +246,7 @@ public class Day04 implements IAocTask {
 
 
         String print() {
-            String dateLog = String.format("[%d-%02d-%02d %02d:%02d] ", 1518, date.getMonth(), date.getDate(), date.getHours(), date.getMinutes());
+            String dateLog = String.format("[%d-%02d-%02d %02d:%02d] ", 1518, getMonth(date), getCalendarDate(date), getHours(date), getMinutes(date));
             String description = eventType == GuardEventType.FALLS_ASLEEP
                     ? "falls asleep" : eventType == GuardEventType.WAKES_UP
                     ? "wakes up" : String.format("Guard #%d begins shift", guardId);
@@ -248,6 +258,24 @@ public class Day04 implements IAocTask {
     enum GuardEventType {
         BEGINS,
         WAKES_UP,
-        FALLS_ASLEEP;
+        FALLS_ASLEEP
+    }
+
+    private int getHours(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return calendar.get(Calendar.HOUR_OF_DAY);
+    }
+
+    private int getCalendarDate(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return calendar.get(Calendar.DATE);
+    }
+
+    private int getMonth(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        return calendar.get(Calendar.MONTH);
     }
 }
