@@ -6,13 +6,12 @@ public class Day05 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "input_05_small.txt";
+        return "input_05.txt";
     }
 
     @Override
     public void solvePartOne(List<String> lines) {
         char[] chars = lines.get(0).toCharArray();
-
         System.out.printf("before: %d\n", chars.length);
 
         first = new PolymerUnit(chars[0]);
@@ -39,7 +38,7 @@ public class Day05 implements IAocTask {
             isReduced = false;
 
             while(first.reactsWithNext()) {
-                first = first.reduce(null);
+                first = first.next.next;
                 isReduced = true;
             }
 
@@ -48,11 +47,10 @@ public class Day05 implements IAocTask {
 
             while (pointer != null) {
                 if (pointer.reactsWithNext()) {
-                    pointer = pointer.reduce(prev);
                     isReduced = true;
-                    if (prev == first) {
-                        prev = null;
-                        first = pointer;
+                    pointer = pointer.next.next;
+                    if (prev != null) {
+                        prev.next = pointer;
                     }
                 } else {
                     prev = pointer;
@@ -102,14 +100,6 @@ public class Day05 implements IAocTask {
 
         boolean reactsWithNext() {
             return next != null && reactsWith(next);
-        }
-
-        PolymerUnit reduce(PolymerUnit prev) {
-            if (prev != null) {
-                prev.next = this.next.next;
-            }
-
-            return this.next.next;
         }
 
         private boolean reactsWith(PolymerUnit other) {
