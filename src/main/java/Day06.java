@@ -1,4 +1,5 @@
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class Day06 implements IAocTask {
@@ -15,21 +16,47 @@ public class Day06 implements IAocTask {
         List<Location> locations = initializeLocations(lines);
         Location[][] area = createArea(locations);
 
-        locations.forEach(location -> area[location.y - 1][location.x - 1] = location);
-
         // mozna by tez union find
-        for (Location[] row : area) {
-            Arrays.stream(row).forEach(location -> {
-                findClosestSource(location, locations);
-            });
-        }
-        // printArea(area);
+        findClosestSources(locations, area);
+        printArea(area);
 
-        int largestFiniteArea = getLargestFiniteArea(area, locations);
+        int largestFiniteArea = getLargestFiniteArea(area);
         System.out.println(largestFiniteArea);
     }
 
-    private int getLargestFiniteArea(Location[][] area, List<Location> locations) {
+    @Override
+    public void solvePartTwo(List<String> lines) {
+        List<Location> locations = initializeLocations(lines);
+        Location[][] area = createArea(locations);
+
+        markRegionByOverallDistance(area, locations);
+//        printArea(area);
+        int areaSize = 0;
+
+        for(Location[] row: area) {
+            for (Location location: row) {
+                if (location.isInRegion) {
+                    areaSize++;
+                }
+            }
+        }
+        System.out.println(areaSize);
+    }
+
+    private void markRegionByOverallDistance(Location[][] area, List<Location> coordinates) {
+        for(Location[] row : area) {
+            for (Location location : row) {
+                AtomicInteger sum = new AtomicInteger();
+                coordinates.forEach(loc -> sum.addAndGet(location.getDistance(loc)));
+
+                if (sum.get() < 10000) {
+                    location.isInRegion = true;
+                }
+            }
+        }
+    }
+
+    private int getLargestFiniteArea(Location[][] area) {
         HashSet<Integer> infiniteAreas = new HashSet<>();
 
         for (int i = 0; i < xMax; i++) {
@@ -95,7 +122,10 @@ public class Day06 implements IAocTask {
             for (int j = 0; j < xMax; j++) {
                 if (area[i][j].areaId != 0) {
                     System.out.printf("%3d", area[i][j].areaId);
-                } else {
+                } else if (area[i][j].isInRegion) {
+                    System.out.print(" X ");
+                }
+                else {
                     System.out.print(" # ");
                 }
             }
@@ -120,6 +150,8 @@ public class Day06 implements IAocTask {
             }
         }
 
+        locations.forEach(location -> area[location.y - 1][location.x - 1] = location);
+
         return area;
     }
 
@@ -141,15 +173,17 @@ public class Day06 implements IAocTask {
         return locations;
     }
 
-    @Override
-    public void solvePartTwo(List<String> lines) {
-
+    private void findClosestSources(List<Location> locations, Location[][] area) {
+        for (Location[] row : area) {
+            Arrays.stream(row).forEach(location -> findClosestSource(location, locations));
+        }
     }
 
     class Location {
         final int x;
         final int y;
         int areaId = 0;
+        boolean isInRegion;
 
         Location(int x, int y) {
             this.x = x;
