@@ -23,7 +23,7 @@ public class Day06 implements IAocTask {
                 findClosestSource(location, locations);
             });
         }
-//        printArea(area);
+        // printArea(area);
 
         int largestFiniteArea = getLargestFiniteArea(area, locations);
         System.out.println(largestFiniteArea);
@@ -44,7 +44,28 @@ public class Day06 implements IAocTask {
 
         HashMap<Integer, Integer> areaSizes = new HashMap<>();
 
-        return 0;
+        for (Location[] row: area) {
+            for (Location location : row) {
+                int areaId = Math.abs(location.areaId);
+                if (areaSizes.containsKey(areaId)) {
+                    areaSizes.put(areaId, areaSizes.get(areaId) + 1);
+                } else {
+                    areaSizes.put(areaId, 1);
+                }
+            }
+        }
+
+        int maxArea = -1;
+        for (Integer areaId : areaSizes.keySet()) {
+            if (infiniteAreas.contains(areaId)) {
+                continue;
+            }
+            if (maxArea < areaSizes.get(areaId)) {
+                maxArea = areaSizes.get(areaId);
+            }
+        }
+
+        return maxArea;
     }
 
     private void findClosestSource(Location location, List<Location> locations) {
