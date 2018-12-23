@@ -7,8 +7,8 @@ import java.util.regex.Pattern;
 
 public class Day07 implements IAocTask {
 
-    private static final int NUMBER_OF_ELVES = 2;
-    private int BASE_TIME_SECONDS = 0;
+    private static final int NUMBER_OF_ELVES = 5;
+    private int BASE_TIME_SECONDS = 60;
     private int maxTaskId = 0;
     private int[] taskTimeLeft = createTaskTimes();
 
@@ -25,7 +25,7 @@ public class Day07 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "input_07_small.txt";
+        return "input_07.txt";
     }
 
     @Override
@@ -147,7 +147,10 @@ public class Day07 implements IAocTask {
                             processingOrder.add(elf.currentTaskId);
                             updateGraph(graph, processingOrder, independent, elf.finishTask());
                         }
-
+                    });
+            elves.stream()
+                    .filter(Elf::isAvailable)
+                    .forEach(elf -> {
                         int taskId = getNextIndependentId(independent);
 
                         if (taskId != -1) {
