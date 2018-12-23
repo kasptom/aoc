@@ -1,8 +1,7 @@
+import java.util.Arrays;
 import java.util.List;
 
 public class Day05 implements IAocTask {
-
-    private PolymerUnit first;
 
     @Override
     public String getFileName() {
@@ -14,7 +13,15 @@ public class Day05 implements IAocTask {
         char[] chars = lines.get(0).toCharArray();
         System.out.printf("before: %d\n", chars.length);
 
-        first = new PolymerUnit(chars[0]);
+        PolymerUnit first = createPolymer(chars);
+        first = compressPolymer(first);
+        printPolymer(first);
+
+        System.out.printf("after compression: %d\n", getLength(first));
+    }
+
+    private PolymerUnit createPolymer(char[] chars) {
+        PolymerUnit first = new PolymerUnit(chars[0]);
         PolymerUnit pointer = first;
 
         for (int i = 1; i < chars.length; i++) {
@@ -22,11 +29,7 @@ public class Day05 implements IAocTask {
             pointer = pointer.next;
         }
         printPolymer(first);
-
-        first = compressPolymer(first);
-        printPolymer(first);
-
-        System.out.printf("after compression: %d\n", getLength(first));
+        return first;
     }
 
     private PolymerUnit compressPolymer(PolymerUnit first) {
@@ -57,9 +60,9 @@ public class Day05 implements IAocTask {
                     pointer = pointer.next;
                 }
             }
-            int length = getLength(first);
-            System.out.printf("after compression: %d\n", length);
-            printPolymer(first);
+//            int length = getLength(first);
+//            System.out.printf("after compression: %d\n", length);
+//            printPolymer(first);
         }
 
         return first;
@@ -88,13 +91,37 @@ public class Day05 implements IAocTask {
     @Override
     public void solvePartTwo(List<String> lines) {
 
+        String line = lines.get(0);
+        int bestShort = line.length();
+
+        for (char letter = 'a'; letter <= 'z'; letter++) {
+            char capLetter = (char)(letter - 32);
+
+            String smallBig = Arrays.toString(new char[]{letter, capLetter});
+            String bigSmall = Arrays.toString(new char[]{capLetter, letter});
+
+            System.out.println(smallBig);
+            System.out.println(bigSmall);
+
+            line = lines.get(0).replaceAll(smallBig, "").replaceAll(bigSmall, "");
+
+            PolymerUnit first = createPolymer(line.toCharArray());
+            first = compressPolymer(first);
+            int currentLength = getLength(first);
+
+            if (currentLength < bestShort) {
+                bestShort = currentLength;
+            }
+        }
+
+        System.out.println(bestShort);
     }
 
     class PolymerUnit {
         PolymerUnit next;
         char value;
 
-        public PolymerUnit(char value) {
+        PolymerUnit(char value) {
             this.value = value;
         }
 
