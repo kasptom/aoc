@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class App {
     public static void main(String[] args) throws FileNotFoundException {
 //        IAocTask task = new Day01();
-        IAocTask task = new Day04();
+        IAocTask task = new Day05();
 
 
         ClassLoader classLoader = task.getClass().getClassLoader();
