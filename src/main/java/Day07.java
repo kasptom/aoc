@@ -8,12 +8,12 @@ import java.util.regex.Pattern;
 public class Day07 implements IAocTask {
 
     private static final int NUMBER_OF_ELVES = 5;
-    private int BASE_TIME_SECONDS = 60;
+    private static final int BASE_TIME_SECONDS = 60;
     private int maxTaskId = 0;
     private int[] taskTimeLeft = createTaskTimes();
 
-    List<Elf> elves = new ArrayList<>();
-    HashSet<Integer> currentlyProcessed = new HashSet<>();
+    private List<Elf> elves = new ArrayList<>();
+    private final HashSet<Integer> currentlyProcessed = new HashSet<>();
 
     private int[] createTaskTimes() {
         int[] times = new int[26];
