@@ -1,5 +1,6 @@
+import org.magicwerk.brownies.collections.GapList;
+
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
 public class Day09 implements IAocTask {
@@ -14,18 +15,18 @@ public class Day09 implements IAocTask {
         int players = Integer.parseInt(playersLastMarbleValue[0].trim());
         int marbleValue = Integer.parseInt(playersLastMarbleValue[1].trim());
 
-        int bestScore = findBestScore(players, marbleValue);
+        long bestScore = findBestScore(players, marbleValue);
         System.out.println(bestScore);
     }
 
-    private int findBestScore(int players, int marbleValue) {
-        int[] playersScores = new int[players];
-        List<Integer> board = new LinkedList<>();
+    private long findBestScore(int players, int marbleValue) {
+        long[] playersScores = new long[players];
+        List<Integer> board = new GapList<>();
         board.add(0);
 //        printBoard(board, 0);
 
         int currentMarbleValue = 1;
-        int removedMarbleValue = 0;
+        int removedMarbleValue;
         int boardIdx = 0;
         int playerIdx = 0;
 
@@ -55,18 +56,18 @@ public class Day09 implements IAocTask {
         return Arrays.stream(playersScores).max().orElse(-1);
     }
 
-    private void printBoard(List<Integer> board, int boardIdx) {
-        for (int i = 0; i < board.size(); i++) {
-            if (boardIdx == i) {
-                System.out.printf("(%d) ", board.get(i));
-            } else {
-                System.out.printf("%d ", board.get(i));
-            }
-        }
-        System.out.println();
-    }
+//    private void printBoard(List<Integer> board, int boardIdx) {
+//        for (int i = 0; i < board.size(); i++) {
+//            if (boardIdx == i) {
+//                System.out.printf("(%d) ", board.get(i));
+//            } else {
+//                System.out.printf("%d ", board.get(i));
+//            }
+//        }
+//        System.out.println();
+//    }
 
-    int move(List<Integer> board, int boardIdx, int move) {
+    private int move(List<Integer> board, int boardIdx, int move) {
         if (board.isEmpty()) {
             return 0;
         }
@@ -74,7 +75,7 @@ public class Day09 implements IAocTask {
         int currentSize = board.size();
 
         int idx = (boardIdx + move) % currentSize;
-        return  idx < 0 ? (currentSize + idx) : idx;
+        return idx < 0 ? (currentSize + idx) : idx;
     }
 
 
