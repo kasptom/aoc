@@ -14,18 +14,17 @@ public class Day24 implements IAocTask {
     801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
     4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4
      */
-    private String ARMY_GROUP_REGEX = "([0-9]+) units each with ([0-9]+) hit points \\(([a-z,;\\s&&[^()]]+)\\) with an attack that does ([0-9]+) ([a-z]+) damage at initiative ([0-9]+)";
+    private String ARMY_GROUP_REGEX = "([0-9]+) units each with ([0-9]+) hit points \\(([a-z,;\\s&&[^()]]+)\\) " +
+            "with an attack that does ([0-9]+) ([a-z]+) damage at initiative ([0-9]+)";
     private Pattern pattern = Pattern.compile(ARMY_GROUP_REGEX);
 
     private Army immuneArmy = new Army("immune");
     private Army infectionArmy = new Army("infection");
 
 
-    private HashMap<Integer, BattleGroup> targets = new HashMap<>();
-    private HashSet<Integer> occupiedTargers = new HashSet<>();
-    private HashMap<Integer, BattleGroup> preparedToAttack = new HashMap<>();
-
-    private boolean battleIsOver = false;
+    private HashMap<String, BattleGroup> targets = new HashMap<>();
+    private HashSet<String> occupiedTargets = new HashSet<>();
+    private HashMap<String, BattleGroup> preparedToAttack = new HashMap<>();
 
     @Override
     public String getFileName() {
@@ -56,28 +55,24 @@ public class Day24 implements IAocTask {
     }
 
     private void printAttackPlan() {
-        for (Integer attackingId : targets.keySet()) {
+        for (String attackingId : targets.keySet()) {
             BattleGroup beingAttacked = targets.get(attackingId);
-            System.out.printf("%d would deal %d %d damage\n",
+            System.out.printf("%s would deal %s %d damage\n",
                     attackingId, beingAttacked.id, beingAttacked.calculateDamage(preparedToAttack.get(attackingId)));
         }
     }
 
     private void attack() {
         for (int i=0; i < preparedToAttack.size(); i++) {
-            BattleGroup attacking = preparedToAttack.values().stream()
+            preparedToAttack.values().stream()
                     .filter(BattleGroup::isAlive)
-                    .max(Comparator.comparingInt(BattleGroup::getInitiative))
-                    .orElse(null);
-            if (attacking != null) {
-                attacking.attack();
-            }
+                    .max(Comparator.comparingInt(BattleGroup::getInitiative)).ifPresent(BattleGroup::attack);
         }
     }
 
     private void setTargets() {
         targets.clear();
-        occupiedTargers.clear();
+        occupiedTargets.clear();
         preparedToAttack.clear();
 
         infectionArmy.selectTargets();
@@ -91,10 +86,10 @@ public class Day24 implements IAocTask {
             line = lines.get(i);
             if (line.startsWith("Immune System:")) {
                 i++;
-                i = loadGroupsToArmy(lines, i, immuneArmy.groups);
+                i = loadGroupsToArmy(lines, i, immuneArmy);
             } else if (line.startsWith("Infection:")) {
                 i++;
-                i = loadGroupsToArmy(lines, i, infectionArmy.groups);
+                i = loadGroupsToArmy(lines, i, infectionArmy);
             } else {
                 i++;
             }
@@ -104,19 +99,19 @@ public class Day24 implements IAocTask {
         infectionArmy.setEnemy(immuneArmy);
     }
 
-    private int loadGroupsToArmy(List<String> lines, int i, List<BattleGroup> battleGroups) {
+    private int loadGroupsToArmy(List<String> lines, int i, Army army) {
         while (i < lines.size() && !lines.get(i).isEmpty()) {
-            BattleGroup group = createGroup(i, lines.get(i));
-            battleGroups.add(group);
+            BattleGroup group = createGroup(army.name + "#" + (army.groups.size() + 1), lines.get(i));
+            army.groups.add(group);
             i++;
         }
 
-        battleGroups.sort(Comparator.comparingInt(g -> g.initiative));
+        army.groups.sort(Comparator.comparingInt(g -> g.initiative));
 
         return i;
     }
 
-    private BattleGroup createGroup(int battleGroupId, String groupData) {
+    private BattleGroup createGroup(String battleGroupId, String groupData) {
         // 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
         Matcher matcher = pattern.matcher(groupData);
 
@@ -140,12 +135,11 @@ public class Day24 implements IAocTask {
     }
 
     private List<String> getImmuneOrWeakList(String immuneWeakStr, String prefix) {
-        String[] immuneWeakParts = immuneWeakStr.split(";");
-        String immuneString = Arrays.stream(immuneWeakParts).filter(str -> str.startsWith(prefix)).findFirst().orElse(null);
-        immuneString = immuneString != null ? immuneString.replace(prefix, "") : null;
-        List<String> immuneTo = immuneString == null ? new ArrayList<>() :
-                Arrays.stream(immuneString.split(",")).map(String::trim).collect(Collectors.toList());
-        return immuneTo;
+        String[] attacks = immuneWeakStr.split(";");
+        String attackStr = Arrays.stream(attacks).filter(str -> str.trim().startsWith(prefix)).findFirst().orElse(null);
+        attackStr = attackStr != null ? attackStr.replace(prefix, "") : null;
+        return attackStr == null ? new ArrayList<>() :
+                Arrays.stream(attackStr.split(",")).map(String::trim).collect(Collectors.toList());
     }
 
     @Override
@@ -158,7 +152,7 @@ public class Day24 implements IAocTask {
         List<BattleGroup> groups;
         private Army enemy;
 
-        public Army(String name) {
+        Army(String name) {
             this.name = name;
             this.groups = new ArrayList<>();
         }
@@ -169,7 +163,6 @@ public class Day24 implements IAocTask {
 
         void selectTargets() {
             if (groups.stream().noneMatch(BattleGroup::isAlive)) {
-                battleIsOver = true;
                 return;
             }
 
@@ -181,13 +174,14 @@ public class Day24 implements IAocTask {
                 if (enemyGroupToHit == null) continue;
 
                 targets.put(attackingGroup.id, enemyGroupToHit);
-                occupiedTargers.add(enemyGroupToHit.id);
+                occupiedTargets.add(enemyGroupToHit.id);
                 preparedToAttack.put(attackingGroup.id, attackingGroup);
             }
         }
 
         private BattleGroup getEnemyGroup(BattleGroup attackingGroup) {
             int maxDamageToDeal = enemy.groups.stream()
+                    .filter(gr -> !occupiedTargets.contains(gr.id))
                     .map(gr -> gr.calculateDamage(attackingGroup))
                     .max(Integer::compareTo)
                     .orElse(0);
@@ -253,7 +247,7 @@ public class Day24 implements IAocTask {
     }
 
     class BattleGroup {
-        private int id;
+        private String id;
 
         private int unitsCount;
         private int hitPoints;
@@ -265,7 +259,8 @@ public class Day24 implements IAocTask {
 
         List<BattleUnit> units;
 
-        BattleGroup(int id, int unitsCount, int hitPoints, List<String> immuneTo, List<String> weakTo, int attackPoints, String attackType, int initiative) {
+        BattleGroup(String id, int unitsCount, int hitPoints, List<String> immuneTo, List<String> weakTo, int attackPoints, String attackType, int initiative) {
+            this.id = id;
             this.unitsCount = unitsCount;
             this.hitPoints = hitPoints;
             this.immuneTo = immuneTo;
