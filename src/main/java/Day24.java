@@ -29,7 +29,7 @@ public class Day24 implements IAocTask {
 
     @Override
     public String getFileName() {
-//        return "input_24_simple.txt";
+  //      return "input_24_simple.txt";
         return "input_24.txt";
     }
 
@@ -62,14 +62,14 @@ public class Day24 implements IAocTask {
 
     private void printGroupState(Army army, boolean showSummary) {
         System.out.println(army.name);
-        if (army.groups.stream().noneMatch(BattleGroup::isAlive)) {
+        if (army.groups.isEmpty()) {
             System.out.println("No groups remain");
             return;
         }
 
         int unitsSum = 0;
         for (BattleGroup group : army.groups) {
-            int unitsCount = (int) group.units.stream().filter(u -> u.hitPoints != 0).count();
+            int unitsCount = group.units.size();
             unitsSum += unitsCount;
             if (unitsCount > 0) {
                 System.out.printf("Group %s contains %d units\n", group.id, unitsCount);
@@ -101,7 +101,9 @@ public class Day24 implements IAocTask {
 
             if (attackingGroup == null) throw new RuntimeException("Attacking group cannot be null");
 
-            attackingGroup.attack();
+            if (!attackingGroup.isAlive()) throw new RuntimeException("Attacking group cannot be dead");
+
+            attackingGroup.dealDamage();
 
             preparedToAttack.remove(attackingGroup.id);
             preparedToAttack.values().stream().filter(gr -> !gr.isAlive()).findFirst().ifPresent(possiblyDead -> preparedToAttack.remove(possiblyDead.id));
@@ -119,7 +121,7 @@ public class Day24 implements IAocTask {
 
         for (BattleGroup group : immuneArmy.groups) {
             if (preparedToAttack.containsKey(group.id) && notAttacking.contains(group.id)) {
-                throw new RuntimeException("Group cannot be prepared to attack and not attacking at once");
+                throw new RuntimeException("Group cannot be prepared to deal damage and not attacking at once");
             }
         }
     }
@@ -127,7 +129,7 @@ public class Day24 implements IAocTask {
     private void loadArmies(List<String> lines) {
         String line;
         int i = 0;
-        for (; i < lines.size(); ) {
+        while (i < lines.size()) {
             line = lines.get(i);
             if (line.startsWith("Immune System:")) {
                 i++;
@@ -163,7 +165,7 @@ public class Day24 implements IAocTask {
     }
 
     private BattleGroup createGroup(String battleGroupId, String groupData) {
-        // 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an attack that does 25 slashing damage at initiative 3
+        // 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an dealDamage that does 25 slashing damage at initiative 3
         Matcher matcher = pattern.matcher(groupData);
 
         if (matcher.find()) {
@@ -217,11 +219,13 @@ public class Day24 implements IAocTask {
         }
 
         void selectTargets() {
-            if (groups.stream().noneMatch(BattleGroup::isAlive)) {
+            groups.removeAll(groups.stream().filter(gr -> !gr.isAlive()).collect(Collectors.toList()));
+
+            if (groups.isEmpty()) {
                 return;
             }
 
-            for (int i = 0; i < groups.stream().filter(BattleGroup::isAlive).count(); i++) {
+            for (int i = 0; i < groups.size(); i++) {
                 BattleGroup attackingGroup = getNextAttackingGroup();
 
                 if (attackingGroup == null) {
@@ -241,8 +245,11 @@ public class Day24 implements IAocTask {
         }
 
         private BattleGroup getBestEnemyGroup(BattleGroup attackingGroup) {
+            if (enemy.groups.stream().anyMatch(gr -> !gr.isAlive())) {
+                throw new RuntimeException("Enemy still has dead groups");
+            }
+
             long maxDamageToDeal = enemy.groups.stream()
-                    .filter(BattleGroup::isAlive)
                     .filter(gr -> !occupiedTargets.contains(gr.id))
                     .map(gr -> gr.calculateDamageFrom(attackingGroup))
                     .max(Long::compareTo)
@@ -252,7 +259,6 @@ public class Day24 implements IAocTask {
 
             List<BattleGroup> enemyGroupsWithMaxDamage = enemy.groups
                     .stream()
-                    .filter(BattleGroup::isAlive)
                     .filter(gr -> gr.calculateDamageFrom(attackingGroup) == maxDamageToDeal)
                     .collect(Collectors.toList());
 
@@ -361,7 +367,9 @@ public class Day24 implements IAocTask {
         }
 
         long getEffectivePower() {
-            return units.stream().filter(unit -> unit.hitPoints > 0).count() * this.attackPoints;
+            long power = units.stream().filter(unit -> unit.hitPoints > 0).count() * this.attackPoints;
+            if (power == 0) throw new RuntimeException("effective power is 0");
+            return power;
         }
 
         int getInitiative() {
@@ -379,7 +387,7 @@ public class Day24 implements IAocTask {
             return damageMultiplier * attackingGroup.getEffectivePower();
         }
 
-        void attack() {
+        void dealDamage() {
             BattleGroup enemyGroupToAttack = attackerToDefending.remove(this.id);
             int unitsKilled = enemyGroupToAttack.receiveDamageFrom(this);
             if (unitsKilled > 0) {
@@ -411,6 +419,13 @@ public class Day24 implements IAocTask {
             }
 
             units.removeAll(units.stream().filter(u -> u.hitPoints == 0).collect(Collectors.toList()));
+            if (!isAlive()) {
+                if (id.startsWith("BAD")) {
+                    infectionArmy.groups.remove(this);
+                } else {
+                    immuneArmy.groups.remove(this);
+                }
+            }
 
             return unitsKilled;
         }
