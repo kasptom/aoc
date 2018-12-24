@@ -1,4 +1,6 @@
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -21,9 +23,11 @@ public class Day24 implements IAocTask {
     private Army infectionArmy = new Army("BAD");
 
 
-    private HashMap<String, BattleGroup> targets = new HashMap<>();
+    private HashMap<String, BattleGroup> attackerToDefending = new HashMap<>();
     private HashSet<String> occupiedTargets = new HashSet<>();
     private TreeMap<String, BattleGroup> preparedToAttack = new TreeMap<>();
+    private HashSet<String> notAttacking = new HashSet<>();
+    private HashSet<String> attackNames = new HashSet<>();
 
     @Override
     public String getFileName() {
@@ -35,7 +39,6 @@ public class Day24 implements IAocTask {
     public void solvePartOne(List<String> lines) {
         loadArmies(lines);
         startBattle();
-
         printArmiesState(true);
     }
 
@@ -63,60 +66,56 @@ public class Day24 implements IAocTask {
         System.out.println(army.name);
         if (army.groups.stream().noneMatch(BattleGroup::isAlive)) {
             System.out.println("No groups remain");
-        } else {
-            final int[] unitsSum = {0};
-            army.groups.forEach(gr -> {
-                int unitsCount = (int) gr.units.stream().filter(u -> u.hitPoints != 0).count();
-                unitsSum[0] += unitsCount;
-                if (unitsCount > 0) {
-                    System.out.printf("Group %s contains %d units\n", gr.id, unitsCount);
-                }
-            });
-            if (showSummary) {
-                System.out.printf("%d units\n", unitsSum[0]);
+            return;
+        }
+
+        int unitsSum = 0;
+        for (BattleGroup group : army.groups) {
+            int unitsCount = (int) group.units.stream().filter(u -> u.hitPoints != 0).count();
+            unitsSum += unitsCount;
+            if (unitsCount > 0) {
+                System.out.printf("Group %s contains %d units\n", group.id, unitsCount);
             }
+        }
+
+        if (showSummary) {
+            System.out.printf("%d units\n", unitsSum);
         }
     }
 
     private void printAttackPlan() {
         HashSet<String> printed = new HashSet<>();
-        for (int i = 0; i < preparedToAttack.size(); i++) {
-            BattleGroup attacking = preparedToAttack.values().stream()
-                    .filter(gr -> !printed.contains(gr.id))
-                    .filter(BattleGroup::isAlive)
-                    .max(Comparator.comparingInt(BattleGroup::getInitiative)).orElse(null);
-
-            if (attacking == null) throw new RuntimeException("Attacking group is null");
-
-            BattleGroup beingAttacked = targets.get(attacking.id);
-
-            System.out.printf("%s would deal %s %d damage\n",
-                    attacking.id, beingAttacked.id, beingAttacked.calculateDamage(attacking));
-            printed.add(attacking.id);
-        }
+        preparedToAttack
+                .values()
+                .stream()
+                .sorted(Comparator.comparing(gr -> gr.id))
+                .forEach(gr -> {
+                    BattleGroup defending = attackerToDefending.get(gr.id);
+                    System.out.printf("%s would deal %s %d damage\n",
+                            gr.id, defending.id, defending.calculateDamageFrom(gr));
+                });
     }
 
     private void attack() {
-        HashSet<String> finished = new HashSet<>();
-        for (int i = 0; i < preparedToAttack.size(); i++) {
-            BattleGroup battleGroup = preparedToAttack.values().stream()
-                    .filter(gr -> !finished.contains(gr.id))
-                    .filter(BattleGroup::isAlive)
+        while (!preparedToAttack.isEmpty()) {
+            BattleGroup attackingGroup = preparedToAttack.values().stream()
                     .max(Comparator.comparingInt(BattleGroup::getInitiative))
                     .orElse(null);
 
-            if (battleGroup != null) {
-                battleGroup.attack();
-                finished.add(battleGroup.id);
+            if (attackingGroup == null) throw new RuntimeException("Attacking group cannot be null");
+
+            if (attackingGroup.isAlive()) {
+                attackingGroup.attack();
             }
+            preparedToAttack.remove(attackingGroup.id);
         }
     }
 
     private void setTargets() {
-        targets.clear();
+        attackerToDefending.clear();
         occupiedTargets.clear();
         preparedToAttack.clear();
-
+        notAttacking.clear();
         infectionArmy.selectTargets();
         immuneArmy.selectTargets();
     }
@@ -137,8 +136,16 @@ public class Day24 implements IAocTask {
             }
         }
 
+        printAttackNames();
+
         immuneArmy.setEnemy(infectionArmy);
         infectionArmy.setEnemy(immuneArmy);
+    }
+
+    private void printAttackNames() {
+        System.out.println("atack names: ");
+        attackNames.stream().sorted().forEach(System.out::println);
+        System.out.println("-----------------------------\n");
     }
 
     private int loadGroupsToArmy(List<String> lines, int i, Army army) {
@@ -147,8 +154,6 @@ public class Day24 implements IAocTask {
             army.groups.add(group);
             i++;
         }
-
-        army.groups.sort(Comparator.comparingInt(g -> g.initiative));
 
         return i;
     }
@@ -163,11 +168,16 @@ public class Day24 implements IAocTask {
             String immuneWeakStr = matcher.group(3);
             int attackPoints = Integer.parseInt(matcher.group(4));
             String attackType = matcher.group(5);
+
+            attackNames.add(attackType);
+
             int initiative = Integer.parseInt(matcher.group(6));
 
             List<String> immuneTo = getImmuneOrWeakList(immuneWeakStr, "immune to");
             List<String> weakTo = getImmuneOrWeakList(immuneWeakStr, "weak to");
 
+            attackNames.addAll(immuneTo);
+            attackNames.addAll(weakTo);
 
             return new BattleGroup(battleGroupId, unitsCount, hitPoints, immuneTo, weakTo, attackPoints, attackType, initiative);
         }
@@ -209,40 +219,45 @@ public class Day24 implements IAocTask {
 
             for (int i = 0; i < groups.stream().filter(BattleGroup::isAlive).count(); i++) {
                 BattleGroup attackingGroup = getNextAttackingGroup();
-                if (attackingGroup == null) throw new RuntimeException("No attacking group found");
 
-                BattleGroup enemyGroupToHit = getBestEnemyGroup(attackingGroup);
-                if (enemyGroupToHit == null) {
+                if (attackingGroup == null) {
                     continue;
                 }
 
-                targets.put(attackingGroup.id, enemyGroupToHit);
+                BattleGroup enemyGroupToHit = getBestEnemyGroup(attackingGroup);
+                if (enemyGroupToHit == null) {
+                    notAttacking.add(attackingGroup.id);
+                    continue;
+                }
+
+                attackerToDefending.put(attackingGroup.id, enemyGroupToHit);
                 occupiedTargets.add(enemyGroupToHit.id);
                 preparedToAttack.put(attackingGroup.id, attackingGroup);
             }
         }
 
         private BattleGroup getBestEnemyGroup(BattleGroup attackingGroup) {
-            int maxDamageToDeal = enemy.groups.stream()
+            long maxDamageToDeal = enemy.groups.stream()
                     .filter(BattleGroup::isAlive)
                     .filter(gr -> !occupiedTargets.contains(gr.id))
-                    .map(gr -> gr.calculateDamage(attackingGroup))
-                    .max(Integer::compareTo)
-                    .orElse(0);
+                    .map(gr -> gr.calculateDamageFrom(attackingGroup))
+                    .max(Long::compareTo)
+                    .orElse(0L);
 
             if (maxDamageToDeal == 0) return null;
 
             List<BattleGroup> enemyGroupsWithMaxDamage = enemy.groups
                     .stream()
-                    .filter(gr -> gr.calculateDamage(attackingGroup) == maxDamageToDeal)
+                    .filter(BattleGroup::isAlive)
+                    .filter(gr -> gr.calculateDamageFrom(attackingGroup) == maxDamageToDeal)
                     .collect(Collectors.toList());
 
             if (enemyGroupsWithMaxDamage.size() > 1) {
-                int maxEffectivePowerOfEnemyGroupToAttack = enemyGroupsWithMaxDamage
+                long maxEffectivePowerOfEnemyGroupToAttack = enemyGroupsWithMaxDamage
                         .stream()
                         .map(BattleGroup::getEffectivePower)
-                        .max(Integer::compareTo)
-                        .orElse(0);
+                        .max(Long::compareTo)
+                        .orElse(0L);
 
                 enemyGroupsWithMaxDamage = enemyGroupsWithMaxDamage
                         .stream()
@@ -271,17 +286,25 @@ public class Day24 implements IAocTask {
         }
 
         private BattleGroup getNextAttackingGroup() {
-            int maxEffectivePower = groups.stream()
-                    .filter(gr -> gr.isAlive() && !preparedToAttack.keySet().contains(gr.id))
+            long maxEffectivePower = groups.stream()
+                    .filter(gr -> gr.isAlive()
+                            && !notAttacking.contains(gr.id)
+                            && !preparedToAttack.keySet().contains(gr.id))
                     .map(BattleGroup::getEffectivePower)
-                    .max(Integer::compareTo)
-                    .orElse(0);
+                    .max(Long::compareTo)
+                    .orElse(0L);
 
-            if (maxEffectivePower == 0) throw new RuntimeException("No max effective power found");
+            if (maxEffectivePower == 0) {
+                return null;
+//                throw new RuntimeException("No max effective power found");
+            }
 
             List<BattleGroup> groupsWithMaxEffectivePower = groups
                     .stream()
-                    .filter(gr -> gr.getEffectivePower() == maxEffectivePower)
+                    .filter(gr -> gr.isAlive()
+                            && !preparedToAttack.keySet().contains(gr.id)
+                            && !notAttacking.contains(gr.id)
+                            && gr.getEffectivePower() == maxEffectivePower)
                     .collect(Collectors.toList());
 
             BattleGroup attacking = groupsWithMaxEffectivePower.stream()
@@ -292,6 +315,38 @@ public class Day24 implements IAocTask {
             return attacking;
         }
 
+//        private BattleGroup getNextAttackingGroupByMaxDealedDamage() {
+//            long maxDamagePower = groups.stream()
+//                    .filter(gr -> gr.isAlive()
+//                            && !notAttacking.contains(gr.id)
+//                            && !preparedToAttack.keySet().contains(gr.id))
+//                    .map(gr -> this.enemy.groups.stream()
+//                            .filter(BattleGroup::isAlive)
+//                            .map(egr -> egr.calculateDamageFrom(gr))
+//                            .max(Long::compareTo)
+//                            .orElse(0L))
+//                    .max(Long::compareTo)
+//                    .orElse(0L);
+//
+//
+//            List<BattleGroup> groupsWithMaxDamagePower = groups
+//                    .stream()
+//                    .filter(gr -> gr.isAlive()
+//                            && !preparedToAttack.keySet().contains(gr.id)
+//                            && !notAttacking.contains(gr.id)
+//                            && enemy.groups.stream().filter(BattleGroup::isAlive)
+//                            .map(egr -> egr.calculateDamageFrom(gr))
+//                            .max(Long::compareTo).orElse(0L) == maxDamagePower)
+//                    .collect(Collectors.toList());
+//
+//            BattleGroup attacking = groupsWithMaxDamagePower.stream()
+//                    .max(Comparator.comparingInt(BattleGroup::getInitiative))
+//                    .orElse(null);
+//
+//            if (attacking == null) throw new RuntimeException("No attacking group found");
+//            return attacking;
+//        }
+
         boolean isFighting() {
             return groups.stream().anyMatch(BattleGroup::isAlive);
         }
@@ -301,7 +356,7 @@ public class Day24 implements IAocTask {
         private String id;
         private List<String> immuneTo;
         private List<String> weakTo;
-        private int attackPoints;
+        private long attackPoints;
         private String attackType;
         private int initiative;
 
@@ -315,6 +370,14 @@ public class Day24 implements IAocTask {
             this.attackType = attackType;
             this.initiative = initiative;
 
+            if (initiative <= 0) {
+                throw new RuntimeException("Initiative must be grater than zero");
+            }
+
+            if (attackPoints <= 0) {
+                throw new RuntimeException("Attack point must be greater than zero");
+            }
+
             this.units = new ArrayList<>();
             for (int i = 0; i < unitsCount; i++) {
                 this.units.add(new BattleUnit(hitPoints));
@@ -325,48 +388,54 @@ public class Day24 implements IAocTask {
             return units.stream().anyMatch(unit -> unit.hitPoints > 0);
         }
 
-        int getEffectivePower() {
-            return (int) (units.stream().filter(unit -> unit.hitPoints > 0).count() * this.attackPoints);
+        long getEffectivePower() {
+            return units.stream().filter(unit -> unit.hitPoints > 0).count() * this.attackPoints;
         }
 
         int getInitiative() {
             return initiative;
         }
 
-        int calculateDamage(BattleGroup attackingGroup) {
-            int damageMultiplier = immuneTo.contains(attackingGroup.attackType) ? 0 :
-                    weakTo.contains(attackingGroup.attackType) ? 2 :1;
+        long calculateDamageFrom(BattleGroup attackingGroup) {
+            long damageMultiplier = immuneTo.contains(attackingGroup.attackType) ? 0 :
+                    weakTo.contains(attackingGroup.attackType) ? 2 : 1;
 
             return damageMultiplier * attackingGroup.getEffectivePower();
         }
 
         void attack() {
-            BattleGroup enemyGroupToAttack = targets.get(this.id);
-            int unitsKilled = enemyGroupToAttack.receiveDamage(this);
+            BattleGroup enemyGroupToAttack = attackerToDefending.get(this.id);
+            int unitsKilled = enemyGroupToAttack.receiveDamageFrom(this);
             if (unitsKilled > 0) {
                 System.out.printf("%s attacking %s, (I: %d) ", this.id, enemyGroupToAttack.id, this.getInitiative());
-                System.out.printf("killing %d\n", unitsKilled);
+                System.out.printf("killing %d", unitsKilled);
+
+                if (!enemyGroupToAttack.isAlive()) {
+                    System.out.print(" (none remaining)");
+                }
+
+                System.out.println();
             }
         }
 
-        private int receiveDamage(BattleGroup attackingGroup) {
-            final int[] damage = {calculateDamage(attackingGroup)};
+        private int receiveDamageFrom(BattleGroup attackingGroup) {
+            AtomicLong damage = new AtomicLong(calculateDamageFrom(attackingGroup));
 
-            if (damage[0] == 0) throw new RuntimeException(
-                    String.format("Group %s deals zero damage to %s", attackingGroup.id, this.id));
+            if (damage.get() == 0) throw new RuntimeException(
+                    String.format("Group %s deals no positive damage to %s", attackingGroup.id, this.id));
 
-            final int[] unitsKilled = {0};
+            AtomicInteger unitsKilled = new AtomicInteger();
             this.units.stream()
                     .filter(u -> u.hitPoints != 0)
-                    .sorted(Comparator.comparingInt(u2 -> u2.hitPoints))
+                    .sorted(Comparator.comparingInt(u -> u.hitPoints))
                     .forEach(unit -> {
-                        if (unit.hitPoints <= damage[0]) {
-                            damage[0] -= unit.hitPoints;
+                        if (unit.hitPoints <= damage.get()) {
+                            damage.addAndGet(-unit.hitPoints);
                             unit.hitPoints = 0;
-                            unitsKilled[0]++;
+                            unitsKilled.getAndIncrement();
                         }
                     });
-            return unitsKilled[0];
+            return unitsKilled.get();
         }
     }
 
