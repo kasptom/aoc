@@ -1,6 +1,4 @@
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -31,8 +29,8 @@ public class Day24 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "input_24_simple.txt";
-//        return "input_24.txt";
+//        return "input_24_simple.txt";
+        return "input_24.txt";
     }
 
     @Override
@@ -84,7 +82,6 @@ public class Day24 implements IAocTask {
     }
 
     private void printAttackPlan() {
-        HashSet<String> printed = new HashSet<>();
         preparedToAttack
                 .values()
                 .stream()
@@ -104,10 +101,10 @@ public class Day24 implements IAocTask {
 
             if (attackingGroup == null) throw new RuntimeException("Attacking group cannot be null");
 
-            if (attackingGroup.isAlive()) {
-                attackingGroup.attack();
-            }
+            attackingGroup.attack();
+
             preparedToAttack.remove(attackingGroup.id);
+            preparedToAttack.values().stream().filter(gr -> !gr.isAlive()).findFirst().ifPresent(possiblyDead -> preparedToAttack.remove(possiblyDead.id));
         }
     }
 
@@ -116,8 +113,15 @@ public class Day24 implements IAocTask {
         occupiedTargets.clear();
         preparedToAttack.clear();
         notAttacking.clear();
+
         infectionArmy.selectTargets();
         immuneArmy.selectTargets();
+
+        for (BattleGroup group : immuneArmy.groups) {
+            if (preparedToAttack.containsKey(group.id) && notAttacking.contains(group.id)) {
+                throw new RuntimeException("Group cannot be prepared to attack and not attacking at once");
+            }
+        }
     }
 
     private void loadArmies(List<String> lines) {
@@ -315,38 +319,6 @@ public class Day24 implements IAocTask {
             return attacking;
         }
 
-//        private BattleGroup getNextAttackingGroupByMaxDealedDamage() {
-//            long maxDamagePower = groups.stream()
-//                    .filter(gr -> gr.isAlive()
-//                            && !notAttacking.contains(gr.id)
-//                            && !preparedToAttack.keySet().contains(gr.id))
-//                    .map(gr -> this.enemy.groups.stream()
-//                            .filter(BattleGroup::isAlive)
-//                            .map(egr -> egr.calculateDamageFrom(gr))
-//                            .max(Long::compareTo)
-//                            .orElse(0L))
-//                    .max(Long::compareTo)
-//                    .orElse(0L);
-//
-//
-//            List<BattleGroup> groupsWithMaxDamagePower = groups
-//                    .stream()
-//                    .filter(gr -> gr.isAlive()
-//                            && !preparedToAttack.keySet().contains(gr.id)
-//                            && !notAttacking.contains(gr.id)
-//                            && enemy.groups.stream().filter(BattleGroup::isAlive)
-//                            .map(egr -> egr.calculateDamageFrom(gr))
-//                            .max(Long::compareTo).orElse(0L) == maxDamagePower)
-//                    .collect(Collectors.toList());
-//
-//            BattleGroup attacking = groupsWithMaxDamagePower.stream()
-//                    .max(Comparator.comparingInt(BattleGroup::getInitiative))
-//                    .orElse(null);
-//
-//            if (attacking == null) throw new RuntimeException("No attacking group found");
-//            return attacking;
-//        }
-
         boolean isFighting() {
             return groups.stream().anyMatch(BattleGroup::isAlive);
         }
@@ -397,14 +369,18 @@ public class Day24 implements IAocTask {
         }
 
         long calculateDamageFrom(BattleGroup attackingGroup) {
-            long damageMultiplier = immuneTo.contains(attackingGroup.attackType) ? 0 :
-                    weakTo.contains(attackingGroup.attackType) ? 2 : 1;
+            long damageMultiplier = 1;
+            if (immuneTo.contains(attackingGroup.attackType)) {
+                damageMultiplier = 0;
+            } else if (weakTo.contains(attackingGroup.attackType)) {
+                damageMultiplier = 2;
+            }
 
             return damageMultiplier * attackingGroup.getEffectivePower();
         }
 
         void attack() {
-            BattleGroup enemyGroupToAttack = attackerToDefending.get(this.id);
+            BattleGroup enemyGroupToAttack = attackerToDefending.remove(this.id);
             int unitsKilled = enemyGroupToAttack.receiveDamageFrom(this);
             if (unitsKilled > 0) {
                 System.out.printf("%s attacking %s, (I: %d) ", this.id, enemyGroupToAttack.id, this.getInitiative());
@@ -419,23 +395,24 @@ public class Day24 implements IAocTask {
         }
 
         private int receiveDamageFrom(BattleGroup attackingGroup) {
-            AtomicLong damage = new AtomicLong(calculateDamageFrom(attackingGroup));
+            long damage = calculateDamageFrom(attackingGroup);
 
-            if (damage.get() == 0) throw new RuntimeException(
+            if (damage == 0) throw new RuntimeException(
                     String.format("Group %s deals no positive damage to %s", attackingGroup.id, this.id));
 
-            AtomicInteger unitsKilled = new AtomicInteger();
-            this.units.stream()
-                    .filter(u -> u.hitPoints != 0)
-                    .sorted(Comparator.comparingInt(u -> u.hitPoints))
-                    .forEach(unit -> {
-                        if (unit.hitPoints <= damage.get()) {
-                            damage.addAndGet(-unit.hitPoints);
-                            unit.hitPoints = 0;
-                            unitsKilled.getAndIncrement();
-                        }
-                    });
-            return unitsKilled.get();
+            int unitsKilled = 0;
+
+            for (BattleUnit unit : units) {
+                if (unit.hitPoints <= damage) {
+                    damage -= unit.hitPoints;
+                    unit.hitPoints = 0;
+                    unitsKilled++;
+                }
+            }
+
+            units.removeAll(units.stream().filter(u -> u.hitPoints == 0).collect(Collectors.toList()));
+
+            return unitsKilled;
         }
     }
 
