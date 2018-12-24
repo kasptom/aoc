@@ -14,8 +14,7 @@ public class Day24 implements IAocTask {
     801 units each with 4706 hit points (weak to radiation) with an attack that does 116 bludgeoning damage at initiative 1
     4485 units each with 2961 hit points (immune to radiation; weak to fire, cold) with an attack that does 12 slashing damage at initiative 4
      */
-    private String ARMY_GROUP_REGEX = "([0-9]+) units each with ([0-9]+) hit points [(]?([a-z,;\\s&&[^()]]+)[)]?[ ]?" +
-            "with an attack that does ([0-9]+) ([a-z]+) damage at initiative ([0-9]+)";
+    private String ARMY_GROUP_REGEX = "([0-9]+) units each with ([0-9]+) hit points [(]?([a-z,;\\s&&[^()]]*)[)]?[ ]?with an attack that does ([0-9]+) ([a-z]+) damage at initiative ([0-9]+)";
     private Pattern pattern = Pattern.compile(ARMY_GROUP_REGEX);
 
     private Army immuneArmy = new Army("GOD");
@@ -28,7 +27,7 @@ public class Day24 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "input_24_simple.txt";
+        return "input_24.txt";
     }
 
     @Override
