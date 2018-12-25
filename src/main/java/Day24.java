@@ -29,7 +29,7 @@ public class Day24 implements IAocTask {
 
     @Override
     public String getFileName() {
-  //      return "input_24_simple.txt";
+//        return "input_24_simple.txt";
         return "input_24.txt";
     }
 
@@ -239,6 +239,13 @@ public class Day24 implements IAocTask {
                 }
 
                 attackerToDefending.put(attackingGroup.id, enemyGroupToHit);
+
+                if (occupiedTargets.contains(enemyGroupToHit.id)) {
+                    String alreadyAttackingId = attackerToDefending.keySet().stream().filter(attackerId -> attackerToDefending.get(attackerId).id.equals(enemyGroupToHit.id)).findFirst().orElse(null);
+                    alreadyAttackingId = alreadyAttackingId != null ? alreadyAttackingId : "NONE";
+                    throw new RuntimeException(String.format("[%s] Enemy %s is already attacked by %s", attackingGroup.id, enemyGroupToHit.id, alreadyAttackingId));
+                }
+
                 occupiedTargets.add(enemyGroupToHit.id);
                 preparedToAttack.put(attackingGroup.id, attackingGroup);
             }
@@ -259,7 +266,8 @@ public class Day24 implements IAocTask {
 
             List<BattleGroup> enemyGroupsWithMaxDamage = enemy.groups
                     .stream()
-                    .filter(gr -> gr.calculateDamageFrom(attackingGroup) == maxDamageToDeal)
+                    .filter(gr -> gr.calculateDamageFrom(attackingGroup) == maxDamageToDeal
+                            && !occupiedTargets.contains(gr.id))
                     .collect(Collectors.toList());
 
             if (enemyGroupsWithMaxDamage.size() > 1) {
@@ -296,9 +304,11 @@ public class Day24 implements IAocTask {
         }
 
         private BattleGroup getNextAttackingGroup() {
+            if (groups.stream().anyMatch(gr -> !gr.isAlive()))
+                throw new RuntimeException("Found dead group");
+
             long maxEffectivePower = groups.stream()
-                    .filter(gr -> gr.isAlive()
-                            && !notAttacking.contains(gr.id)
+                    .filter(gr -> !notAttacking.contains(gr.id)
                             && !preparedToAttack.keySet().contains(gr.id))
                     .map(BattleGroup::getEffectivePower)
                     .max(Long::compareTo)
