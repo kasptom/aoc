@@ -20,6 +20,7 @@ public class Day24 implements IAocTask {
     private Army immuneArmy = new Army("GOD");
     private Army infectionArmy = new Army("BAD");
 
+    int BOOST = 0;
 
     private HashMap<String, BattleGroup> attackerToDefending = new HashMap<>();
     private HashSet<String> occupiedTargets = new HashSet<>();
@@ -30,7 +31,7 @@ public class Day24 implements IAocTask {
     @Override
     public String getFileName() {
 //        return "input_24_simple.txt";
-        return "input_24.txt";
+        return "input_24_simple.txt";
     }
 
     @Override
@@ -38,6 +39,11 @@ public class Day24 implements IAocTask {
         loadArmies(lines);
         startBattle();
         printArmiesState(true);
+    }
+
+    private void clearArmies() {
+        immuneArmy = new Army("GOD");
+        infectionArmy = new Army("BAD");
     }
 
     private void startBattle() {
@@ -155,8 +161,10 @@ public class Day24 implements IAocTask {
     }
 
     private int loadGroupsToArmy(List<String> lines, int i, Army army) {
+        int boost = army.name.equals("GOD") ? BOOST : 0;
         while (i < lines.size() && !lines.get(i).isEmpty()) {
-            BattleGroup group = createGroup(army.name + " #" + (army.groups.size() + 1), lines.get(i));
+
+            BattleGroup group = createGroup(army.name + " #" + (army.groups.size() + 1), lines.get(i), boost);
             army.groups.add(group);
             i++;
         }
@@ -164,7 +172,7 @@ public class Day24 implements IAocTask {
         return i;
     }
 
-    private BattleGroup createGroup(String battleGroupId, String groupData) {
+    private BattleGroup createGroup(String battleGroupId, String groupData, int boost) {
         // 989 units each with 1274 hit points (immune to fire; weak to bludgeoning, slashing) with an dealDamage that does 25 slashing damage at initiative 3
         Matcher matcher = pattern.matcher(groupData);
 
@@ -172,7 +180,7 @@ public class Day24 implements IAocTask {
             int unitsCount = Integer.parseInt(matcher.group(1));
             int hitPoints = Integer.parseInt(matcher.group(2));
             String immuneWeakStr = matcher.group(3);
-            int attackPoints = Integer.parseInt(matcher.group(4));
+            int attackPoints = Integer.parseInt(matcher.group(4)) + boost;
             String attackType = matcher.group(5);
 
             attackNames.add(attackType);
@@ -201,7 +209,18 @@ public class Day24 implements IAocTask {
 
     @Override
     public void solvePartTwo(List<String> lines) {
+        boolean immuneWon = false;
+        while(!immuneWon) {
+            clearArmies();
+            solvePartOne(lines);
+            if (immuneArmy.isFighting()) {
+                immuneWon = true;
+            } else {
+                BOOST++;
+            }
+        }
 
+        System.out.println(String.format("min boost: %d", BOOST));
     }
 
     class Army {
