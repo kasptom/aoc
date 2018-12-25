@@ -101,26 +101,42 @@ public class Day25 implements IAocTask {
 
     class QuickUnionFind {
         int[] id;
+        int[] sz;
 
         QuickUnionFind(int maxId) {
             id = new int[maxId];
+            sz = new int[maxId];
+
             for (int i = 0; i < id.length; i++) {
                 id[i] = i + 1;
+                sz[i] = 1;
             }
         }
 
         boolean find(int p, int q) {
-            return id[p - 1] == id[q - 1];
+            return root(p) == root(q);
         }
 
         void union(int p, int q) {
-            int pid = id[p - 1];
-            for (int i = 0; i < id.length; i++) {
-                if (id[i] == pid) {
-                    id[i] = id[q - 1];
-                }
+            int i = root(p);
+            int j = root(q);
+
+            if (sz[i-1] < sz[j-1]) {
+                id[i-1] = j;
+                sz[j-1] += sz[i-1];
+            } else {
+                id[j-1] = i;
+                sz[i-1] += sz[j-1];
             }
+
             componentsCount--;
+        }
+
+        private int root(int p) {
+            while (p != id[p - 1]) {
+                p = id[p - 1];
+            }
+            return p;
         }
     }
 }
