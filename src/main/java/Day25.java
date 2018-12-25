@@ -1,19 +1,14 @@
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class Day25 implements IAocTask {
-
-    private int componentsCount = 0;
     private QuickUnionFind unionFind;
     private HashMap<Integer, FourDimPoint> idToPoint = new HashMap<>();
 
     @Override
     public String getFileName() {
 //        return "input_25_simple_3.txt";
-        return "input_25_simple_5.txt";
+        return "input_25.txt";
     }
 
     @Override
@@ -48,7 +43,10 @@ public class Day25 implements IAocTask {
             }
         }
 
-        System.out.println(componentsCount);
+        HashSet<Integer> uniqueParents = new HashSet<>();
+        Arrays.stream(unionFind.id).forEach(uniqueParents::add);
+
+        System.out.println(uniqueParents.size());
     }
 
     @Override
@@ -72,7 +70,6 @@ public class Day25 implements IAocTask {
                     .map(Integer::parseInt)
                     .collect(Collectors.toList());
             points.add(new FourDimPoint(id++, coords.get(0), coords.get(1), coords.get(2), coords.get(3)));
-            componentsCount++;
         }
         return points;
     }
@@ -128,12 +125,11 @@ public class Day25 implements IAocTask {
                 id[j-1] = i;
                 sz[i-1] += sz[j-1];
             }
-
-            componentsCount--;
         }
 
         private int root(int p) {
             while (p != id[p - 1]) {
+                id[p - 1] = id[id[p - 1] - 1];
                 p = id[p - 1];
             }
             return p;
