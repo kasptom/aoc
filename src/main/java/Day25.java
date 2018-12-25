@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 public class Day25 implements IAocTask {
 
     private int componentsCount = 0;
-    private HashMap<Integer, FourDimPoint> idToParent = new HashMap<>();
+    private QuickUnionFind unionFind;
     private HashMap<Integer, FourDimPoint> idToPoint = new HashMap<>();
 
     @Override
@@ -19,27 +19,28 @@ public class Day25 implements IAocTask {
     @Override
     public void solvePartOne(List<String> lines) {
         List<FourDimPoint> points = loadPoints(lines);
+        unionFind = new QuickUnionFind(points.size());
 
         boolean isShrinking = true;
         while (isShrinking) {
             isShrinking = false;
-            for(Integer pointId : idToPoint.keySet()) {
-                for(Integer otherId: idToPoint.keySet()) {
+            for (Integer pointId : idToPoint.keySet()) {
+                for (Integer otherId : idToPoint.keySet()) {
                     if (pointId.equals(otherId)) continue;
 
                     FourDimPoint point = idToPoint.get(pointId);
                     FourDimPoint other = idToPoint.get(otherId);
 
-                    if (find(point, other)) continue;
+                    if (unionFind.find(point.id, other.id)) continue;
 
                     List<FourDimPoint> otherPointSiblings = points
                             .stream()
-                            .filter(p -> p.getParent() == other.getParent())
+                            .filter(p -> unionFind.find(p.id, otherId))
                             .collect(Collectors.toList());
 
                     for (FourDimPoint sibling : otherPointSiblings) {
                         if (point.distance(sibling) <= 3) {
-                            union(point, sibling);
+                            unionFind.union(point.id, sibling.id);
                             isShrinking = true;
                         }
                     }
@@ -48,13 +49,6 @@ public class Day25 implements IAocTask {
         }
 
         System.out.println(componentsCount);
-    }
-
-    private void union(FourDimPoint point, FourDimPoint other) {
-        if (point.id == other.id) throw new RuntimeException("Trying to merge point with itself");
-
-        idToParent.put(other.getParent().id, idToParent.get(point.id));
-        componentsCount--;
     }
 
     @Override
@@ -83,16 +77,11 @@ public class Day25 implements IAocTask {
         return points;
     }
 
-    static boolean find(FourDimPoint a, FourDimPoint b) {
-        return a.getParent() == b.getParent();
-    }
-
     class FourDimPoint {
         int id;
         int x, y, z, v;
 
         FourDimPoint(int id, int x, int y, int z, int v) {
-            idToParent.put(id, this);
             idToPoint.put(id, this);
             this.id = id;
             this.x = x;
@@ -101,21 +90,37 @@ public class Day25 implements IAocTask {
             this.v = v;
         }
 
-        FourDimPoint getParent() {
-           FourDimPoint parent = idToParent.get(id);
-           if (parent.id != id) {
-               idToParent.put(id, parent.getParent());
-           }
-
-           return idToParent.get(id);
-        }
-
         int distance(FourDimPoint other) {
             return dist(x, other.x) + dist(y, other.y) + dist(z, other.z) + dist(v, other.v);
         }
 
         private int dist(int a, int b) {
             return Math.abs(a - b);
+        }
+    }
+
+    class QuickUnionFind {
+        int[] id;
+
+        QuickUnionFind(int maxId) {
+            id = new int[maxId];
+            for (int i = 0; i < id.length; i++) {
+                id[i] = i + 1;
+            }
+        }
+
+        boolean find(int p, int q) {
+            return id[p - 1] == id[q - 1];
+        }
+
+        void union(int p, int q) {
+            int pid = id[p - 1];
+            for (int i = 0; i < id.length; i++) {
+                if (id[i] == pid) {
+                    id[i] = id[q - 1];
+                }
+            }
+            componentsCount--;
         }
     }
 }
