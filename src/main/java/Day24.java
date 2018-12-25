@@ -20,7 +20,7 @@ public class Day24 implements IAocTask {
     private Army immuneArmy = new Army("GOD");
     private Army infectionArmy = new Army("BAD");
 
-    int BOOST = 0;
+    int BOOST = 30;
 
     private HashMap<String, BattleGroup> attackerToDefending = new HashMap<>();
     private HashSet<String> occupiedTargets = new HashSet<>();
@@ -31,7 +31,7 @@ public class Day24 implements IAocTask {
     @Override
     public String getFileName() {
 //        return "input_24_simple.txt";
-        return "input_24_simple.txt";
+        return "input_24.txt";
     }
 
     @Override
@@ -50,20 +50,20 @@ public class Day24 implements IAocTask {
         System.out.println("starting the battle");
 
         while (infectionArmy.isFighting() && immuneArmy.isFighting()) {
-            printArmiesState(false);
+//            printArmiesState(false);
 
             setTargets();
-            printAttackPlan();
+//            printAttackPlan();
 
             attack();
-            System.out.println("--------------------------------\n");
+//            System.out.println("--------------------------------\n");
         }
     }
 
     private void printArmiesState(boolean showSummary) {
         printGroupState(immuneArmy, showSummary);
         printGroupState(infectionArmy, showSummary);
-        System.out.println();
+        System.out.printf("BOOST: %d\n", BOOST);
     }
 
     private void printGroupState(Army army, boolean showSummary) {
@@ -420,14 +420,14 @@ public class Day24 implements IAocTask {
             BattleGroup enemyGroupToAttack = attackerToDefending.remove(this.id);
             int unitsKilled = enemyGroupToAttack.receiveDamageFrom(this);
             if (unitsKilled > 0) {
-                System.out.printf("%s attacking %s, (I: %d) ", this.id, enemyGroupToAttack.id, this.getInitiative());
-                System.out.printf("killing %d", unitsKilled);
+//                System.out.printf("%s attacking %s, (I: %d) ", this.id, enemyGroupToAttack.id, this.getInitiative());
+//                System.out.printf("killing %d", unitsKilled);
 
-                if (!enemyGroupToAttack.isAlive()) {
-                    System.out.print(" (none remaining)");
-                }
+//                if (!enemyGroupToAttack.isAlive()) {
+//                    System.out.print(" (none remaining)");
+//                }
 
-                System.out.println();
+//                System.out.println();
             }
         }
 
