@@ -46,10 +46,12 @@ public class Day24 implements IAocTask {
         infectionArmy = new Army("BAD");
     }
 
+    boolean isDamageGiven = true;
+
     private void startBattle() {
         System.out.println("starting the battle");
-
-        while (infectionArmy.isFighting() && immuneArmy.isFighting()) {
+        while (infectionArmy.isFighting() && immuneArmy.isFighting() && isDamageGiven) {
+            isDamageGiven = false;
 //            printArmiesState(false);
 
             setTargets();
@@ -213,7 +215,7 @@ public class Day24 implements IAocTask {
         while(!immuneWon) {
             clearArmies();
             solvePartOne(lines);
-            if (immuneArmy.isFighting()) {
+            if (immuneArmy.isFighting() || !infectionArmy.isFighting()) {
                 immuneWon = true;
             } else {
                 BOOST++;
@@ -420,6 +422,7 @@ public class Day24 implements IAocTask {
             BattleGroup enemyGroupToAttack = attackerToDefending.remove(this.id);
             int unitsKilled = enemyGroupToAttack.receiveDamageFrom(this);
             if (unitsKilled > 0) {
+                isDamageGiven = true;
 //                System.out.printf("%s attacking %s, (I: %d) ", this.id, enemyGroupToAttack.id, this.getInitiative());
 //                System.out.printf("killing %d", unitsKilled);
 
