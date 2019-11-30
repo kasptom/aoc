@@ -1,3 +1,7 @@
+package year2018;
+
+import aoc.IAocTask;
+
 import java.util.*;
 import java.util.stream.Collectors;
 

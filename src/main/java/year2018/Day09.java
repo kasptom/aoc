@@ -1,3 +1,6 @@
+package year2018;
+
+import aoc.IAocTask;
 import org.magicwerk.brownies.collections.GapList;
 
 import java.util.Arrays;

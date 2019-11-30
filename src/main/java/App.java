@@ -1,3 +1,6 @@
+import year2018.Day25;
+import aoc.IAocTask;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -8,7 +11,7 @@ import java.util.stream.Collectors;
 
 public class App {
     public static void main(String[] args) throws FileNotFoundException {
-//        IAocTask task = new Day01();
+//        aoc.IAocTask task = new year2018.Day01();
         IAocTask task = new Day25();
 
 

@@ -1,3 +1,7 @@
+package year2018;
+
+import aoc.IAocTask;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;

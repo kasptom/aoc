@@ -1,3 +1,5 @@
+package aoc;
+
 import java.util.List;
 
 public interface IAocTask {
