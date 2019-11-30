@@ -8,7 +8,7 @@ public class Day01 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "input_01.txt";
+        return "aoc2018/input_01.txt";
     }
 
     @Override

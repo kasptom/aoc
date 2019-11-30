@@ -31,7 +31,7 @@ public class Day24 implements IAocTask {
     @Override
     public String getFileName() {
 //        return "input_24_simple.txt";
-        return "input_24.txt";
+        return "aoc2018/input_24.txt";
     }
 
     @Override

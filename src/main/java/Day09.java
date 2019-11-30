@@ -6,7 +6,7 @@ import java.util.List;
 public class Day09 implements IAocTask {
     @Override
     public String getFileName() {
-        return "input_09_simple.txt";
+        return "aoc2018/input_09_simple.txt";
     }
 
     @Override

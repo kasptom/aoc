@@ -1,0 +1,1 @@
+unzip aoc<year>.zip to run test
