@@ -7,12 +7,17 @@ import java.util.List;
 public class Day01 implements IAocTask {
     @Override
     public String getFileName() {
-        return null;
+        return "aoc2019/input_01.txt";
     }
 
     @Override
     public void solvePartOne(List<String> lines) {
-
+        Integer sum = lines.stream()
+                .map(Integer::valueOf)
+                .map(mass -> mass / 3 - 2)
+                .reduce(Integer::sum)
+                .orElse(-1);
+        System.out.println(sum);
     }
 
     @Override
