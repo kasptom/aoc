@@ -22,6 +22,22 @@ public class Day01 implements IAocTask {
 
     @Override
     public void solvePartTwo(List<String> lines) {
+        Integer sum = lines.stream()
+                .map(Integer::valueOf)
+                .map(this::getRecursiveSum)
+                .reduce(Integer::sum)
+                .orElse(-1);
+        System.out.println(sum);
 
+    }
+
+    private int getRecursiveSum(Integer mass) {
+        int sum = 0;
+        mass = mass / 3 - 2;
+        while (mass > 0) {
+            sum += mass;
+            mass = mass / 3 - 2;
+        }
+        return sum;
     }
 }
