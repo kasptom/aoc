@@ -5,11 +5,13 @@ import aoc.IAocTask;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Day04 implements IAocTask {
     private int lower;
     private int upper;
+    private Function<int[], Boolean> repeatCondition;
 
     @Override
     public String getFileName() {
@@ -18,14 +20,26 @@ public class Day04 implements IAocTask {
 
     @Override
     public void solvePartOne(List<String> lines) {
+        this.repeatCondition = this::hasDouble;
+        int count = getNumbersCount(lines);
+        System.out.println(count);
+    }
+
+    @Override
+    public void solvePartTwo(List<String> lines) {
+        this.repeatCondition = this::hasExactDouble;
+        int count = getNumbersCount(lines);
+        System.out.println(count);
+    }
+
+    private int getNumbersCount(List<String> lines) {
         List<Integer> range = Arrays.stream(lines.get(0).split("-"))
                 .map(Integer::valueOf)
                 .collect(Collectors.toCollection(ArrayList::new));
         Integer lower = range.get(0);
         Integer upper = range.get(1);
 
-        int count = countNumbersMeetingCriteria(lower, upper);
-        System.out.println(count);
+        return countNumbersMeetingCriteria(lower, upper);
     }
 
     private int countNumbersMeetingCriteria(int lower, int upper) {
@@ -45,7 +59,7 @@ public class Day04 implements IAocTask {
     private int countNumbers(int currentDigitIdx, int digit, int digitsCount, int[] number) {
         number[currentDigitIdx] = digit;
         if (currentDigitIdx == digitsCount - 1) {
-            boolean meetsCriteria = isInRange(number) && hasDouble(number);
+            boolean meetsCriteria = isInRange(number) && this.repeatCondition.apply(number);
 //            if (meetsCriteria) {
 //                print(number);
 //            }
@@ -58,12 +72,12 @@ public class Day04 implements IAocTask {
         return sum;
     }
 
-    private void print(int[] number) {
-        for (int value : number) {
-            System.out.format("%d", value);
-        }
-        System.out.println();
-    }
+//    private void print(int[] number) {
+//        for (int value : number) {
+//            System.out.format("%d", value);
+//        }
+//        System.out.println();
+//    }
 
     private boolean isInRange(int[] numberArr) {
         int number = 0;
@@ -85,8 +99,12 @@ public class Day04 implements IAocTask {
         return false;
     }
 
-    @Override
-    public void solvePartTwo(List<String> lines) {
+    private boolean hasExactDouble(int[] number) {
+        int[] digitsCounter = new int[10];
+        for (int value : number) {
+            digitsCounter[value - 1]++;
+        }
 
+        return Arrays.stream(digitsCounter).anyMatch(counter -> counter == 2);
     }
 }
