@@ -6,6 +6,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Aoc2019Utils {
+
+    /* instruction opcodes */
+    public static final int INSTR_STOP = 99;
+    public static final int INSTR_ADD = 1;
+    public static final int INSTR_MUL = 2;
+    public static final int INSTR_INPUT = 3;
+    public static final int INSTR_OUTPUT = 4;
+
+    /* parameter modes */
+    public static final int MODE_POSITION = 0;
+    public static final int MODE_IMMEDIATE = 1;
+
     public static int[] loadProgram(List<String> lines) {
         List<Integer> code = Arrays.stream(lines.get(0).split(","))
                 .map(Integer::valueOf)
@@ -19,12 +31,12 @@ public class Aoc2019Utils {
     }
 
     public static int runBasicInstructions(int[] parsedCode, int i) {
-        if (parsedCode[i] == 99) {
+        if (parsedCode[i] == INSTR_STOP) {
             i = parsedCode.length;
-        } else if (parsedCode[i] == 1) {
+        } else if (parsedCode[i] == INSTR_ADD) {
             addNumbers(i, parsedCode);
             i += 4;
-        } else if (parsedCode[i] == 2) {
+        } else if (parsedCode[i] == INSTR_MUL) {
             multiplyNumbers(i, parsedCode);
             i += 4;
         }
