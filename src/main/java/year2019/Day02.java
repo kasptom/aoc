@@ -4,8 +4,7 @@ import aoc.IAocTask;
 
 import java.util.List;
 
-import static year2019.utils.Aoc2019Utils.loadProgram;
-import static year2019.utils.Aoc2019Utils.runBasicInstructions;
+import static year2019.utils.Aoc2019Utils.*;
 
 public class Day02 implements IAocTask {
     @Override
@@ -52,5 +51,26 @@ public class Day02 implements IAocTask {
             }
         }
         return parsedCode;
+    }
+
+    public static int runBasicInstructions(int[] parsedCode, int i) {
+        if (parsedCode[i] == INSTR_STOP) {
+            i = parsedCode.length;
+        } else if (parsedCode[i] == INSTR_ADD) {
+            addNumbers(i, parsedCode);
+            i += 4;
+        } else if (parsedCode[i] == INSTR_MUL) {
+            multiplyNumbers(i, parsedCode);
+            i += 4;
+        }
+        return i;
+    }
+
+    public static void addNumbers(int i, int[] parsedCode) {
+        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] + parsedCode[parsedCode[i + 2]];
+    }
+
+    public static void multiplyNumbers(int i, int[] parsedCode) {
+        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] * parsedCode[parsedCode[i + 2]];
     }
 }

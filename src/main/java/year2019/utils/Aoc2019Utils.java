@@ -6,6 +6,13 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Aoc2019Utils {
+    /* parsed instruction indexes */
+    public static final int MAX_INSTRUCTION_SIZE = 5;
+    public static final int IDX_OPCODE_A = 0;
+    public static final int IDX_OPCODE_B = 1;
+    public static final int IDX_MODE1 = 2;
+    public static final int IDX_MODE2 = 3;
+    public static final int IDX_MODE3 = 4;
 
     /* instruction opcodes */
     public static final int INSTR_STOP = 99;
@@ -28,26 +35,5 @@ public class Aoc2019Utils {
             parsedCode[i] = code.get(i);
         }
         return parsedCode;
-    }
-
-    public static int runBasicInstructions(int[] parsedCode, int i) {
-        if (parsedCode[i] == INSTR_STOP) {
-            i = parsedCode.length;
-        } else if (parsedCode[i] == INSTR_ADD) {
-            addNumbers(i, parsedCode);
-            i += 4;
-        } else if (parsedCode[i] == INSTR_MUL) {
-            multiplyNumbers(i, parsedCode);
-            i += 4;
-        }
-        return i;
-    }
-
-    private static void addNumbers(int i, int[] parsedCode) {
-        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] + parsedCode[parsedCode[i + 2]];
-    }
-
-    private static void multiplyNumbers(int i, int[] parsedCode) {
-        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] * parsedCode[parsedCode[i + 2]];
     }
 }
