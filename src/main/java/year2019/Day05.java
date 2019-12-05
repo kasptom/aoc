@@ -25,6 +25,7 @@ public class Day05 implements IAocTask {
 
     private void runProgram(int[] parsedCode) {
         int i = 0;
+        input = 1;
         for (; i < parsedCode.length; ) {
             i = runInstructions(parsedCode, i);
         }
@@ -44,10 +45,17 @@ public class Day05 implements IAocTask {
             parsedCode[parsedCode[i + 3]] = multiplyNumbers(i, parsedCode, instruction);
             i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_INPUT) {
-            input = parsedCode[parsedCode[i + 1]];
+            input = instruction[IDX_MODE1] == MODE_IMMEDIATE
+                    ? parsedCode[i + 1]
+                    : parsedCode[parsedCode[i + 1]];
             i += 2;
         } else if (instruction[IDX_OPCODE_A] == INSTR_OUTPUT) {
-            parsedCode[parsedCode[i + 1]] = input;
+            if (instruction[IDX_MODE1] == MODE_IMMEDIATE) {
+                throw new RuntimeException("writing parameter in immediate mode");
+                //parsedCode[i + 1] = input;
+            } else { // MODE_POSITION
+                parsedCode[parsedCode[i + 1]] = input;
+            }
             i += 2;
         }
         return i;
