@@ -2,6 +2,7 @@ package year2019;
 
 import aoc.IAocTask;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static year2019.utils.Aoc2019Utils.*;
@@ -10,6 +11,8 @@ public class Day05 implements IAocTask {
 
     private int inputOutput;
     private int prevInstructionIdx;
+    private int passedTestsCount = 0;
+    private List<String> stacktrace = new ArrayList<>();
 
     @Override
     public String getFileName() {
@@ -44,9 +47,11 @@ public class Day05 implements IAocTask {
         }
 
         if (instruction[IDX_OPCODE_A] == INSTR_ADD) {
+            printInstruction("INSTR_ADD", i, parsedCode);
             parsedCode[parsedCode[i + 3]] = addNumbers(i, parsedCode, instruction);
             i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_MUL) {
+            printInstruction("INSTR_MUL", i, parsedCode);
             parsedCode[parsedCode[i + 3]] = multiplyNumbers(i, parsedCode, instruction);
             i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_OUTPUT) {
@@ -54,12 +59,19 @@ public class Day05 implements IAocTask {
                     ? parsedCode[i + 1]
                     : parsedCode[parsedCode[i + 1]];
             if (inputOutput != 0) {
-                String errMsg = String.format("Program test failed err=%d, instruction, parsedCode[%d] = %d", inputOutput, prevInstructionIdx, parsedCode[prevInstructionIdx]);
-                throw new RuntimeException(errMsg);
+                StringBuilder errMsg = new StringBuilder(String.format("Program test failed err=%d, parsedCode[%d] = %d", inputOutput, prevInstructionIdx, parsedCode[prevInstructionIdx]));
+                for (String line: stacktrace) {
+                    errMsg.append(String.format("\n %s", line));
+                }
+                throw new RuntimeException(errMsg.toString());
+            } else {
+                passedTestsCount++;
+                System.out.format("Tests passed: %d%n", passedTestsCount);
             }
 
             i += 2;
         } else if (instruction[IDX_OPCODE_A] == INSTR_INPUT) {
+            stacktrace.clear();
             if (instruction[IDX_MODE1] == MODE_IMMEDIATE) {
                 throw new RuntimeException("writing parameter in immediate mode");
                 //parsedCode[i + 1] = input;
@@ -69,6 +81,16 @@ public class Day05 implements IAocTask {
             i += 2;
         }
         return i;
+    }
+
+    private void printInstruction(String instructionName, int instructionPointer, int[] parsedCode) {
+        List<Integer> parameters = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            parameters.add(parsedCode[instructionPointer + i]);
+        }
+
+        String log = String.format("[%s] IP=%d, %s", instructionName, instructionPointer, parameters.toString());
+        stacktrace.add(log);
     }
 
     private int addNumbers(int i, int[] parsedCode, int[] instruction) {
