@@ -2,10 +2,10 @@ package year2019;
 
 import aoc.IAocTask;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static year2019.utils.Aoc2019Utils.loadProgram;
+import static year2019.utils.Aoc2019Utils.runBasicInstructions;
 
 public class Day02 implements IAocTask {
     @Override
@@ -29,31 +29,10 @@ public class Day02 implements IAocTask {
         System.out.format("%d", 100 * copied[1] + copied[2]);
     }
 
-    private int[] loadProgram(List<String> lines) {
-        List<Integer> code = Arrays.stream(lines.get(0).split(","))
-                .map(Integer::valueOf)
-                .collect(Collectors.toCollection(ArrayList::new));
-
-        int[] parsedCode = new int[code.size()];
-        for (int i = 0; i < code.size(); i++) {
-            parsedCode[i] = code.get(i);
-        }
-        return parsedCode;
-    }
-
     private void runProgram(int[] parsedCode) {
         int i = 0;
         for (; i < parsedCode.length; ) {
-            if (parsedCode[i] == 99) {
-                return;
-            }
-            if (parsedCode[i] == 1) {
-                addNumbers(i, parsedCode);
-                i += 4;
-            } else if (parsedCode[i] == 2) {
-                multiplyNumbers(i, parsedCode);
-                i += 4;
-            }
+            i = runBasicInstructions(parsedCode, i);
         }
     }
 
@@ -73,13 +52,5 @@ public class Day02 implements IAocTask {
             }
         }
         return parsedCode;
-    }
-
-    private void addNumbers(int i, int[] parsedCode) {
-        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] + parsedCode[parsedCode[i + 2]];
-    }
-
-    private void multiplyNumbers(int i, int[] parsedCode) {
-        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] * parsedCode[parsedCode[i + 2]];
     }
 }
