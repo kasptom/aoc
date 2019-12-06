@@ -2,7 +2,7 @@ package year2019;
 
 import aoc.IAocTask;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static year2019.utils.Aoc2019Utils.*;
@@ -10,9 +10,11 @@ import static year2019.utils.Aoc2019Utils.*;
 public class Day05 implements IAocTask {
 
     private int inputOutput;
+    private int checkPoint;
     private int prevInstructionIdx;
-    private int passedTestsCount = 0;
-    private List<String> stacktrace = new ArrayList<>();
+    private int[] parsedCode;
+    private int[] backup;
+    private boolean finished= false;
 
     @Override
     public String getFileName() {
@@ -21,57 +23,73 @@ public class Day05 implements IAocTask {
 
     @Override
     public void solvePartOne(List<String> lines) {
-        int[] parsedCode = loadProgram(lines);
+        parsedCode = loadProgram(lines);
+        backup = new int[parsedCode.length];
+        System.arraycopy(parsedCode, 0, backup, 0, parsedCode.length);
 //        int[] test = {3, 0, 4, 0, 99};
 //        int[] test = {1002, 4, 3, 4, 33};
-        runProgram(parsedCode);
+        runProgram(0);
     }
 
-    private void runProgram(int[] parsedCode) {
-        int i = 0;
-        inputOutput = 1;
+    private int modifyParameters(int operationIdx, int instructionPointer, int[] permutation) {
+        int[] instruction = getInstruction(parsedCode[instructionPointer]);
+        instruction[IDX_MODE1] = permutation[2 * operationIdx];
+        instruction[IDX_MODE2] = permutation[2 * operationIdx + 1];
+        int newOpCode = 0;
+        for (int j = 3; j >= 0; j--) {
+            newOpCode *= 10;
+            newOpCode += instruction[j];
+        }
+        return newOpCode;
+    }
+
+    private void runProgram(int i) {
+        if (finished) {
+            return;
+        }
+        inputOutput = i > 0 ? 0 : 1;
 //        int executionCounter = 0;
         for (; i < parsedCode.length; /* && executionCounter < 1e9; */ ) {
-            prevInstructionIdx = i;
-            i = runInstructions(parsedCode, i);
+            i = runInstructions(i);
 //            executionCounter++;
         }
     }
 
     // https://adventofcode.com/2019/day/5
-    private int runInstructions(int[] parsedCode, int i) {
+    private int runInstructions(int i) {
         int[] instruction = getInstruction(parsedCode[i]);
         if (instruction[IDX_OPCODE_A] + 10 * instruction[IDX_OPCODE_B] == INSTR_STOP) {
             System.out.printf("TESTS PASSED!!! OUTPUT: %d\n", inputOutput);
+            finished = true;
             return parsedCode.length;
         }
 
         if (instruction[IDX_OPCODE_A] == INSTR_ADD) {
-            printInstruction("INSTR_ADD", i, parsedCode);
+            prevInstructionIdx = i;
             parsedCode[parsedCode[i + 3]] = addNumbers(i, parsedCode, instruction);
             i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_MUL) {
-            printInstruction("INSTR_MUL", i, parsedCode);
+            prevInstructionIdx = i;
             parsedCode[parsedCode[i + 3]] = multiplyNumbers(i, parsedCode, instruction);
             i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_OUTPUT) {
             inputOutput = instruction[IDX_MODE1] == MODE_IMMEDIATE
                     ? parsedCode[i + 1]
                     : parsedCode[parsedCode[i + 1]];
+            System.out.printf("output: %d\n", inputOutput);
             if (inputOutput != 0) {
-                StringBuilder errMsg = new StringBuilder(String.format("Program test failed err=%d, parsedCode[%d] = %d", inputOutput, prevInstructionIdx, parsedCode[prevInstructionIdx]));
-                for (String line: stacktrace) {
-                    errMsg.append(String.format("\n %s", line));
-                }
-                throw new RuntimeException(errMsg.toString());
-            } else {
-                passedTestsCount++;
-                System.out.format("Tests passed: %d%n", passedTestsCount);
+                System.arraycopy(backup, 0, parsedCode, 0, parsedCode.length);
+                System.out.printf("Error on parsedCode[%d]=%d\n", prevInstructionIdx, parsedCode[prevInstructionIdx]);
+                i = prevInstructionIdx;
+                retryFromCheckpoint(checkPoint, prevInstructionIdx);
+            } else{
+                System.out.printf("Success on parsedCode[%d]=%d\n", prevInstructionIdx, parsedCode[prevInstructionIdx]);
+                System.arraycopy(parsedCode, 0, backup, 0, parsedCode.length);
+                i += 2;
+                checkPoint = i;
             }
-
-            i += 2;
         } else if (instruction[IDX_OPCODE_A] == INSTR_INPUT) {
-            stacktrace.clear();
+            System.out.println("INPUT");
             if (instruction[IDX_MODE1] == MODE_IMMEDIATE) {
                 throw new RuntimeException("writing parameter in immediate mode");
                 //parsedCode[i + 1] = input;
@@ -83,14 +101,40 @@ public class Day05 implements IAocTask {
         return i;
     }
 
-    private void printInstruction(String instructionName, int instructionPointer, int[] parsedCode) {
-        List<Integer> parameters = new ArrayList<>();
-        for (int i = 0; i < 4; i++) {
-            parameters.add(parsedCode[instructionPointer + i]);
+    private void retryFromCheckpoint(int checkPoint, int prevInstructionIdx) {
+        int operationsCount = (prevInstructionIdx - checkPoint) / 4;
+        int[] permutation = new int[operationsCount * 2];
+        int idxToSelect = 0;
+        permutation[idxToSelect] = 0;
+        retryFromCheckpoint(checkPoint, idxToSelect + 1,  operationsCount, permutation);
+        permutation[idxToSelect] = 1;
+        retryFromCheckpoint(checkPoint, idxToSelect + 1,  operationsCount, permutation);
+    }
+
+    private void retryFromCheckpoint(int checkPoint, int idxToSelect, int operationsCount, int[] permutation) {
+        if (finished) {
+            return;
         }
 
-        String log = String.format("[%s] IP=%d, %s", instructionName, instructionPointer, parameters.toString());
-        stacktrace.add(log);
+        if (idxToSelect == operationsCount * 2 - 1) {
+            modifyCode(checkPoint, permutation, operationsCount);
+            runProgram(checkPoint);
+            return;
+        }
+
+        permutation[idxToSelect] = 0;
+        retryFromCheckpoint(checkPoint, idxToSelect + 1, operationsCount, permutation);
+
+        permutation[idxToSelect] = 1;
+        retryFromCheckpoint(checkPoint, idxToSelect + 1, operationsCount, permutation);
+    }
+
+    private void modifyCode(int checkPoint, int[] permutation, int operationsCount) {
+        for (int i = 0; i < operationsCount; i++) {
+            parsedCode[checkPoint] = modifyParameters(i, checkPoint, permutation);
+            checkPoint += 4;
+        }
+        System.out.printf("Trying with: %s%n", Arrays.toString(permutation));
     }
 
     private int addNumbers(int i, int[] parsedCode, int[] instruction) {
