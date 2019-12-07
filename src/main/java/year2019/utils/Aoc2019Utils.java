@@ -20,6 +20,11 @@ public class Aoc2019Utils {
     public static final int INSTR_MUL = 2;
     public static final int INSTR_INPUT = 3;
     public static final int INSTR_OUTPUT = 4;
+    /* part 2 instructions */
+    public static final int INSTR_JMP_TRUE = 5;
+    public static final int INSTR_JMP_FALSE = 6;
+    public static final int INSTR_LT = 7;
+    public static final int INSTR_EQ = 8;
 
     /* parameter modes */
     public static final int MODE_POSITION = 0;

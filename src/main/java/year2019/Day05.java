@@ -34,8 +34,8 @@ public class Day05 implements IAocTask {
         // retryFromCheckpoint(0, 20);
         while (!finished) {
             try {
-//                printChecksumFor(204);
-                runProgram(parsedCode);
+                printChecksumFor(parsedCode.length);
+                runProgram(parsedCode, 1);
                 finished = true;
             } catch (RuntimeException exc) {
                 printIfEnabled(true, () -> System.out.printf("Repair needed: %s%n", exc.getMessage()));
@@ -49,6 +49,21 @@ public class Day05 implements IAocTask {
         }
     }
 
+    @Override
+    public void solvePartTwo(List<String> lines) {
+        parsedCode = loadProgram(lines);
+        printChecksumFor(parsedCode.length);
+        backup = new int[parsedCode.length];
+        try {
+            runProgram(parsedCode, 5);
+        } catch (Exception exc) {
+            System.out.printf("EXCEPTION IN SOLVE PART 2: %s", exc.getMessage());
+        }
+    }
+
+    /**
+     * this is useless :V :V :V ;_;
+     **/
     private void fixCodeFragment(int testFirstInstructionIdx, int testLastInstructionIdx) throws Exception {
         printIfEnabled(() -> System.err.printf("trying to fix code between (%d, %d) %n", testFirstInstructionIdx, testLastInstructionIdx));
         System.arraycopy(backup, 0, parsedCode, 0, parsedCode.length);
@@ -57,7 +72,7 @@ public class Day05 implements IAocTask {
         for (int[] permutation : opCodePermutations) {
             try {
                 modifyCode(permutation, testFirstInstructionIdx, testLastInstructionIdx);
-                runProgram(parsedCode);
+                runProgram(parsedCode, 1);
             } catch (RuntimeException exc) {
                 printIfEnabled(true, () -> System.out.printf("Repair failed: %s%n", exc.getMessage()));
                 if (this.testLastInstructionIdx > testLastInstructionIdx) {
@@ -115,9 +130,9 @@ public class Day05 implements IAocTask {
         return newOpCode;
     }
 
-    private void runProgram(int[] parsedCode) {
+    private void runProgram(int[] parsedCode, int inputOutput) {
 //        int executionCounter = 0;
-        inputOutput = 1;
+        this.inputOutput = inputOutput;
         passedTestCounter = 0;
         testFirstInstructionIdx = 0;
         testLastInstructionIdx = 0;
@@ -143,11 +158,25 @@ public class Day05 implements IAocTask {
             testLastInstructionIdx = i;
             parsedCode[parsedCode[i + 3]] = multiplyNumbers(i, parsedCode, instruction);
             i += 4;
+        } else if (instruction[IDX_OPCODE_A] == INSTR_JMP_TRUE) {
+            testLastInstructionIdx = i;
+            int jumpIdx = jumpIfTrue(i, parsedCode, instruction);
+            i = jumpIdx != -1 ? jumpIdx : i + 3;
+        } else if (instruction[IDX_OPCODE_A] == INSTR_JMP_FALSE) {
+            testLastInstructionIdx = i;
+            int jumpIdx = jumpIfFalse(i, parsedCode, instruction);
+            i = jumpIdx != -1 ? jumpIdx : i + 3;
+        } else if (instruction[IDX_OPCODE_A] == INSTR_LT) {
+            testLastInstructionIdx = i;
+            parsedCode[parsedCode[i + 3]] = isLessThan(i, parsedCode, instruction);
+            i += 4;
+        } else if (instruction[IDX_OPCODE_A] == INSTR_EQ) {
+            testLastInstructionIdx = i;
+            parsedCode[parsedCode[i + 3]] = isEqual(i, parsedCode, instruction);
+            i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_OUTPUT) {
             outputIndices.add(i);
-            inputOutput = instruction[IDX_MODE1] == MODE_IMMEDIATE
-                    ? parsedCode[i + 1]
-                    : parsedCode[parsedCode[i + 1]];
+            inputOutput = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
 
             // check if next is STOP
             int[] nextInstruction = getInstruction(parsedCode[i + 2]);
@@ -158,6 +187,7 @@ public class Day05 implements IAocTask {
             }
 
             if (inputOutput != 0) {
+                System.out.printf("output %d%n", inputOutput);
                 testOutputIdx = i;
                 throw new RuntimeException(String.format("Output: %d, on for test #%d - instructions(%d, %d)\n",
                         inputOutput, passedTestCounter, testFirstInstructionIdx, testLastInstructionIdx));
@@ -256,23 +286,79 @@ public class Day05 implements IAocTask {
     }
 
     private int addNumbers(int i, int[] parsedCode, int[] instruction) {
-        int a = instruction[IDX_MODE1] == MODE_IMMEDIATE
-                ? parsedCode[i + 1]
-                : parsedCode[parsedCode[i + 1]];
-        int b = instruction[IDX_MODE2] == MODE_IMMEDIATE
-                ? parsedCode[i + 2]
-                : parsedCode[parsedCode[i + 2]];
+        int a = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
+        int b = getParameter(i, parsedCode, instruction, IDX_MODE2, 2);
         return a + b;
     }
 
     private int multiplyNumbers(int i, int[] parsedCode, int[] instruction) {
-        int a = instruction[IDX_MODE1] == MODE_IMMEDIATE
-                ? parsedCode[i + 1]
-                : parsedCode[parsedCode[i + 1]];
-        int b = instruction[IDX_MODE2] == MODE_IMMEDIATE
-                ? parsedCode[i + 2]
-                : parsedCode[parsedCode[i + 2]];
+        int a = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
+        int b = getParameter(i, parsedCode, instruction, IDX_MODE2, 2);
         return a * b;
+    }
+
+    /* part 2 instructions */
+
+    /**
+     * Opcode 5 is jump-if-true: if the first parameter is non-zero, it sets the instruction pointer to
+     * the value from the second parameter. Otherwise, it does nothing.
+     *
+     * @return the instruction pointer
+     */
+    private int jumpIfTrue(int instructionPointer, int[] parsedCode, int[] instruction) {
+        int a = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE1, 1);
+        int b = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE2, 2);
+
+        return a != 0 ? b : -1;
+    }
+
+    /**
+     * Opcode 6 is jump-if-false: if the first parameter is zero, it sets the instruction pointer to
+     * the value from the second parameter. Otherwise, it does nothing.
+     */
+    private int jumpIfFalse(int instructionPointer, int[] parsedCode, int[] instruction) {
+        int a = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE1, 1);
+        int b = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE2, 2);
+
+        return a == 0 ? b : -1;
+    }
+
+    /**
+     * Opcode 7 is less than: if the first parameter is less than the second parameter,
+     * it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+     */
+    private int isLessThan(int instructionPointer, int[] parsedCode, int[] instruction) {
+        int a = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE1, 1);
+        int b = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE2, 2);
+
+        return a < b ? 1 : 0;
+    }
+
+    /**
+     * Opcode 8 is equals: if the first parameter is equal to the second parameter,
+     * it stores 1 in the position given by the third parameter. Otherwise, it stores 0.
+     */
+    private int isEqual(int instructionPointer, int[] parsedCode, int[] instruction) {
+        int a = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE1, 1);
+        int b = getParameter(instructionPointer, parsedCode, instruction, IDX_MODE2, 2);
+
+        return a == b ? 1 : 0;
+    }
+
+    /**
+     * Loads the parameter at offset from the instruction pointer
+     *
+     * @param instructionPointer the instruction pointer
+     * @param parsedCode         the code
+     * @param instruction        parsed instruction
+     * @param idxMode            mode
+     * @param offset             the offset
+     * @return the parameter value (immediate or position)
+     */
+    private int getParameter(int instructionPointer, int[] parsedCode, int[] instruction, int idxMode, int offset) {
+        return instruction[idxMode] == MODE_IMMEDIATE
+                ? parsedCode[instructionPointer + offset]
+                : parsedCode[parsedCode[instructionPointer + offset]];
     }
 
     /**
@@ -301,10 +387,6 @@ public class Day05 implements IAocTask {
         return instruction;
     }
 
-    @Override
-    public void solvePartTwo(List<String> lines) {
-
-    }
 
     private interface PrintAction {
         void print();
