@@ -8,7 +8,8 @@ import static year2019.utils.Aoc2019Utils.*;
 
 public class Day05 implements IAocTask {
 
-    private int inputOutput;
+    private int[] inputOutput;
+    private int inputIdx = 0;
     private int testFirstInstructionIdx;
     private int testLastInstructionIdx;
     private int testOutputIdx = -1;
@@ -18,6 +19,9 @@ public class Day05 implements IAocTask {
     private int[] backup;
     private boolean finished = false;
     private static final boolean isDebugEnabled = false;
+    private InputListener inputListener;
+    private OutputListener outputListener;
+    private StopListener stopListener;
 
     @Override
     public String getFileName() {
@@ -34,8 +38,8 @@ public class Day05 implements IAocTask {
         // retryFromCheckpoint(0, 20);
         while (!finished) {
             try {
-                printChecksumFor(parsedCode.length);
-                runProgram(parsedCode, 1);
+                printChecksumFor(parsedCode, parsedCode.length);
+                runProgram(parsedCode, new int[]{1});
                 finished = true;
             } catch (RuntimeException exc) {
                 printIfEnabled(true, () -> System.out.printf("Repair needed: %s%n", exc.getMessage()));
@@ -52,13 +56,19 @@ public class Day05 implements IAocTask {
     @Override
     public void solvePartTwo(List<String> lines) {
         parsedCode = loadProgram(lines);
-        printChecksumFor(parsedCode.length);
+        printChecksumFor(parsedCode, parsedCode.length);
         backup = new int[parsedCode.length];
         try {
-            runProgram(parsedCode, 5);
+            runProgram(parsedCode, new int[]{5});
         } catch (Exception exc) {
             System.out.printf("EXCEPTION IN SOLVE PART 2: %s", exc.getMessage());
         }
+    }
+
+    public void setIoListeners(InputListener inputListener, OutputListener outputListener, StopListener stopListener) {
+        this.inputListener = inputListener;
+        this.outputListener = outputListener;
+        this.stopListener = stopListener;
     }
 
     /**
@@ -72,7 +82,7 @@ public class Day05 implements IAocTask {
         for (int[] permutation : opCodePermutations) {
             try {
                 modifyCode(permutation, testFirstInstructionIdx, testLastInstructionIdx);
-                runProgram(parsedCode, 1);
+                runProgram(parsedCode, new int[]{1});
             } catch (RuntimeException exc) {
                 printIfEnabled(true, () -> System.out.printf("Repair failed: %s%n", exc.getMessage()));
                 if (this.testLastInstructionIdx > testLastInstructionIdx) {
@@ -97,15 +107,15 @@ public class Day05 implements IAocTask {
     }
 
     @SuppressWarnings("unused")
-    private void printChecksumFor(int testFirstInstructionIdx) {
+    protected void printChecksumFor(int[] parsedCode, int testFirstInstructionIdx) {
         int checksum = 0;
         int bckChksm = 0;
         for (int i = 0; i < testFirstInstructionIdx; i++) {
             checksum += parsedCode[i];
-            bckChksm += backup[i];
+//            bckChksm += backup[i];
         }
         System.out.printf("checksum for %d idx: %d%n", testFirstInstructionIdx, checksum);
-        System.out.printf("bckChksm for %d idx: %d%n", testFirstInstructionIdx, bckChksm);
+//        System.out.printf("bckChksm for %d idx: %d%n", testFirstInstructionIdx, bckChksm);
     }
 
     private void printIfEnabled(PrintAction printAction) {
@@ -130,21 +140,35 @@ public class Day05 implements IAocTask {
         return newOpCode;
     }
 
-    private void runProgram(int[] parsedCode, int inputOutput) {
+    protected int[] runProgram(int[] parsedCode, int[]inputOutput, int instructionPointer) {
 //        int executionCounter = 0;
         this.inputOutput = inputOutput;
+        inputIdx = 0;
         passedTestCounter = 0;
         testFirstInstructionIdx = 0;
         testLastInstructionIdx = 0;
-        for (int i = 0; i < parsedCode.length; /* && executionCounter < 1e9; */) {
+        for (int i = instructionPointer; i < parsedCode.length; /* && executionCounter < 1e9; */) {
             i = runInstructions(parsedCode, i);
 //            executionCounter++;
         }
+        return this.inputOutput;
+    }
+
+    protected int[] runProgram(int[] parsedCode, int[] inputOutput) {
+        return runProgram(parsedCode, inputOutput, 0);
     }
 
     // https://adventofcode.com/2019/day/5
     private int runInstructions(int[] parsedCode, int i) {
         int[] instruction = getInstruction(parsedCode[i]);
+
+        if (isStopInstruction(instruction)) {
+            System.out.println("EXITING");
+            if (stopListener != null) {
+                stopListener.onStop();
+            }
+            return parsedCode.length;
+        }
 
         if (i <= testOutputIdx && outputIndices.contains(i) && instruction[IDX_OPCODE_A] != INSTR_OUTPUT) {
             throw new RuntimeException(String.format("Expected output instruction is missing %d", testOutputIdx));
@@ -176,21 +200,29 @@ public class Day05 implements IAocTask {
             i += 4;
         } else if (instruction[IDX_OPCODE_A] == INSTR_OUTPUT) {
             outputIndices.add(i);
-            inputOutput = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
+
+            if (outputListener == null) {
+                inputOutput[0] = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
+            } else {
+                inputOutput[0] = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
+                int nextInputInstructionPointer = i + 2;
+                this.outputListener.onNext(getParameter(i, parsedCode, instruction, IDX_MODE1, 1), nextInputInstructionPointer);
+                return parsedCode.length;
+            }
 
             // check if next is STOP
             int[] nextInstruction = getInstruction(parsedCode[i + 2]);
             if (isStopInstruction(nextInstruction)) {
-                printIfEnabled(true, () -> System.out.printf("TESTS PASSED!!! OUTPUT: %d\n", inputOutput));
+                printIfEnabled(true, () -> System.out.printf("TESTS PASSED!!! OUTPUT: %d\n", inputOutput[0]));
                 finished = true;
                 return parsedCode.length;
             }
 
-            if (inputOutput != 0) {
-                System.out.printf("output %d%n", inputOutput);
+            if (inputOutput[0] != 0 && false) {
+                System.out.printf("output %d%n", inputOutput[0]);
                 testOutputIdx = i;
                 throw new RuntimeException(String.format("Output: %d, on for test #%d - instructions(%d, %d)\n",
-                        inputOutput, passedTestCounter, testFirstInstructionIdx, testLastInstructionIdx));
+                        inputOutput[0], passedTestCounter, testFirstInstructionIdx, testLastInstructionIdx));
             } else {
                 passedTestCounter++; // todo max tests passed counter
                 printIfEnabled(() -> System.out.printf("Test #%d passed - instructions (%d, %d)\n", passedTestCounter, testFirstInstructionIdx, testLastInstructionIdx));
@@ -198,12 +230,16 @@ public class Day05 implements IAocTask {
                 testFirstInstructionIdx = i;
             }
         } else if (instruction[IDX_OPCODE_A] == INSTR_INPUT) {
-            printIfEnabled(() -> System.out.println("INPUT"));
+            printIfEnabled(false, () -> System.out.println("INPUT"));
             if (instruction[IDX_MODE1] == MODE_IMMEDIATE) {
                 throw new RuntimeException("writing parameter in immediate mode");
                 //parsedCode[i + 1] = input;
             } else { // MODE_POSITION
-                parsedCode[parsedCode[i + 1]] = inputOutput;
+                if (inputListener == null) {
+                    parsedCode[parsedCode[i + 1]] = inputOutput[inputIdx++];
+                } else {
+                    parsedCode[parsedCode[i + 1]] = inputListener.onNext();
+                }
             }
             i += 2;
         } else {
@@ -390,5 +426,17 @@ public class Day05 implements IAocTask {
 
     private interface PrintAction {
         void print();
+    }
+
+    protected interface InputListener {
+        int onNext();
+    }
+
+    protected interface OutputListener {
+        void onNext(int n, int instructionPointer);
+    }
+
+    protected interface StopListener {
+        void onStop();
     }
 }
