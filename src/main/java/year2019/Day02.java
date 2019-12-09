@@ -14,7 +14,7 @@ public class Day02 implements IAocTask {
 
     @Override
     public void solvePartOne(List<String> lines) {
-        int[] parsedCode = loadProgram(lines);
+        long[] parsedCode = loadProgram(lines);
         parsedCode[1] = 12;
         parsedCode[2] = 2;
         runProgram(parsedCode);
@@ -23,23 +23,23 @@ public class Day02 implements IAocTask {
 
     @Override
     public void solvePartTwo(List<String> lines) {
-        int[] parsedCode = loadProgram(lines);
-        int[] copied = runProgramV2(parsedCode);
+        long[] parsedCode = loadProgram(lines);
+        long[] copied = runProgramV2(parsedCode);
         System.out.format("%d", 100 * copied[1] + copied[2]);
     }
 
-    private void runProgram(int[] parsedCode) {
+    private void runProgram(long[] parsedCode) {
         int i = 0;
         for (; i < parsedCode.length; ) {
             i = runBasicInstructions(parsedCode, i);
         }
     }
 
-    private int[] runProgramV2(int[] parsedCode) {
+    private long[] runProgramV2(long[] parsedCode) {
 
         for (int i = 0; i < 100; i++) {
             for (int j = 0; j < 100; j++) {
-                int[] copied = new int[parsedCode.length];
+                long[] copied = new long[parsedCode.length];
                 System.arraycopy(parsedCode, 0, copied, 0, parsedCode.length);
                 copied[1] = i;
                 copied[2] = j;
@@ -53,7 +53,7 @@ public class Day02 implements IAocTask {
         return parsedCode;
     }
 
-    public static int runBasicInstructions(int[] parsedCode, int i) {
+    public static int runBasicInstructions(long[] parsedCode, int i) {
         if (parsedCode[i] == INSTR_STOP) {
             i = parsedCode.length;
         } else if (parsedCode[i] == INSTR_ADD) {
@@ -66,11 +66,11 @@ public class Day02 implements IAocTask {
         return i;
     }
 
-    public static void addNumbers(int i, int[] parsedCode) {
-        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] + parsedCode[parsedCode[i + 2]];
+    public static void addNumbers(int i, long[] parsedCode) {
+        parsedCode[(int) parsedCode[i + 3]] = parsedCode[(int) parsedCode[i + 1]] + parsedCode[(int) parsedCode[i + 2]];
     }
 
-    public static void multiplyNumbers(int i, int[] parsedCode) {
-        parsedCode[parsedCode[i + 3]] = parsedCode[parsedCode[i + 1]] * parsedCode[parsedCode[i + 2]];
+    public static void multiplyNumbers(int i, long[] parsedCode) {
+        parsedCode[(int) parsedCode[i + 3]] = parsedCode[(int) parsedCode[i + 1]] * parsedCode[(int) parsedCode[i + 2]];
     }
 }

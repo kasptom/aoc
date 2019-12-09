@@ -25,17 +25,20 @@ public class Aoc2019Utils {
     public static final int INSTR_JMP_FALSE = 6;
     public static final int INSTR_LT = 7;
     public static final int INSTR_EQ = 8;
+    /* relative mode */
+    public static final int INSTR_RBASE = 9;
 
     /* parameter modes */
     public static final int MODE_POSITION = 0;
     public static final int MODE_IMMEDIATE = 1;
+    public static final int MODE_RELATIVE = 2;
 
-    public static int[] loadProgram(List<String> lines) {
-        List<Integer> code = Arrays.stream(lines.get(0).split(","))
-                .map(Integer::valueOf)
+    public static long[] loadProgram(List<String> lines) {
+        List<Long> code = Arrays.stream(lines.get(0).split(","))
+                .map(Long::valueOf)
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        int[] parsedCode = new int[code.size()];
+        long[] parsedCode = new long[code.size()];
         for (int i = 0; i < code.size(); i++) {
             parsedCode[i] = code.get(i);
         }
