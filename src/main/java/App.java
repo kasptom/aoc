@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 public class App {
     public static void main(String[] args) throws FileNotFoundException {
 //        aoc.IAocTask task = new year2018.Day01();
-        IAocTask task = new year2019.Day09();
+        IAocTask task = new year2019.Day10();
 
         ClassLoader classLoader = task.getClass().getClassLoader();
         File inputFile = new File(Objects.requireNonNull(classLoader.getResource(task.getFileName())).getFile());
