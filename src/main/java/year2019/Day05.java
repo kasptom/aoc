@@ -344,7 +344,7 @@ public class Day05 implements IAocTask {
         long a = getParameter(i, parsedCode, instruction, IDX_MODE1, 1);
         long b = getParameter(i, parsedCode, instruction, IDX_MODE2, 2);
 
-        if (a > Math.sqrt(Long.MAX_VALUE) || b > Math.sqrt(Long.MAX_VALUE)) {
+        if (a > Math.sqrt(Long.MAX_VALUE) && b > Math.sqrt(Long.MAX_VALUE)) {
             throw new RuntimeException("TOO BIG NUMBERS MULTIPLIED");
         }
 

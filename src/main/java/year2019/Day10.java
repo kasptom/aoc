@@ -134,6 +134,8 @@ public class Day10 implements IAocTask {
 
     static class Point implements Comparable<Point> {
         int x, y;
+        int color;
+        static boolean showColor = false;
 
         public Point(int x, int y) {
             this.x = x;
@@ -168,7 +170,9 @@ public class Day10 implements IAocTask {
 
         @Override
         public String toString() {
-            return String.format("{%d, %d}", x, y);
+            return !showColor
+                    ? String.format("{%3d, %3d}", x, y)
+                    : String.format("{%3d, %3d} (%s)", x, y, color == 0 ? "B" : "W");
         }
 
         static double distanceBetween(Point one, Point another) {
