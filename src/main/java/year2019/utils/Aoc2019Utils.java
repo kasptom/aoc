@@ -1,9 +1,8 @@
 package year2019.utils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class Aoc2019Utils {
     /* parsed instruction indexes */
@@ -43,5 +42,19 @@ public class Aoc2019Utils {
             parsedCode[i] = code.get(i);
         }
         return parsedCode;
+    }
+
+    public static TreeSet<Integer> createSieve(int maxValue) {
+        List<Integer> sieve = IntStream.range(2, maxValue + 1).boxed().collect(Collectors.toList());
+        sieve = sieve.stream().filter(number -> number == 2 || number % 2 != 0).collect(Collectors.toList());
+
+        for (int i = 3; i * i < maxValue; i += 2) {
+            for (int j = 2 * i; j < maxValue; j += i) {
+                sieve.remove(Integer.valueOf(j));
+            }
+        }
+//        sieve.forEach(el -> System.out.format("%d ", el));
+//        System.out.println();
+        return new TreeSet<>(sieve);
     }
 }
