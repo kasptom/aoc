@@ -6,6 +6,9 @@ import java.util.*;
 
 import static year2019.utils.Aoc2019Utils.*;
 
+/**
+ * IntCode computer
+ */
 public class Day05 implements IAocTask {
 
     private long[] inputOutput;

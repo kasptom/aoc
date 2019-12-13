@@ -27,9 +27,7 @@ public class Day09 implements IAocTask {
 
     private void solve(List<String> lines, long input) {
         long[] parsedCode = Aoc2019Utils.loadProgram(lines);
-        long[] largerMemory = new long[6000];
-        System.arraycopy(parsedCode, 0, largerMemory, 0, parsedCode.length);
-        parsedCode = largerMemory;
+        parsedCode = Aoc2019Utils.copyToLargerMemory(parsedCode, 6000);
 
         final long[] output = new long[2];
         Day05 intComp = new Day05();

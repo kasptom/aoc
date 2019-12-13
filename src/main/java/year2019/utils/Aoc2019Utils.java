@@ -57,4 +57,11 @@ public class Aoc2019Utils {
 //        System.out.println();
         return new TreeSet<>(sieve);
     }
+
+    public static long[] copyToLargerMemory(long[] parsedCode, int size) {
+        long[] largerMemory = new long[size];
+        System.arraycopy(parsedCode, 0, largerMemory, 0, parsedCode.length);
+        parsedCode = largerMemory;
+        return parsedCode;
+    }
 }
