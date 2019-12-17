@@ -461,6 +461,12 @@ public class Day05 implements IAocTask {
     }
 
     protected interface OutputListener {
+        /**
+         *
+         * @param n output value
+         * @param instructionPointer instruction pointer
+         * @return true if should pause the program on current instructionPointer
+         */
         boolean getNextAndCheckIfShouldPause(long n, int instructionPointer);
     }
 
