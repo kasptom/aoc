@@ -130,3 +130,6 @@ gradle-app.setting
 # End of https://www.gitignore.io/api/java,gradle,intellij+all
 
 src/main/resources/input*.txt
+src/main/resources/aoc*/input*.txt
+!src/main/resources/aoc2019/input_05.txt
+!src/main/resources/aoc2019/*.zip
