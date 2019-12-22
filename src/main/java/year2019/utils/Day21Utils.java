@@ -31,7 +31,8 @@ public class Day21Utils {
         possibleToJump.forEach(tiles -> System.out.println(Day21Utils.getRobotView(tiles)));
 //        System.out.println("|ABCDEFGHI|");
 //        tilesConfigurations.forEach(tiles -> System.out.println(Day21Utils.getRobotView(tiles)));
-//        Day21Utils.saveAsCsv(tilesConfigurations, String.format("task_21_tiles_%d.csv", LOOK_AHEAD_SIZE));
+
+        Day21Utils.saveAsCsv(possibleToJump, String.format("task_21_selected_tiles_%d.csv", LOOK_AHEAD_SIZE));
     }
 
     private static void generateCombinations(List<int[]> tilesConfigurations) {
