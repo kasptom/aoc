@@ -1,11 +1,17 @@
 package year2019.utils;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class Day21Utils {
-    private static final int LOOK_AHEAD_SIZE = 4;
+    private static final int LOOK_AHEAD_SIZE = 9;
     private static final int SPRING_BOT_JUMP_RANGE = 4;
 
     public static void main(String[] args) {
@@ -14,7 +20,9 @@ public class Day21Utils {
         generateCombinations(tilesConfigurations);
         System.out.println("all possibilities count: " + tilesConfigurations.size());
 
+        System.out.println("|ABCDEFGHI|");
         tilesConfigurations.forEach(tiles -> System.out.println(Day21Utils.getRobotView(tiles)));
+        Day21Utils.saveAsCsv(tilesConfigurations, String.format("task_21_tiles_%d.csv", LOOK_AHEAD_SIZE));
     }
 
     private static void generateCombinations(List<int[]> tilesConfigurations) {
@@ -41,8 +49,30 @@ public class Day21Utils {
     private static String getRobotView(int[] tilesBeforeRobot) {
         return "|" + Arrays.stream(tilesBeforeRobot)
                 .boxed()
-                .map(value -> value == 0 ? " " : "#")
+                .map(value -> value == 0 ? "." : "#")
                 .reduce((tiles, tile) -> tiles + tile)
                 .orElse("ERROR") + "|";
+    }
+
+    private static void saveAsCsv(List<int[]> combinations, String csvFileName) {
+        Charset charset = StandardCharsets.UTF_8;
+        Path csvFilePath = java.nio.file.Paths.get(csvFileName);
+        try (BufferedWriter bufferedWriter = Files.newBufferedWriter(csvFilePath, charset)) {
+            String lines = combinations.stream()
+                    .map(Day21Utils::mapToCsvRow)
+                    .reduce((rows, row) -> rows + "\n" + row)
+                    .orElse("ERROR");
+            bufferedWriter.write(lines);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String mapToCsvRow(int[] combination) {
+        return Arrays.stream(combination)
+                .boxed()
+                .map(String::valueOf)
+                .reduce((tiles, tile) -> tiles + ";" +  tile)
+                .orElse("ERROR");
     }
 }
