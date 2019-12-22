@@ -9,6 +9,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Day21Utils {
     private static final int LOOK_AHEAD_SIZE = 9;
@@ -20,9 +21,17 @@ public class Day21Utils {
         generateCombinations(tilesConfigurations);
         System.out.println("all possibilities count: " + tilesConfigurations.size());
 
-        System.out.println("|ABCDEFGHI|");
-        tilesConfigurations.forEach(tiles -> System.out.println(Day21Utils.getRobotView(tiles)));
-        Day21Utils.saveAsCsv(tilesConfigurations, String.format("task_21_tiles_%d.csv", LOOK_AHEAD_SIZE));
+        List<int[]> possibleToJump = tilesConfigurations
+                .stream()
+                .filter(Day21Utils::isPossibleToPass)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        System.out.printf("Possible to pass through %d%n", possibleToJump.size());
+
+        possibleToJump.forEach(tiles -> System.out.println(Day21Utils.getRobotView(tiles)));
+//        System.out.println("|ABCDEFGHI|");
+//        tilesConfigurations.forEach(tiles -> System.out.println(Day21Utils.getRobotView(tiles)));
+//        Day21Utils.saveAsCsv(tilesConfigurations, String.format("task_21_tiles_%d.csv", LOOK_AHEAD_SIZE));
     }
 
     private static void generateCombinations(List<int[]> tilesConfigurations) {
@@ -74,5 +83,19 @@ public class Day21Utils {
                 .map(String::valueOf)
                 .reduce((tiles, tile) -> tiles + ";" +  tile)
                 .orElse("ERROR");
+    }
+
+    private static boolean isPossibleToPass(int[] tiles) {
+        int robotIdx = -1;
+        return isPossibleToPass(true, robotIdx, tiles) || isPossibleToPass(false, robotIdx, tiles);
+    }
+
+    private static boolean isPossibleToPass(boolean isJump, int robotIdx, int[] tiles) {
+        int nextRobotIdx = isJump ? robotIdx + SPRING_BOT_JUMP_RANGE : robotIdx + 1;
+        if (LOOK_AHEAD_SIZE <= nextRobotIdx) return true;
+
+        if (tiles[nextRobotIdx] == 0) return false;
+
+        return isPossibleToPass(false, nextRobotIdx, tiles) || isPossibleToPass(true, nextRobotIdx, tiles);
     }
 }
