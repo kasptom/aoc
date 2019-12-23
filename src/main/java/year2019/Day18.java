@@ -15,6 +15,7 @@ public class Day18 implements IAocTask {
 
     @Override
     public String getFileName() {
+//        return "aoc2019/input_18.txt"; // TODO detect cycles
         return "aoc2019/input_18_small.txt";
     }
 
@@ -39,7 +40,7 @@ public class Day18 implements IAocTask {
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
             String mazePlace = maze[position.y][position.x];
             if (isKeyLocation(mazePlace)) {
-                openedGatesCopy.add(mazePlace);
+                foundKeysCopy.add(mazePlace);
             } else if (isGateLocation(mazePlace)) {
                 assert foundKeysCopy.contains(mazePlace.toLowerCase());
                 openedGatesCopy.add(mazePlace);
@@ -55,6 +56,7 @@ public class Day18 implements IAocTask {
 
     private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition) {
         if (openedGates.size() == allGates.size()) {
+            System.out.printf("%d", stepsToCurrentPosition);
             return stepsToCurrentPosition;
         }
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys, openedGates);
@@ -64,7 +66,7 @@ public class Day18 implements IAocTask {
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
             String mazePlace = maze[nextPos.y][nextPos.x];
             if (isKeyLocation(mazePlace)) {
-                foundKeys.add(mazePlace);
+                foundKeysCopy.add(mazePlace);
             } else if (isGateLocation(mazePlace)) {
                 assert foundKeysCopy.contains(mazePlace.toLowerCase());
                 openedGatesCopy.add(mazePlace);
