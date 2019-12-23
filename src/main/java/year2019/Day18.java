@@ -15,7 +15,7 @@ public class Day18 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "aoc2019/input_18.txt";
+        return "aoc2019/input_18_small.txt";
     }
 
     @Override
@@ -64,7 +64,7 @@ public class Day18 implements IAocTask {
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
             String mazePlace = maze[nextPos.y][nextPos.x];
             if (isKeyLocation(mazePlace)) {
-                openedGatesCopy.add(mazePlace);
+                foundKeys.add(mazePlace);
             } else if (isGateLocation(mazePlace)) {
                 assert foundKeysCopy.contains(mazePlace.toLowerCase());
                 openedGatesCopy.add(mazePlace);
@@ -82,7 +82,7 @@ public class Day18 implements IAocTask {
         List<Pair<Integer>> nextPositions = new ArrayList<>();
         for (Pair<Integer> move : MOVES) {
             if (isMovePossible(prevPosition, currentPosition, move, foundKeys)) {
-                nextPositions.add(new Pair<>(currentPosition.x + move.x, currentPosition.y + move.x));
+                nextPositions.add(new Pair<>(currentPosition.x + move.x, currentPosition.y + move.y));
             }
         }
         return nextPositions;
