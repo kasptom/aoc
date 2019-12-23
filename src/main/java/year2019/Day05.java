@@ -26,6 +26,8 @@ public class Day05 implements IAocTask {
     private OutputListener outputListener;
     private StopListener stopListener;
 
+    private InstructionPointerListener instructionPointerListener;
+
     private long relativeBase = 0;
 
     @Override
@@ -74,6 +76,10 @@ public class Day05 implements IAocTask {
         this.inputListener = inputListener;
         this.outputListener = outputListener;
         this.stopListener = stopListener;
+    }
+
+    public void setInstructionPointerListener(InstructionPointerListener instructionPointerListener) {
+        this.instructionPointerListener = instructionPointerListener;
     }
 
     /**
@@ -154,6 +160,9 @@ public class Day05 implements IAocTask {
         testLastInstructionIdx = 0;
         for (int i = instructionPointer; i < parsedCode.length; /* && executionCounter < 1e9; */) {
             i = runInstructions(parsedCode, i);
+            if (instructionPointerListener != null && instructionPointerListener.onInstructionPointerChange(i)) {
+                break;
+            }
 //            executionCounter++;
         }
         return this.inputOutput;
@@ -458,6 +467,14 @@ public class Day05 implements IAocTask {
 
     protected interface InputListener {
         long onNext();
+    }
+
+    protected interface InstructionPointerListener {
+        /**
+         * @param instructionPointer instruction pointer
+         * @return true if program should be paused
+         */
+        boolean onInstructionPointerChange(int instructionPointer);
     }
 
     protected interface OutputListener {
