@@ -3,6 +3,8 @@ package year2019;
 import aoc.IAocTask;
 import year2019.utils.Pair;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -13,22 +15,31 @@ public class Day18 implements IAocTask {
     private Set<String> allKeys;
     private static final List<Pair<Integer>> MOVES = createMoves();
     int MAX_STEPS = 900;
-    private boolean printEnabled = false;
+    private static final boolean printEnabled = true;
     private int currentBestPath = Integer.MAX_VALUE;
     private List<String> keyPath;
 
     @Override
     public String getFileName() {
 //        return "aoc2019/input_18.txt"; // TODO detect cycles
-        return "aoc2019/input_18_small_81.txt";
+        return "aoc2019/input_18_small_136.txt";
     }
 
     @Override
     public void solvePartOne(List<String> lines) {
         loadMaze(lines);
+        long start = System.nanoTime();
+        System.out.println("START: " + getTimestamp());
         int fewestSteps = collectAllKeys();
         System.out.printf("fewest steps to collect all keys: %d%n", fewestSteps);
         System.out.printf("found path: %s%n", keyPath);
+        System.out.println("END: " + getTimestamp());
+        long end = System.nanoTime();
+        System.out.printf("time elapsed [min]: %.3f%n", (end - start) / (1e9 * 60));
+    }
+
+    private String getTimestamp() {
+        return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").format(LocalDateTime.now());
     }
 
     private int collectAllKeys() {
@@ -40,7 +51,7 @@ public class Day18 implements IAocTask {
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys);
         int stepsCount = 0;
 
-        printBoardWithCurrentPositionIfEnabled(startPosition, foundKeys, new HashSet<>());
+        printBoardWithCurrentPositionIfEnabled(startPosition, foundKeys, new HashSet<>(), stepsCount);
 
         for (Pair<Integer> position: possibleNextPositions) {
             HashSet<String> openedGatesCopy = new HashSet<>();
@@ -57,12 +68,12 @@ public class Day18 implements IAocTask {
         return currentBestPath;
     }
 
-    private void printBoardWithCurrentPositionIfEnabled(Pair<Integer> currentPosition, HashSet<String> foundKeys, HashSet<String> openedGates) {
+    private void printBoardWithCurrentPositionIfEnabled(Pair<Integer> currentPosition, HashSet<String> foundKeys, HashSet<String> openedGates, int steps) {
         if (!printEnabled) {
             return;
         }
         System.out.println();
-        String footer = "@(%2d, %2d)=%s\nkeys: %s,\nopened gates: %s";
+        String footer = "@(%2d, %2d)=%s\nkeys: %s,\nopened gates: %s\nsteps: %d";
         String tileValue = "X";
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
@@ -79,18 +90,18 @@ public class Day18 implements IAocTask {
             }
             System.out.println();
         }
-        System.out.println(String.format(footer, currentPosition.x, currentPosition.y, tileValue, foundKeys, openedGates));
+        System.out.println(String.format(footer, currentPosition.x, currentPosition.y, tileValue, foundKeys, openedGates, steps));
     }
 
     private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition, List<String> keyPath) {
-        printBoardWithCurrentPositionIfEnabled(position, foundKeys, openedGates);
+        printBoardWithCurrentPositionIfEnabled(position, foundKeys, openedGates, stepsToCurrentPosition);
         if (stepsToCurrentPosition > MAX_STEPS || currentBestPath < stepsToCurrentPosition) {
             return Integer.MAX_VALUE;
         }
         if (foundKeys.size() == allKeys.size()) {
-            if (printEnabled) {
-                System.out.printf("steps to current position: %d\n", stepsToCurrentPosition);
-            }
+//            if (printEnabled) {
+                System.out.printf("[%s] steps to current position: %d\n", getTimestamp(), stepsToCurrentPosition);
+//            }
             return stepsToCurrentPosition;
         }
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys);
