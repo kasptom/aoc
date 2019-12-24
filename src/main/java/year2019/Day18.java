@@ -12,6 +12,7 @@ public class Day18 implements IAocTask {
     private String[][] maze;
     private Set<String> allGates;
     private static final List<Pair<Integer>> MOVES = createMoves();
+    int MAX_STEPS = 1000000;
 
     @Override
     public String getFileName() {
@@ -35,6 +36,8 @@ public class Day18 implements IAocTask {
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys, openedGates);
         int stepsCount = 0;
 
+        printBoardWithCurrentPosition(startPosition);
+
         for (Pair<Integer> position: possibleNextPositions) {
             HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
@@ -54,7 +57,31 @@ public class Day18 implements IAocTask {
         return shortestPath;
     }
 
+    private void printBoardWithCurrentPosition(Pair<Integer> currentPosition) {
+        System.out.println();
+        String footer = "@(%2d, %2d)=%s";
+        String tileValue = "X";
+        for (int i = 0; i < maze.length; i++) {
+            for (int j = 0; j < maze[0].length; j++) {
+                if (i == currentPosition.y && j == currentPosition.x) {
+                    System.out.print("@");
+                    tileValue = maze[i][j].equals("@") ? "." : maze[i][j];
+                } else if (maze[i][j].equals("@")) {
+                    System.out.print(".");
+                } else {
+                    System.out.print(maze[i][j]);
+                }
+            }
+            System.out.println();
+        }
+        System.out.println(String.format(footer, currentPosition.x, currentPosition.y, tileValue));
+    }
+
     private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition) {
+        printBoardWithCurrentPosition(position);
+        if (stepsToCurrentPosition > MAX_STEPS) {
+            return Integer.MAX_VALUE;
+        }
         if (openedGates.size() == allGates.size()) {
             System.out.printf("%d", stepsToCurrentPosition);
             return stepsToCurrentPosition;
