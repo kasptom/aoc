@@ -12,12 +12,13 @@ public class Day18 implements IAocTask {
     private String[][] maze;
     private Set<String> allGates;
     private static final List<Pair<Integer>> MOVES = createMoves();
-    int MAX_STEPS = 1000000;
+    int MAX_STEPS = 100000;
+    private boolean printEnabled = false;
 
     @Override
     public String getFileName() {
 //        return "aoc2019/input_18.txt"; // TODO detect cycles
-        return "aoc2019/input_18_small.txt";
+        return "aoc2019/input_18_small_132.txt";
     }
 
     @Override
@@ -28,27 +29,18 @@ public class Day18 implements IAocTask {
     }
 
     private int unlockAllGates() {
-        HashSet<String> openedGates = new HashSet<>();
         HashSet<String> foundKeys = new HashSet<>();
 
         Pair<Integer> startPosition = findMazeStartPosition();
         int shortestPath = Integer.MAX_VALUE;
-        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys, openedGates);
-        int stepsCount = 1;
+        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys);
+        int stepsCount = 0;
 
-        printBoardWithCurrentPosition(startPosition);
+        printBoardWithCurrentPositionIfEnabled(startPosition);
 
         for (Pair<Integer> position: possibleNextPositions) {
-            HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
+            HashSet<String> openedGatesCopy = new HashSet<>();
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
-            String mazePlace = maze[position.y][position.x];
-
-            if (isKeyLocation(mazePlace)) {
-                foundKeysCopy.add(mazePlace);
-            } else if (isGateLocation(mazePlace)) {
-                assert foundKeysCopy.contains(mazePlace.toLowerCase());
-                openedGatesCopy.add(mazePlace);
-            }
 
             Pair<Integer> prevPosition = new Pair<>(startPosition);
             int stepsToOpenAllGates = getStepsToOpenAllGates(prevPosition, position, foundKeysCopy, openedGatesCopy, stepsCount + 1);
@@ -60,7 +52,10 @@ public class Day18 implements IAocTask {
         return shortestPath;
     }
 
-    private void printBoardWithCurrentPosition(Pair<Integer> currentPosition) {
+    private void printBoardWithCurrentPositionIfEnabled(Pair<Integer> currentPosition) {
+        if (!printEnabled) {
+            return;
+        }
         System.out.println();
         String footer = "@(%2d, %2d)=%s";
         String tileValue = "X";
@@ -81,15 +76,17 @@ public class Day18 implements IAocTask {
     }
 
     private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition) {
-        printBoardWithCurrentPosition(position);
+        printBoardWithCurrentPositionIfEnabled(position);
         if (stepsToCurrentPosition > MAX_STEPS) {
             return Integer.MAX_VALUE;
         }
         if (openedGates.size() == allGates.size()) {
-            System.out.printf("%d", stepsToCurrentPosition);
+            if (printEnabled) {
+                System.out.printf("%d", stepsToCurrentPosition);
+            }
             return stepsToCurrentPosition;
         }
-        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys, openedGates);
+        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys);
 
         HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
         HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
@@ -112,7 +109,7 @@ public class Day18 implements IAocTask {
         return shortestPath;
     }
 
-    private List<Pair<Integer>> getPossibleNextPositions(Pair<Integer> prevPosition, Pair<Integer> currentPosition, HashSet<String> foundKeys, HashSet<String> openedGates) {
+    private List<Pair<Integer>> getPossibleNextPositions(Pair<Integer> prevPosition, Pair<Integer> currentPosition, HashSet<String> foundKeys) {
         List<Pair<Integer>> nextPositions = new ArrayList<>();
         for (Pair<Integer> move : MOVES) {
             if (isMovePossible(prevPosition, currentPosition, move, foundKeys)) {
