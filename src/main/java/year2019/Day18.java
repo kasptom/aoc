@@ -10,25 +10,25 @@ import java.util.Set;
 
 public class Day18 implements IAocTask {
     private String[][] maze;
-    private Set<String> allGates;
+    private Set<String> allKeys;
     private static final List<Pair<Integer>> MOVES = createMoves();
-    int MAX_STEPS = 100000;
+    int MAX_STEPS = 900;
     private boolean printEnabled = false;
 
     @Override
     public String getFileName() {
 //        return "aoc2019/input_18.txt"; // TODO detect cycles
-        return "aoc2019/input_18_small_132.txt";
+        return "aoc2019/input_18_small_86.txt";
     }
 
     @Override
     public void solvePartOne(List<String> lines) {
         loadMaze(lines);
-        int fewestSteps = unlockAllGates();
-        System.out.printf("fewest steps to open all gates: %d%n", fewestSteps);
+        int fewestSteps = collectAllKeys();
+        System.out.printf("fewest steps to collect all keys: %d%n", fewestSteps);
     }
 
-    private int unlockAllGates() {
+    private int collectAllKeys() {
         HashSet<String> foundKeys = new HashSet<>();
 
         Pair<Integer> startPosition = findMazeStartPosition();
@@ -43,7 +43,7 @@ public class Day18 implements IAocTask {
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
 
             Pair<Integer> prevPosition = new Pair<>(startPosition);
-            int stepsToOpenAllGates = getStepsToOpenAllGates(prevPosition, position, foundKeysCopy, openedGatesCopy, stepsCount + 1);
+            int stepsToOpenAllGates = getStepsToOpenAllGates(prevPosition, position, foundKeysCopy, openedGatesCopy, stepsCount);
 
             if (stepsToOpenAllGates < shortestPath) {
                 shortestPath = stepsToOpenAllGates;
@@ -80,9 +80,9 @@ public class Day18 implements IAocTask {
         if (stepsToCurrentPosition > MAX_STEPS) {
             return Integer.MAX_VALUE;
         }
-        if (openedGates.size() == allGates.size()) {
+        if (foundKeys.size() == allKeys.size()) {
             if (printEnabled) {
-                System.out.printf("%d", stepsToCurrentPosition);
+                System.out.printf("steps to current position: %d\n", stepsToCurrentPosition);
             }
             return stepsToCurrentPosition;
         }
@@ -157,13 +157,13 @@ public class Day18 implements IAocTask {
 
     private void loadMaze(List<String> lines) {
         maze = new String[lines.size()][lines.get(0).length()];
-        allGates = new HashSet<>();
+        allKeys = new HashSet<>();
 
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
                 maze[i][j] = lines.get(i).substring(j, j + 1);
-                if (maze[i][j].matches("[A-Z]")) {
-                    allGates.add(maze[i][j]);
+                if (maze[i][j].matches("[a-z]")) {
+                    allKeys.add(maze[i][j]);
                 }
             }
         }
