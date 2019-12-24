@@ -34,7 +34,7 @@ public class Day18 implements IAocTask {
         Pair<Integer> startPosition = findMazeStartPosition();
         int shortestPath = Integer.MAX_VALUE;
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys, openedGates);
-        int stepsCount = 0;
+        int stepsCount = 1;
 
         printBoardWithCurrentPosition(startPosition);
 
@@ -42,14 +42,17 @@ public class Day18 implements IAocTask {
             HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
             String mazePlace = maze[position.y][position.x];
+
             if (isKeyLocation(mazePlace)) {
                 foundKeysCopy.add(mazePlace);
             } else if (isGateLocation(mazePlace)) {
                 assert foundKeysCopy.contains(mazePlace.toLowerCase());
                 openedGatesCopy.add(mazePlace);
             }
+
             Pair<Integer> prevPosition = new Pair<>(startPosition);
             int stepsToOpenAllGates = getStepsToOpenAllGates(prevPosition, position, foundKeysCopy, openedGatesCopy, stepsCount + 1);
+
             if (stepsToOpenAllGates < shortestPath) {
                 shortestPath = stepsToOpenAllGates;
             }
@@ -87,17 +90,19 @@ public class Day18 implements IAocTask {
             return stepsToCurrentPosition;
         }
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys, openedGates);
+
+        HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
+        HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
+        String mazePlace = maze[position.y][position.x];
+        if (isKeyLocation(mazePlace)) {
+            foundKeysCopy.add(mazePlace);
+        } else if (isGateLocation(mazePlace)) {
+            assert foundKeysCopy.contains(mazePlace.toLowerCase());
+            openedGatesCopy.add(mazePlace);
+        }
+
         int shortestPath = Integer.MAX_VALUE;
         for (Pair<Integer> nextPos: possibleNextPositions) {
-            HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
-            HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
-            String mazePlace = maze[nextPos.y][nextPos.x];
-            if (isKeyLocation(mazePlace)) {
-                foundKeysCopy.add(mazePlace);
-            } else if (isGateLocation(mazePlace)) {
-                assert foundKeysCopy.contains(mazePlace.toLowerCase());
-                openedGatesCopy.add(mazePlace);
-            }
             Pair<Integer> prevPos = new Pair<>(position);
             int stepsToOpenAllGates = getStepsToOpenAllGates(prevPos, nextPos, foundKeysCopy, openedGatesCopy, stepsToCurrentPosition + 1);
             if (stepsToOpenAllGates < shortestPath) {
@@ -119,16 +124,22 @@ public class Day18 implements IAocTask {
 
     private boolean isMovePossible(Pair<Integer> prevPosition, Pair<Integer> currentPosition, Pair<Integer> move, HashSet<String> foundKeys) {
         Pair<Integer> nextPosition = new Pair<>(currentPosition.x + move.x, currentPosition.y + move.y);
-        if (nextPosition.equals(prevPosition)) {
+        String currentMazeCell = maze[currentPosition.y][currentPosition.x];
+        String mazeCell = maze[nextPosition.y][nextPosition.x];
+
+        if (nextPosition.equals(prevPosition) && !isNewKeyPosition(foundKeys, currentMazeCell)) {
             return false;
         }
-        String mazeCell = maze[nextPosition.y][nextPosition.x];
 
         if (isGateLocation(mazeCell)) {
             return foundKeys.contains(mazeCell.toLowerCase());
         }
 
         return isFree(mazeCell);
+    }
+
+    private boolean isNewKeyPosition(HashSet<String> foundKeys, String mazeCell) {
+        return isKeyLocation(mazeCell) && !foundKeys.contains(mazeCell);
     }
 
     private Pair<Integer> findMazeStartPosition() {
