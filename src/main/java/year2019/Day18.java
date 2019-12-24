@@ -15,11 +15,12 @@ public class Day18 implements IAocTask {
     int MAX_STEPS = 900;
     private boolean printEnabled = false;
     private int currentBestPath = Integer.MAX_VALUE;
+    private List<String> keyPath;
 
     @Override
     public String getFileName() {
 //        return "aoc2019/input_18.txt"; // TODO detect cycles
-        return "aoc2019/input_18_small_132.txt";
+        return "aoc2019/input_18_small_81.txt";
     }
 
     @Override
@@ -27,13 +28,15 @@ public class Day18 implements IAocTask {
         loadMaze(lines);
         int fewestSteps = collectAllKeys();
         System.out.printf("fewest steps to collect all keys: %d%n", fewestSteps);
+        System.out.printf("found path: %s%n", keyPath);
     }
 
     private int collectAllKeys() {
         HashSet<String> foundKeys = new HashSet<>();
+        List<String> keyPath = new ArrayList<>();
 
         Pair<Integer> startPosition = findMazeStartPosition();
-        int shortestPath = Integer.MAX_VALUE;
+        currentBestPath = Integer.MAX_VALUE;
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys);
         int stepsCount = 0;
 
@@ -44,13 +47,14 @@ public class Day18 implements IAocTask {
             HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
 
             Pair<Integer> prevPosition = new Pair<>(startPosition);
-            int stepsToOpenAllGates = getStepsToOpenAllGates(prevPosition, position, foundKeysCopy, openedGatesCopy, stepsCount);
+            int stepsToOpenAllGates = getStepsToOpenAllGates(prevPosition, position, foundKeysCopy, openedGatesCopy, stepsCount, keyPath);
 
-            if (stepsToOpenAllGates < shortestPath) {
-                shortestPath = stepsToOpenAllGates;
+            if (stepsToOpenAllGates < currentBestPath) {
+                currentBestPath = stepsToOpenAllGates;
+                this.keyPath = keyPath;
             }
         }
-        return shortestPath;
+        return currentBestPath;
     }
 
     private void printBoardWithCurrentPositionIfEnabled(Pair<Integer> currentPosition, HashSet<String> foundKeys, HashSet<String> openedGates) {
@@ -78,7 +82,7 @@ public class Day18 implements IAocTask {
         System.out.println(String.format(footer, currentPosition.x, currentPosition.y, tileValue, foundKeys, openedGates));
     }
 
-    private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition) {
+    private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition, List<String> keyPath) {
         printBoardWithCurrentPositionIfEnabled(position, foundKeys, openedGates);
         if (stepsToCurrentPosition > MAX_STEPS || currentBestPath < stepsToCurrentPosition) {
             return Integer.MAX_VALUE;
@@ -93,9 +97,11 @@ public class Day18 implements IAocTask {
 
         HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
         HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
+        ArrayList<String> keyPathCopy = new ArrayList<>(keyPath);
         String mazePlace = maze[position.y][position.x];
-        if (isKeyLocation(mazePlace)) {
+        if (isKeyLocation(mazePlace) && !foundKeys.contains(mazePlace)) {
             foundKeysCopy.add(mazePlace);
+            keyPathCopy.add(mazePlace);
         } else if (isGateLocation(mazePlace)) {
             assert foundKeysCopy.contains(mazePlace.toLowerCase());
             openedGatesCopy.add(mazePlace);
@@ -103,9 +109,10 @@ public class Day18 implements IAocTask {
 
         for (Pair<Integer> nextPos: possibleNextPositions) {
             Pair<Integer> prevPos = new Pair<>(position);
-            int stepsToOpenAllGates = getStepsToOpenAllGates(prevPos, nextPos, foundKeysCopy, openedGatesCopy, stepsToCurrentPosition + 1);
+            int stepsToOpenAllGates = getStepsToOpenAllGates(prevPos, nextPos, foundKeysCopy, openedGatesCopy, stepsToCurrentPosition + 1, keyPathCopy);
             if (stepsToOpenAllGates < currentBestPath) {
                 currentBestPath = stepsToOpenAllGates;
+                this.keyPath = keyPathCopy;
             }
         }
         return currentBestPath;
