@@ -11,6 +11,10 @@ import java.util.List;
 import java.util.Set;
 
 public class Day18 implements IAocTask {
+    public static final int IDX_GATES = 0;
+    public static final int IDX_KEYS = 1;
+    public static final int IDX_PATH_COST = 2;
+
     private String[][] maze;
     private Set<String> allKeys;
     private static final List<Pair<Integer>> MOVES = createMoves();
@@ -19,10 +23,12 @@ public class Day18 implements IAocTask {
     private int currentBestPath = Integer.MAX_VALUE;
     private List<String> keyPath;
 
+    private int[][][] pathCost;
+
     @Override
     public String getFileName() {
 //        return "aoc2019/input_18.txt"; // TODO detect cycles
-        return "aoc2019/input_18_small_136.txt";
+        return "aoc2019/input_18_small_81.txt";
     }
 
     @Override
@@ -48,8 +54,11 @@ public class Day18 implements IAocTask {
 
         Pair<Integer> startPosition = findMazeStartPosition();
         currentBestPath = Integer.MAX_VALUE;
-        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys);
         int stepsCount = 0;
+        pathCost[startPosition.y][startPosition.x][IDX_PATH_COST] = stepsCount;
+        pathCost[startPosition.y][startPosition.x][IDX_KEYS] = -1;
+        pathCost[startPosition.y][startPosition.x][IDX_GATES] = 0;
+        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys, new HashSet<>(), stepsCount);
 
         printBoardWithCurrentPositionIfEnabled(startPosition, foundKeys, new HashSet<>(), stepsCount);
 
@@ -94,7 +103,7 @@ public class Day18 implements IAocTask {
     }
 
     private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition, List<String> keyPath) {
-        printBoardWithCurrentPositionIfEnabled(position, foundKeys, openedGates, stepsToCurrentPosition);
+        printBoardWithCurrentPositionIfEnabled(position, foundKeys, openedGates, stepsToCurrentPosition + 1);
         if (stepsToCurrentPosition > MAX_STEPS || currentBestPath < stepsToCurrentPosition) {
             return Integer.MAX_VALUE;
         }
@@ -104,7 +113,7 @@ public class Day18 implements IAocTask {
 //            }
             return stepsToCurrentPosition;
         }
-        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys);
+        List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(prevPosition, position, foundKeys, openedGates, stepsToCurrentPosition);
 
         HashSet<String> openedGatesCopy = new HashSet<>(openedGates);
         HashSet<String> foundKeysCopy = new HashSet<>(foundKeys);
@@ -119,6 +128,8 @@ public class Day18 implements IAocTask {
         }
 
         for (Pair<Integer> nextPos: possibleNextPositions) {
+            pathCost[nextPos.y][nextPos.x][IDX_KEYS] = foundKeys.size();
+            pathCost[nextPos.y][nextPos.x][IDX_PATH_COST] = stepsToCurrentPosition + 1;
             Pair<Integer> prevPos = new Pair<>(position);
             int stepsToOpenAllGates = getStepsToOpenAllGates(prevPos, nextPos, foundKeysCopy, openedGatesCopy, stepsToCurrentPosition + 1, keyPathCopy);
             if (stepsToOpenAllGates < currentBestPath) {
@@ -129,17 +140,17 @@ public class Day18 implements IAocTask {
         return currentBestPath;
     }
 
-    private List<Pair<Integer>> getPossibleNextPositions(Pair<Integer> prevPosition, Pair<Integer> currentPosition, HashSet<String> foundKeys) {
+    private List<Pair<Integer>> getPossibleNextPositions(Pair<Integer> prevPosition, Pair<Integer> currentPosition, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsCount) {
         List<Pair<Integer>> nextPositions = new ArrayList<>();
         for (Pair<Integer> move : MOVES) {
-            if (isMovePossible(prevPosition, currentPosition, move, foundKeys)) {
+            if (isMovePossible(prevPosition, currentPosition, move, foundKeys, openedGates, stepsCount)) {
                 nextPositions.add(new Pair<>(currentPosition.x + move.x, currentPosition.y + move.y));
             }
         }
         return nextPositions;
     }
 
-    private boolean isMovePossible(Pair<Integer> prevPosition, Pair<Integer> currentPosition, Pair<Integer> move, HashSet<String> foundKeys) {
+    private boolean isMovePossible(Pair<Integer> prevPosition, Pair<Integer> currentPosition, Pair<Integer> move, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsCount) {
         Pair<Integer> nextPosition = new Pair<>(currentPosition.x + move.x, currentPosition.y + move.y);
         String currentMazeCell = maze[currentPosition.y][currentPosition.x];
         String mazeCell = maze[nextPosition.y][nextPosition.x];
@@ -152,7 +163,9 @@ public class Day18 implements IAocTask {
             return foundKeys.contains(mazeCell.toLowerCase());
         }
 
-        return isFree(mazeCell);
+        int[] cost = pathCost[nextPosition.y][nextPosition.x];
+
+        return isFree(mazeCell);// && openedGates.size() >= cost[IDX_GATES] && foundKeys.size() >= cost[IDX_KEYS] && stepsCount < cost[IDX_PATH_COST];
     }
 
     private boolean isNewKeyPosition(HashSet<String> foundKeys, String mazeCell) {
@@ -178,9 +191,14 @@ public class Day18 implements IAocTask {
     private void loadMaze(List<String> lines) {
         maze = new String[lines.size()][lines.get(0).length()];
         allKeys = new HashSet<>();
+        pathCost = new int[maze.length][maze[0].length][3];
 
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
+                pathCost[i][j][IDX_PATH_COST] = Integer.MAX_VALUE; // path to place
+                pathCost[i][j][IDX_GATES] = -1; // opened gates size
+                pathCost[i][j][IDX_KEYS] = -1; // found keys gates size
+
                 maze[i][j] = lines.get(i).substring(j, j + 1);
                 if (maze[i][j].matches("[a-z]")) {
                     allKeys.add(maze[i][j]);
