@@ -14,11 +14,12 @@ public class Day18 implements IAocTask {
     private static final List<Pair<Integer>> MOVES = createMoves();
     int MAX_STEPS = 900;
     private boolean printEnabled = false;
+    private int currentBestPath = Integer.MAX_VALUE;
 
     @Override
     public String getFileName() {
 //        return "aoc2019/input_18.txt"; // TODO detect cycles
-        return "aoc2019/input_18_small_86.txt";
+        return "aoc2019/input_18_small_132.txt";
     }
 
     @Override
@@ -36,7 +37,7 @@ public class Day18 implements IAocTask {
         List<Pair<Integer>> possibleNextPositions = getPossibleNextPositions(null, startPosition, foundKeys);
         int stepsCount = 0;
 
-        printBoardWithCurrentPositionIfEnabled(startPosition);
+        printBoardWithCurrentPositionIfEnabled(startPosition, foundKeys, new HashSet<>());
 
         for (Pair<Integer> position: possibleNextPositions) {
             HashSet<String> openedGatesCopy = new HashSet<>();
@@ -52,32 +53,34 @@ public class Day18 implements IAocTask {
         return shortestPath;
     }
 
-    private void printBoardWithCurrentPositionIfEnabled(Pair<Integer> currentPosition) {
+    private void printBoardWithCurrentPositionIfEnabled(Pair<Integer> currentPosition, HashSet<String> foundKeys, HashSet<String> openedGates) {
         if (!printEnabled) {
             return;
         }
         System.out.println();
-        String footer = "@(%2d, %2d)=%s";
+        String footer = "@(%2d, %2d)=%s\nkeys: %s,\nopened gates: %s";
         String tileValue = "X";
         for (int i = 0; i < maze.length; i++) {
             for (int j = 0; j < maze[0].length; j++) {
+                String mazeCell = maze[i][j];
+
                 if (i == currentPosition.y && j == currentPosition.x) {
                     System.out.print("@");
-                    tileValue = maze[i][j].equals("@") ? "." : maze[i][j];
-                } else if (maze[i][j].equals("@")) {
+                    tileValue = mazeCell.equals("@") || foundKeys.contains(mazeCell) || openedGates.contains(mazeCell) ? "." : mazeCell;
+                } else if (mazeCell.equals("@")) {
                     System.out.print(".");
                 } else {
-                    System.out.print(maze[i][j]);
+                    System.out.print((foundKeys.contains(mazeCell) || openedGates.contains(mazeCell) ? "*" : mazeCell));
                 }
             }
             System.out.println();
         }
-        System.out.println(String.format(footer, currentPosition.x, currentPosition.y, tileValue));
+        System.out.println(String.format(footer, currentPosition.x, currentPosition.y, tileValue, foundKeys, openedGates));
     }
 
     private int getStepsToOpenAllGates(Pair<Integer> prevPosition, Pair<Integer> position, HashSet<String> foundKeys, HashSet<String> openedGates, int stepsToCurrentPosition) {
-        printBoardWithCurrentPositionIfEnabled(position);
-        if (stepsToCurrentPosition > MAX_STEPS) {
+        printBoardWithCurrentPositionIfEnabled(position, foundKeys, openedGates);
+        if (stepsToCurrentPosition > MAX_STEPS || currentBestPath < stepsToCurrentPosition) {
             return Integer.MAX_VALUE;
         }
         if (foundKeys.size() == allKeys.size()) {
@@ -98,15 +101,14 @@ public class Day18 implements IAocTask {
             openedGatesCopy.add(mazePlace);
         }
 
-        int shortestPath = Integer.MAX_VALUE;
         for (Pair<Integer> nextPos: possibleNextPositions) {
             Pair<Integer> prevPos = new Pair<>(position);
             int stepsToOpenAllGates = getStepsToOpenAllGates(prevPos, nextPos, foundKeysCopy, openedGatesCopy, stepsToCurrentPosition + 1);
-            if (stepsToOpenAllGates < shortestPath) {
-                shortestPath = stepsToOpenAllGates;
+            if (stepsToOpenAllGates < currentBestPath) {
+                currentBestPath = stepsToOpenAllGates;
             }
         }
-        return shortestPath;
+        return currentBestPath;
     }
 
     private List<Pair<Integer>> getPossibleNextPositions(Pair<Integer> prevPosition, Pair<Integer> currentPosition, HashSet<String> foundKeys) {
