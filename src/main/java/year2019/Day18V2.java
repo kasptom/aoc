@@ -19,14 +19,19 @@ public class Day18V2 implements IAocTask {
 
     Map<String, List<Path>> keyOrGateToPaths;
 
+    int shortestPath;
+    List<String> keyOrderForShortestPath = null;
+
     @Override
     public String getFileName() {
-        return "aoc2019/input_18_small_86.txt";
+        return "aoc2019/input_18_small_132.txt";
     }
 
     @Override
     public void solvePartOne(List<String> lines) {
         loadMaze(lines);
+        shortestPath = Integer.MAX_VALUE;
+
         keyOrGateToPaths = keysAndGatesCoordinates
                 .entrySet()
                 .stream()
@@ -60,7 +65,7 @@ public class Day18V2 implements IAocTask {
         List<String[]> permutations = new ArrayList<>();
 
         for (String keyName : keyNames) {
-            if (isPossibleToGet(keyName, Collections.singletonList("@"))) {
+            if (isPossibleAndBetterThanCurrentBest(keyName, Collections.singletonList("@"))) {
                 List<String> newSelectedKeys = new ArrayList<>();
                 newSelectedKeys.add(keyName);
                 generatePossibleKeyPermutations(permutations, newSelectedKeys, keyNames);
@@ -71,18 +76,25 @@ public class Day18V2 implements IAocTask {
     }
 
     private void generatePossibleKeyPermutations(List<String[]> permutations, List<String> selectedKeys, List<String> allKeys) {
+        if (selectedKeys.size() > 1 && shortestPath <= computeCost(selectedKeys, keyOrGateToPaths, selectedKeys.size())) {
+            return;
+        }
+
         if (selectedKeys.size() == allKeys.size()) {
             String[] keys = new String[allKeys.size()];
             for (int i = 0; i < keys.length; i++) {
                 keys[i] = selectedKeys.get(i);
             }
+            shortestPath = computeCost(keys, keyOrGateToPaths);
+            keyOrderForShortestPath = selectedKeys;
+            System.out.printf("New best: %d, %s%n", shortestPath, keyOrderForShortestPath);
             permutations.add(keys);
             return;
         }
 
         List<String> unusedKeys = allKeys.stream().filter(key -> !selectedKeys.contains(key)).collect(Collectors.toCollection(ArrayList::new));
         for (String unusedKey : unusedKeys) {
-            if (isPossibleToGet(unusedKey, selectedKeys)) {
+            if (isPossibleAndBetterThanCurrentBest(unusedKey, selectedKeys)) {
                 List<String> newSelectedKeys = new ArrayList<>(selectedKeys);
                 newSelectedKeys.add(unusedKey);
                 generatePossibleKeyPermutations(permutations, newSelectedKeys, allKeys);
@@ -97,7 +109,7 @@ public class Day18V2 implements IAocTask {
      * @param selectedKeys already 'found' keys
      * @return true if it is possible, otherwise false
      */
-    private boolean isPossibleToGet(String unusedKey, List<String> selectedKeys) {
+    private boolean isPossibleAndBetterThanCurrentBest(String unusedKey, List<String> selectedKeys) {
         List<Path> paths = keyOrGateToPaths.get(selectedKeys.get(selectedKeys.size() - 1));
         Path toKey = paths.stream().filter(path -> path.to.equals(unusedKey)).findFirst().orElse(null);
         assert toKey != null;
@@ -116,10 +128,14 @@ public class Day18V2 implements IAocTask {
     }
 
     private int computeCost(String[] keyOrder, Map<String, List<Path>> keyOrGateToPath) {
+        return computeCost(Arrays.stream(keyOrder).collect(Collectors.toList()), keyOrGateToPath, keyOrder.length);
+    }
+
+    private int computeCost(List<String> keyOrder, Map<String, List<Path>> keyOrGateToPath, int length) {
         int cost = 0;
-        for (int i = 0; i < keyOrder.length; i++) {
-            String from = i == 0 ? "@" : keyOrder[i-1];
-            String to = keyOrder[i];
+        for (int i = 0; i < keyOrder.size(); i++) {
+            String from = i == 0 ? "@" : keyOrder.get(i-1);
+            String to = keyOrder.get(i);
             cost += Objects.requireNonNull(keyOrGateToPath.get(from)
                     .stream()
                     .filter(path -> path.to.equals(to))
