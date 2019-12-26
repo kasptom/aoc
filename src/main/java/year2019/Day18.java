@@ -1,6 +1,7 @@
 package year2019;
 
 import aoc.IAocTask;
+import year2019.utils.Aoc2019Utils;
 import year2019.utils.Pair;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,7 @@ import java.util.*;
 public class Day18 implements IAocTask {
     private String[][] maze;
     private Set<String> allKeys;
-    private static final List<Pair<Integer>> MOVES = createMoves();
+    private static final List<Pair<Integer>> MOVES = Aoc2019Utils.createMoves();
     int MAX_STEPS = 900;
     private static final boolean printEnabled = false;
     private int currentBestPath = Integer.MAX_VALUE;
@@ -184,15 +185,6 @@ public class Day18 implements IAocTask {
                 }
             }
         }
-    }
-
-    private static List<Pair<Integer>> createMoves() {
-        List<Pair<Integer>> moves = new ArrayList<>();
-        moves.add(new Pair<>(0, -1));
-        moves.add(new Pair<>(1, 0));
-        moves.add(new Pair<>(0, 1));
-        moves.add(new Pair<>(-1, 0));
-        return moves;
     }
 
     private boolean isGateLocation(String mazePlace) {
