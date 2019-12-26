@@ -18,13 +18,14 @@ public class Day18V2 implements IAocTask {
     HashMap<Pair<Integer>, String> coordinatesToKeysAndGates;
 
     Map<String, List<Path>> keyOrGateToPaths;
+    Map<String, Set<String>> keyDependencies;
 
     int shortestPath;
     List<String> keyOrderForShortestPath = null;
 
     @Override
     public String getFileName() {
-        return "aoc2019/input_18_small_132.txt";
+        return "aoc2019/input_18_small_136.txt";
     }
 
     @Override
@@ -42,6 +43,8 @@ public class Day18V2 implements IAocTask {
 
         printKeysOrGatesToPaths();
 
+        createKeyDependencies();
+
         List<String[]> keyOrders = generatePossibleKeyPermutations();
         int minPathCost = Integer.MAX_VALUE;
         String[] minPath = null;
@@ -54,6 +57,38 @@ public class Day18V2 implements IAocTask {
             minPath = keyOrder;
         }
         System.out.printf("Min cost: %d for path %s%n", minPathCost, Arrays.toString(minPath));
+    }
+
+    private void createKeyDependencies() {
+        List<Path> paths = keyOrGateToPaths.get("@");
+        keyDependencies = new HashMap<>();
+
+        keysAndGatesCoordinates.keySet()
+                .stream()
+                .filter(key -> key.matches("[a-z]"))
+                .forEach(key -> updateKeyDependencies(key, paths));
+    }
+
+    private void updateKeyDependencies(String keyName, List<Path> paths) {
+        HashSet<String> keyDependency = new HashSet<>();
+        keyDependencies.put(keyName, keyDependency);
+
+        for (Path path : paths) {
+            List<String> keysOrGates = path.keysAndGatesOrdered;
+            if (!keysOrGates.contains(keyName)) {
+                continue;
+            }
+
+            for(int i = 0; i< keysOrGates.size(); i++) {
+                if (keysOrGates.get(i).equals(keyName)) {
+                    for (int j = 0; j < i; j++) {
+                        if (keysOrGates.get(j).matches("[A-Z]")) {
+                            keyDependency.add(keysOrGates.get(j).toLowerCase()); // get the key name required to open the blocking gate
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private List<String[]> generatePossibleKeyPermutations() {
