@@ -133,7 +133,7 @@ public class Day18V2 implements IAocTask {
 
     private int computeCost(List<String> keyOrder, Map<String, List<Path>> keyOrGateToPath, int length) {
         int cost = 0;
-        for (int i = 0; i < keyOrder.size(); i++) {
+        for (int i = 0; i < length; i++) {
             String from = i == 0 ? "@" : keyOrder.get(i-1);
             String to = keyOrder.get(i);
             cost += Objects.requireNonNull(keyOrGateToPath.get(from)
