@@ -10,11 +10,14 @@ import java.util.stream.Collectors;
 public class Day18V2 implements IAocTask {
 
     private static final List<Pair<Integer>> MOVES = Aoc2019Utils.createMoves();
+    private static final boolean ENABLE_DEBUG_PRINT = false;
 
     String[][] maze;
     HashSet<Pair<Integer>> vertices;
     HashMap<String, Pair<Integer>> keysAndGatesCoordinates;
     HashMap<Pair<Integer>, String> coordinatesToKeysAndGates;
+
+    Map<String, List<Path>> keyOrGateToPaths;
 
     @Override
     public String getFileName() {
@@ -24,17 +27,102 @@ public class Day18V2 implements IAocTask {
     @Override
     public void solvePartOne(List<String> lines) {
         loadMaze(lines);
-        Map<String, List<Path>> keyOrGateToPath = keysAndGatesCoordinates
+        keyOrGateToPaths = keysAndGatesCoordinates
                 .entrySet()
                 .stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         keyValue -> findShortestPaths(keyValue.getKey())
                 ));
-        keyOrGateToPath.forEach((key, value) -> {
-            System.out.printf("%n---Paths from: %s---%n", key);
-            value.forEach(System.out::println);
-        });
+
+        printKeysOrGatesToPaths();
+
+        List<String[]> keyOrders = generatePossibleKeyPermutations();
+        int minPathCost = Integer.MAX_VALUE;
+        String[] minPath = null;
+
+        for (String[] keyOrder : keyOrders) {
+            int pathCost = computeCost(keyOrder, keyOrGateToPaths);
+            if (pathCost < minPathCost) {
+                minPathCost = pathCost;
+            }
+            minPath = keyOrder;
+        }
+        System.out.printf("Min cost: %d for path %s%n", minPathCost, Arrays.toString(minPath));
+    }
+
+    private List<String[]> generatePossibleKeyPermutations() {
+        List<String> keyNames = keysAndGatesCoordinates
+                .keySet()
+                .stream().filter(key -> key.matches("[a-z]"))
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        List<String> selectedKeys = new ArrayList<>();
+
+        List<String[]> permutations = new ArrayList<>();
+
+        for (String keyName : keyNames) {
+            if (isPossibleToGet(keyName, Collections.singletonList("@"))) {
+                List<String> newSelectedKeys = new ArrayList<>();
+                newSelectedKeys.add(keyName);
+                generatePossibleKeyPermutations(permutations, newSelectedKeys, keyNames);
+            }
+        }
+
+        return permutations;
+    }
+
+    private void generatePossibleKeyPermutations(List<String[]> permutations, List<String> selectedKeys, List<String> allKeys) {
+        if (selectedKeys.size() == allKeys.size()) {
+            String[] keys = new String[allKeys.size()];
+            for (int i = 0; i < keys.length; i++) {
+                keys[i] = selectedKeys.get(i);
+            }
+            permutations.add(keys);
+            return;
+        }
+
+        List<String> unusedKeys = allKeys.stream().filter(key -> !selectedKeys.contains(key)).collect(Collectors.toCollection(ArrayList::new));
+        for (String unusedKey : unusedKeys) {
+            if (isPossibleToGet(unusedKey, selectedKeys)) {
+                List<String> newSelectedKeys = new ArrayList<>(selectedKeys);
+                newSelectedKeys.add(unusedKey);
+                generatePossibleKeyPermutations(permutations, newSelectedKeys, allKeys);
+            }
+        }
+    }
+
+    /**
+     * Checks if selected keys allow to get the unused key
+     *
+     * @param unusedKey    unused key
+     * @param selectedKeys already 'found' keys
+     * @return true if it is possible, otherwise false
+     */
+    private boolean isPossibleToGet(String unusedKey, List<String> selectedKeys) {
+        List<Path> paths = keyOrGateToPaths.get(selectedKeys.get(selectedKeys.size() - 1));
+        Path toKey = paths.stream().filter(path -> path.to.equals(unusedKey)).findFirst().orElse(null);
+        assert toKey != null;
+
+        HashSet<String> collectedKeys = new HashSet<>(selectedKeys);
+        for (int i = 0; i < toKey.keysAndGatesOrdered.size(); i++) {
+            String nextKeyOrGate = toKey.keysAndGatesOrdered.get(i);
+            if (nextKeyOrGate.matches("[a-z]")) {
+                collectedKeys.add(nextKeyOrGate);
+            } else if (nextKeyOrGate.matches("[A-Z]") && !collectedKeys.contains(nextKeyOrGate)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private int computeCost(String[] keyOrder, Map<String, List<Path>> keyOrGateToPath) {
+        int cost = 0;
+        for (int i = 1; i < keyOrder.length; i++) {
+            // TODO
+        }
+        return cost;
     }
 
     @Override
@@ -142,7 +230,19 @@ public class Day18V2 implements IAocTask {
                 .collect(Collectors.toCollection(ArrayList::new));
     }
 
+    private void printKeysOrGatesToPaths() {
+        if (!ENABLE_DEBUG_PRINT) {
+            return;
+        }
+
+        keyOrGateToPaths.forEach((key, value) -> {
+            System.out.printf("%n---Paths from: %s---%n", key);
+            value.forEach(System.out::println);
+        });
+    }
+
     static class Path {
+
         String from;
         String to;
         List<Pair<Integer>> path;
