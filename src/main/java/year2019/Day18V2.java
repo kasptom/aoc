@@ -21,7 +21,7 @@ public class Day18V2 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "aoc2019/input_18_small_136.txt";
+        return "aoc2019/input_18_small_86.txt";
     }
 
     @Override
@@ -56,8 +56,6 @@ public class Day18V2 implements IAocTask {
                 .keySet()
                 .stream().filter(key -> key.matches("[a-z]"))
                 .collect(Collectors.toCollection(ArrayList::new));
-
-        List<String> selectedKeys = new ArrayList<>();
 
         List<String[]> permutations = new ArrayList<>();
 
@@ -109,7 +107,7 @@ public class Day18V2 implements IAocTask {
             String nextKeyOrGate = toKey.keysAndGatesOrdered.get(i);
             if (nextKeyOrGate.matches("[a-z]")) {
                 collectedKeys.add(nextKeyOrGate);
-            } else if (nextKeyOrGate.matches("[A-Z]") && !collectedKeys.contains(nextKeyOrGate)) {
+            } else if (nextKeyOrGate.matches("[A-Z]") && !collectedKeys.contains(nextKeyOrGate.toLowerCase())) {
                 return false;
             }
         }
@@ -119,8 +117,13 @@ public class Day18V2 implements IAocTask {
 
     private int computeCost(String[] keyOrder, Map<String, List<Path>> keyOrGateToPath) {
         int cost = 0;
-        for (int i = 1; i < keyOrder.length; i++) {
-            // TODO
+        for (int i = 0; i < keyOrder.length; i++) {
+            String from = i == 0 ? "@" : keyOrder[i-1];
+            String to = keyOrder[i];
+            cost += Objects.requireNonNull(keyOrGateToPath.get(from)
+                    .stream()
+                    .filter(path -> path.to.equals(to))
+                    .findFirst().orElse(null)).path.size();
         }
         return cost;
     }
