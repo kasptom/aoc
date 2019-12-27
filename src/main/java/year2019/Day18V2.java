@@ -26,7 +26,7 @@ public class Day18V2 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "aoc2019/input_18_small_81.txt";
+        return "aoc2019/input_18_small_136.txt";
     }
 
     @Override
@@ -161,6 +161,10 @@ public class Day18V2 implements IAocTask {
      * @return true if it is possible, otherwise false
      */
     private boolean isPossibleAndBetterThanCurrentBest(String unusedKey, List<String> selectedKeys) {
+        Set<String> requiredKeys = keyDependencies.get(unusedKey);
+        if (!selectedKeys.containsAll(requiredKeys)) {
+            return false;
+        }
         List<Path> paths = keyOrGateToPaths.get(selectedKeys.get(selectedKeys.size() - 1));
         Path toKey = paths.stream().filter(path -> path.to.equals(unusedKey)).findFirst().orElse(null);
         assert toKey != null;
