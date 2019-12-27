@@ -5,6 +5,7 @@ import year2019.utils.Aoc2019Utils;
 import year2019.utils.Pair;
 
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 
 public class Day18V2 implements IAocTask {
@@ -25,7 +26,7 @@ public class Day18V2 implements IAocTask {
 
     @Override
     public String getFileName() {
-        return "aoc2019/input_18_small_136.txt";
+        return "aoc2019/input_18_small_81.txt";
     }
 
     @Override
@@ -67,10 +68,25 @@ public class Day18V2 implements IAocTask {
                 .stream()
                 .filter(key -> key.matches("[a-z]"))
                 .forEach(key -> updateKeyDependencies(key, paths));
+
+        int dependenciesCountLimit = keyDependencies.size() - 1;
+        keyDependencies.forEach((keyName, requiredKeys) -> {
+            int dependenciesCount = 0;
+            Set<String> dependencies = new HashSet<>(requiredKeys);
+            Queue<String> dependenciesQueue = new LinkedBlockingQueue<>(dependencies);
+            while (!dependenciesQueue.isEmpty()) {
+                dependenciesCount++;
+                if (dependenciesCount > dependenciesCountLimit) throw new RuntimeException("Cyclic dependency");
+                String requiredKey = dependenciesQueue.poll();
+                dependenciesQueue.addAll(keyDependencies.get(requiredKey));
+                dependencies.addAll(keyDependencies.get(requiredKey));
+            }
+            keyDependencies.put(keyName, dependencies);
+        });
     }
 
     private void updateKeyDependencies(String keyName, List<Path> paths) {
-        HashSet<String> keyDependency = new HashSet<>();
+        Set<String> keyDependency = new HashSet<>();
         keyDependencies.put(keyName, keyDependency);
 
         for (Path path : paths) {
