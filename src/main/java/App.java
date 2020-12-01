@@ -1,4 +1,6 @@
 import aoc.IAocTask;
+import year2019.Day18;
+import year2019.Day18V2;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -11,7 +13,7 @@ import java.util.stream.Collectors;
 public class App {
     public static void main(String[] args) throws FileNotFoundException {
 //        aoc.IAocTask task = new year2018.Day01();
-        IAocTask task = new year2019.Day24();
+        IAocTask task = new Day18V2();
 
         ClassLoader classLoader = task.getClass().getClassLoader();
         File inputFile = new File(Objects.requireNonNull(classLoader.getResource(task.getFileName())).getFile());
