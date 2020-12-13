@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Getter
-@JsonPropertyOrder({"owner_id", "event", "members"})
+@JsonPropertyOrder({"event", "members", "owner_id"})
 public class Stats {
     public static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
     /**
@@ -30,12 +30,14 @@ public class Stats {
     Integer event;
 
     @JsonProperty
-    HashMap<Integer, Member> members;
+    HashMap<Long, Member> members;
 
     List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
     List<List<Member>> rankTillDay = new ArrayList<>();
     List<Integer> days;
     private boolean updateMembersRequired;
+    private List<Member> sortedMembers;
+    String ownerName;
 
 
     public void setEvent(int event) {
@@ -46,9 +48,7 @@ public class Stats {
         }
     }
 
-    private List<Member> sortedMembers;
-
-    public void setMembers(HashMap<Integer, Member> members) {
+    public void setMembers(HashMap<Long, Member> members) {
         this.members = members;
         if (this.event == null) {
             this.updateMembersRequired = true;
@@ -57,7 +57,12 @@ public class Stats {
         updateMembers(members);
     }
 
-    private void updateMembers(HashMap<Integer, Member> members) {
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+        this.ownerName = this.members.get(ownerId).name;
+    }
+
+    private void updateMembers(HashMap<Long, Member> members) {
         this.sortedMembers = members.values()
                 .stream()
                 .sorted((first, second) -> Long.compare(second.localScore, first.localScore))

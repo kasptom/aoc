@@ -7,10 +7,11 @@
 </head>
 <body>
 <h1>
-    <span>AoC</span>
+    <a th:href="'https://adventofcode.com'">AoC</a>
     <a th:href="'https://adventofcode.com/' + ${stats.event}"
        th:text="${stats.event}"> 2020 </a>
-    <span>Stats</span>
+    <a th:href="'https://github.com/kasptom/aoc'">Stats</a>
+    <span style="font-size: smaller" th:text="${stats.ownerName} + '\'s Private Leaderboard'"></span>
 </h1>
 <div class="stats">
     <div class="stats__user-summaries">
