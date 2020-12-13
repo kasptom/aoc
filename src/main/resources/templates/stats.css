@@ -145,8 +145,19 @@ a:hover, a:focus {
     display: flex;
     flex-direction: row;
     justify-content: center;
+    /*background: darkblue;*/
 }
 
 .stats__days__row__day__details__col--small {
     min-width: 85px;
+}
+
+/*.stats__days__row__day__details__col--minus {*/
+.minus {
+    color: #ff0000;
+}
+
+/*.stats__days__row__day__details__col--plus {*/
+.plus {
+    color: #00ff00;
 }

@@ -58,10 +58,10 @@
             <div th:each="day : ${days}" class="stats__days__row__day">
                 <div th:text="'Day ' + ${day + 1}"></div>
                 <div class="stats__days__row__day__details">
-                    <div class="stats__days__row__day__details__col">P1(DRNK)</div>
-                    <div class="stats__days__row__day__details__col ">P2(DRNK)</div>
-                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">PTS(+)</div>
-                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK(+/-)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P1(DRK)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P2(DRK)</div>
+                    <div class="stats__days__row__day__details__col">PTS(+)</div>
+                    <div class="stats__days__row__day__details__col">RNK(+/-)</div>
                 </div>
             </div>
         </div>
@@ -69,13 +69,17 @@
             <div th:each="day : ${days}" class="stats__days__row__day">
                 <div class="stats__days__row__day__details">
                     <div th:text="${member.getDayPoints(day, 0)} + '(' + ${member.getDayRank(day, 0)} + ')'"
-                            class="stats__days__row__day__details__col">P1(DRNK)</div>
+                            class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P1(DRK)</div>
                     <div th:text="${member.getDayPoints(day, 1)} + '(' + ${member.getDayRank(day, 1)} + ')'"
-                         class="stats__days__row__day__details__col">P2(DRNK)</div>
+                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P2(DRK)</div>
                     <div th:text="${member.getPointsAtDay(day)} + '(' + ${member.getPointsDelta(day) > 0 ? '+' : ''} + ${member.getPointsDelta(day)} + ')'"
-                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">PTS(+)</div>
+                         class="stats__days__row__day__details__col">PTS(+)</div>
                     <div th:text="${member.getRankAtDay(day)} + '(' + ${member.getRankDelta(day) > 0 ? '+' : ''} + ${member.getRankDelta(day)} + ')'"
-                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK(+/-)</div>
+                         th:class="${member.getRankDelta(day) > 0
+                                        ? 'plus stats\_\_days\_\_row\_\_day\_\_details\_\_col'
+                                        : (member.getRankDelta(day) < 0
+                                            ? 'minus stats\_\_days\_\_row\_\_day\_\_details\_\_col'
+                                            : 'stats\_\_days\_\_row\_\_day\_\_details\_\_col')}">RNK(+/-)</div>
                 </div>
             </div>
         </div>
