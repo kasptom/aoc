@@ -48,14 +48,13 @@ a:hover, a:focus {
 }
 
 .gold-star {
-    min-height: 16px;
     color: #ffff66;
-
 }
-
 .silver-star {
-    min-height: 16px;
     color: #9999cc;
+}
+.no-star {
+    color: #333333;
 }
 
 .stats {
@@ -86,7 +85,27 @@ a:hover, a:focus {
     padding-right: 4px;
 }
 
-.summary__column--name {
+.summary__column--stars {
+    display: flex;
+    flex-direction: column;
+    min-width: 300px;
+}
+
+.summary__column--stars__star-row__star{
+
+}
+
+.summary__column--stars__star-row__star__digit,
+.summary__column--stars__star-row__star__symbol {
+    min-height: 24px;
+}
+
+.summary__column--stars__star-row {
+    display: flex;
+    flex-direction: row;
+}
+
+.summary__column--user {
     min-width: 300px;
 }
 

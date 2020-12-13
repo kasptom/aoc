@@ -30,16 +30,20 @@ public class Member {
     @JsonProperty("completion_day_level")
     HashMap<String, Day> completionDayLevel;
 
-    public String getStar(int dayIdx, int part) {
+    public int getStarsForDay(int dayIdx) {
         if (!completionDayLevel.containsKey(String.valueOf(dayIdx))) {
-            return "";
+            return 0;
         }
         Day day = completionDayLevel.get(String.valueOf(dayIdx));
-        return day.getStarAsString(part);
+        return day.getStarsCount();
     }
 
     public String getTime(int dayIdx, int part) {
         var day = completionDayLevel.get(String.valueOf(dayIdx));
         return day == null ? "N/A" : day.getTime(part);
+    }
+
+    public String getAnonymous() {
+        return "(anonymous user #" + id + ")";
     }
 }

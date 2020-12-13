@@ -21,10 +21,9 @@ public class Day {
 
     List<Star> stars = new ArrayList<>();
 
-    String getStarAsString(int part) {
-        stars.clear();
-        stars.add(first); stars.add(second);
-        return stars.get(part - 1) == null ? "" : "*";
+    int getStarsCount() {
+        if (second != null) return 2;
+        return first != null ? 1 : 0;
     }
 
     public String getTime(int part) {

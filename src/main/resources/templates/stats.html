@@ -16,19 +16,36 @@
     <div class="stats__user-summaries">
         <div class="stats__user-summaries__summary">
             <div class="summary__column summary__column--place"></div>
-            <div class="summary__column">Id</div>
-            <div class="summary__column summary__column--name">Name</div>
             <div class="summary__column">Score</div>
             <div class="summary__column">(Global)</div>
-            <div class="summary__column">Stars</div>
+            <div class="summary__column summary__column--stars">
+                <div>Stars</div>
+                <div class="summary__column--stars__star-row">
+                    <div th:each="day : ${days}" class="summary__column--stars__star-row__star">
+                        <div th:text="${day > 9 ? (day / 10) : ''}" class="summary__column--stars__star-row__star__digit"></div>
+                        <div th:text="${day % 10}" class="summary__column--stars__star-row__star__digit">1</div>
+                    </div>
+                </div>
+            </div>
+            <div class="summary__column summary__column--user">User</div>
         </div>
         <div th:each="member : ${members}" class="stats__user-summaries__summary">
             <div th:text="${members.indexOf(member) + 1} + ')'" class="summary__column summary__column--place">1)</div>
-            <div th:text="'#' + ${member.id}" class="summary__column">#102</div>
-            <div th:text="${member.name}" class="summary__column summary__column--name">Software Engineer</div>
             <div th:text="${member.localScore}" class="summary__column">3210</div>
             <div th:text="'(' + ${member.globalScore} + ')'" class="summary__column">123</div>
-            <div th:text="${member.stars} + '*'" class="summary__column gold-star">49*</div>
+            <div class="summary__column summary__column--stars">
+                <div class="summary__column--stars__star-row">
+                    <div th:each="day : ${days}" class="summary__column--stars__star-row__star">
+                        <div th:class="${member.getStarsForDay(day) == 2
+                                        ? 'gold-star'
+                                        : member.getStarsForDay(day)  == 1
+                                                ? 'silver-star'
+                                                : 'no-star'}"
+                             class="summary__column--stars__star-row__star__symbol">*</div>
+                    </div>
+                </div>
+            </div>
+            <div th:text="${member.name == null ? member.getAnonymous() : member.name}" class="summary__column summary__column--user">Software Engineer</div>
         </div>
     </div>
     <div class="stats__days">
