@@ -122,10 +122,32 @@ a:hover, a:focus {
 .stats__days__row {
     display: flex;
     flex-direction: row;
+    padding: 0 4px 0 4px;
 }
 
 .stats__days__row__day {
-    min-width: 100px;
+    min-width: 460px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    align-items: center;
+    margin: 1px;
+}
+
+.stats__days__row__day__details {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+}
+
+.stats__days__row__day__details__col {
+    min-width: 130px;
+    margin: 1px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.stats__days__row__day__details__col--small {
+    min-width: 85px;
 }

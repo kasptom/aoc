@@ -55,10 +55,25 @@
     </div>
     <div class="stats__days">
         <div class="stats__days__row stats__header">
-            <div th:each="day : ${days}" th:text="'Day ' + ${day}" class="stats__days__row__day"></div>
+            <div th:each="day : ${days}" class="stats__days__row__day">
+                <div th:text="'Day ' + ${day}"></div>
+                <div class="stats__days__row__day__details">
+                    <div class="stats__days__row__day__details__col">(P1 RNK)(+)</div>
+                    <div class="stats__days__row__day__details__col ">(P2 RNK)(+)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">CHG</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK (+/-)</div>
+                </div>
+            </div>
         </div>
-        <div class="stats__days__row">
-            EACH USER 25 x day
+        <div th:each="member : ${members}" class="stats__days__row">
+            <div th:each="day : ${days}" class="stats__days__row__day">
+                <div class="stats__days__row__day__details">
+                    <div class="stats__days__row__day__details__col">(P1 RNK)(+)</div>
+                    <div class="stats__days__row__day__details__col">(P2 RNK)(+)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">CHG</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK (+/-)</div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
