@@ -20,4 +20,8 @@ public class Stats {
                 .sorted((first, second) -> Long.compare(second.localScore, first.localScore))
                 .collect(Collectors.toList());
     }
+
+    public int getMembersCount() {
+        return members.size();
+    }
 }

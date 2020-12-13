@@ -19,48 +19,48 @@ code:before {
   background: #10101a;
 }
 
-.members-header {
-  padding: 1px 8px 1px 8px;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
+a {
+  text-decoration: none;
+  color: #009900;
+}
+a:hover, a:focus {
+  color: #99ff99;
 }
 
-.member {
-  padding: 1px 8px 1px 8px;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
+.gold-star {
+  min-height: 16px;
+  color: #9999cc;
 }
 
-.member__col {
-  padding: 0 4px 0 4px;
-}
-
-.member__col--id {
-  width: 120px;
-}
-
-.member__col--name {
-  width: 300px;
-}
-
-.member__col--stars{
+.silver-star {
+  min-height: 16px;
   color: #ffff66;
 }
 
-.member__col--days {
+.stats {
   display: flex;
   flex-direction: column;
 }
 
-.members-header__days--label {
+.stats__row {
+  display: flex;
+  flex-direction: row;
+}
+
+.stats__column {
+  padding: 1px 4px 4px 1px;
+  min-width: 300px;
+  margin: 1px;
+}
+
+.stats__column--centered {
   display: flex;
   justify-content: center;
 }
 
-.members-header__days {
+.stats__row--full-width-centered {
+  width: 100%;
   display: flex;
-  flex-direction: row;
+  justify-content: center;
 }
 

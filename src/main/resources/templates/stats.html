@@ -2,29 +2,30 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>Aoc Stats</title>
+    <title>AoC Stats 2020</title>
     <link th:href="@{stats.css}" rel="stylesheet" type="text/css"/>
 </head>
 <body>
-<div class="members-header">
-    <div class="member__col member__col--id">ID</div>
-    <div class="member__col member__col--name">User</div>
-    <div class="member__col">Stars</div>
-    <div class="member__col member__col--days">
-        <div class="members-header__days--label">Per day</div>
-        <div class="members-header__days">
-            <div th:each="day : ${days}"
-                 th:text="${day}"
-                 class="members-header__days__day">1</div>
-        </div>
+<div class="stats">
+   <div class="stats__row">
+       <div class="stats__column">ID</div>
+       <div th:each="member : ${members}"
+            th:text="${'#' + member.id}"
+            class="stats__column stats__column--centered">#123123</div>
+   </div>
+    <div class="stats__row">
+        <div class="stats__column">Name</div>
+        <div th:each="member : ${members}"
+             th:text="${member.name != null ? member.name : '???'}"
+             class="stats__column stats__column--centered">Mother Hacker</div>
     </div>
-</div>
-<div th:each="member : ${members}" class="member">
-    <div th:text="${'#' + member.id}" class="member__col member__col--id">#123</div>
-    <div th:text="${member.name != null ? member.name : '???'}"
-         class="member__col member__col--name">Mother Hacker
+    <div class="stats__row">
+        <div class="stats__column">Place</div>
+        <div th:each="place : ${places}"
+             th:text="${'#' + place}"
+             class="stats__column stats__column--centered">1</div>
     </div>
-    <div th:text="${member.stars + '*'}" class="member__col member__col--stars">49</div>
+    <div class="stats__row stats__row--full-width-centered">Stats</div>
 </div>
 </body>
 </html>
