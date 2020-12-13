@@ -6,7 +6,12 @@
     <link th:href="@{stats.css}" rel="stylesheet" type="text/css"/>
 </head>
 <body>
-<h1 th:text="'AoC Stats' + ${stats.event}">AoC Stats 2020</h1>
+<h1>
+    <span>AoC</span>
+    <a th:href="'https://adventofcode.com/' + ${stats.event}"
+       th:text="${stats.event}"> 2020 </a>
+    <span>Stats</span>
+</h1>
 <div class="stats">
     <div class="stats__column stats__label-column">
         <div class="stats__row">ID</div>
@@ -46,7 +51,8 @@
                          class="stats__row__column__date">2020-12-01 06:04:21
                     </div>
                     <div th:text="${member.getTime(day, 1)}"
-                         class="stats__row__column__date">2020-12-01 06:04:21</div>
+                         class="stats__row__column__date">2020-12-01 06:04:21
+                    </div>
                 </div>
             </div>
         </div>
