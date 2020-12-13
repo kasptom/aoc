@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,6 +25,8 @@ public class Member {
     @JsonProperty("local_score")
     int localScore;
 
+    List<Integer> scoreHistory = new ArrayList<>();
+
     @JsonProperty("global_score")
     long globalScore;
 
@@ -38,15 +41,15 @@ public class Member {
     List<List<Integer>> dayPoints;
 
     public int getStarsForDay(int dayIdx) {
-        if (!completionDayLevel.containsKey(dayIdx)) {
+        if (!completionDayLevel.containsKey(dayIdx + 1)) {
             return 0;
         }
-        Day day = completionDayLevel.get(dayIdx);
+        Day day = completionDayLevel.get(dayIdx + 1);
         return day.getStarsCount();
     }
 
     public String getTime(int dayIdx, int part) {
-        var day = completionDayLevel.get(dayIdx);
+        var day = completionDayLevel.get(dayIdx + 1);
         return day == null ? "N/A" : day.getTime(part);
     }
 

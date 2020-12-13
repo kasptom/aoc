@@ -3,18 +3,29 @@ package stats.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Getter
 public class Stats {
+    private static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
     HashMap<Integer, Member> members = new HashMap<>();
     List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
+    List<Integer> days;
 
-    @JsonProperty
     String event;
+
+    @JsonProperty(index = 1)
+    public void setEvent(String event) {
+        this.event = event;
+        days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
+    }
 
     private List<Member> sortedMembers;
 
@@ -46,7 +57,7 @@ public class Stats {
 
 
     private void updateRankPerDays() {
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < days.size(); i++) {
             final int dayIdx = i;
             sortedMembers.forEach(member -> member
                     .getCompletionDayLevel()
@@ -74,7 +85,7 @@ public class Stats {
     private void updateMemberStats(Member member) {
         member.dayPoints = new ArrayList<>();
         member.daysRanks = new ArrayList<>();
-        for (int dayIdx = 0; dayIdx < 25; dayIdx++) {
+        for (int dayIdx = 0; dayIdx < getDaysCount(); dayIdx++) {
             int pointsFirst = getPoints(dayIdx, member, 0);
             int pointsSecond = getPoints(dayIdx, member, 1);
             int rankFirst = getRank(dayIdx, member, 0);
@@ -91,5 +102,12 @@ public class Stats {
 
     private int getPoints(int dayIdx, Member member, int partIdx) {
         return members.size() - getRank(dayIdx, member, partIdx) + 1;
+    }
+
+    private long getDaysCount() {
+        var lastTaskDate = ZonedDateTime.of(Integer.parseInt(event), 12, 25, 0, 0, 0, 0, AOC_EST_ZONE);
+        var timeNowEct = ZonedDateTime.now(AOC_EST_ZONE);
+        var daysToChristmas = Duration.between(timeNowEct, lastTaskDate).toDays();
+        return Math.min(26L, 25L - daysToChristmas);
     }
 }

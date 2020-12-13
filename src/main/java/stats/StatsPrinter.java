@@ -32,7 +32,7 @@ public class StatsPrinter {
         Map<String, Object> variables = new HashMap<>();
         variables.put("stats", stats);
         variables.put("members", stats.getMembersSorted());
-        variables.put("days", IntStream.range(0,25).boxed().collect(Collectors.toList()));
+        variables.put("days", stats.getDays());
         IContext context = new Context(Locale.getDefault(), variables);
 
         DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss");
