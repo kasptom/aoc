@@ -18,6 +18,6 @@ public class TimestampComparator implements Comparator<Member> {
         Day otherDay = other.completionDayLevel.get(dayIdx + 1);
         var oneStar = oneDay.getStars().get(partIdx);
         var otherStar = otherDay.getStars().get(partIdx);
-        return Long.compare(otherStar.timestamp, oneStar.timestamp);
+        return Long.compare(oneStar.timestamp, otherStar.timestamp);
     }
 }

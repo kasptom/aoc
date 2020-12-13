@@ -85,10 +85,11 @@ public class Stats {
     }
 
     private int getRank(int dayIdx, Member member, int partIdx) {
-        return this.ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
+        var rank = this.ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
+        return rank == -1 ? members.size() : rank + 1;
     }
 
     private int getPoints(int dayIdx, Member member, int partIdx) {
-        return 100 - getRank(dayIdx, member, partIdx);
+        return members.size() - getRank(dayIdx, member, partIdx) + 1;
     }
 }
