@@ -14,7 +14,7 @@ import java.util.stream.IntStream;
 
 @Getter
 public class Stats {
-    private static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
+    public static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
     /**
      * Because of an outage during the day 1 puzzle unlock, day 1 is worth no points.
      * https://adventofcode.com/2020/leaderboard
@@ -83,9 +83,16 @@ public class Stats {
     private List<Member> getCopyWithFilteredUsers(int dayIdx, int partIdx) {
         List<Member> members = new ArrayList<>(this.members.values());
         return members.stream()
-                .filter(member -> member.getCompletionDayLevel().containsKey(dayIdx + 1)
-                        && member.getCompletionDayLevel().get(dayIdx + 1).getStars().size() > partIdx)
+                .filter(member -> member.getCompletionDayLevel().containsKey(dayIdx + 1))
+                .filter(member -> member.getCompletionDayLevel().get(dayIdx + 1).getStars().size() > partIdx)
+                .filter(member -> isWithinDeadline(dayIdx, member.getCompletionDayLevel().get(dayIdx + 1), partIdx))
                 .collect(Collectors.toList());
+    }
+
+    private boolean isWithinDeadline(int dayIdx, Day day, int partIdx) {
+        ZonedDateTime dayDeadline = ZonedDateTime.of(event, 12, dayIdx + 2, 0, 0, 0, 0, AOC_EST_ZONE);
+        ZonedDateTime submitTime = day.getDateTime(partIdx);
+        return submitTime.isBefore(dayDeadline);
     }
 
     private void updateMemberStats(Member member) {

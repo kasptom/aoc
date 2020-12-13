@@ -49,7 +49,7 @@ public class Member {
 
     public String getTime(int dayIdx, int part) {
         var day = completionDayLevel.get(dayIdx + 1);
-        return day == null ? "N/A" : day.getTime(part);
+        return day == null ? "N/A" : day.getTimestampStr(part);
     }
 
     public String getAnonymous() {

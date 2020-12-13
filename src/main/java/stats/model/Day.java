@@ -5,6 +5,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,12 +31,18 @@ public class Day {
         return first != null ? 1 : 0;
     }
 
-    public String getTime(int part) {
+    public String getTimestampStr(int part) {
         var star = stars.get(part - 1);
         if (star == null) {
             return "N/A";
         }
         long timestamp = star.timestamp;
         return LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.of("+01:00")).format(DATE_TIME_FORMATTER);
+    }
+
+    public ZonedDateTime getDateTime(int partIdx) {
+        var star = stars.get(partIdx);
+        long timestamp = star.timestamp;
+        return LocalDateTime.ofEpochSecond(timestamp, 0, Stats.AOC_EST_ZONE).atZone(Stats.AOC_EST_ZONE);
     }
 }
