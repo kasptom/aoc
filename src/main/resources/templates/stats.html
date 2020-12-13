@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title th:text="'AoC Stats ' + ${stats.event}">AoC Stats 2020</title>
+    <title th:text="'AoC Stats ' + ${stats.event}">AoC 2020 Stats</title>
     <link th:href="@{stats.css}" rel="stylesheet" type="text/css"/>
 </head>
 <body>
@@ -21,10 +21,12 @@
             <div class="summary__column summary__column--stars">
                 <div>Stars</div>
                 <div class="summary__column--stars__star-row">
-                    <div th:each="day : ${days}" class="summary__column--stars__star-row__star">
-                        <div th:text="${day > 9 ? (day / 10) : ''}" class="summary__column--stars__star-row__star__digit"></div>
+                    <a th:href="'https://adventofcode.com/' + ${stats.event} + '/day' + ${day}"
+                       th:each="day : ${days}" class="summary__column--stars__star-row__star">
+                        <div th:text="${day > 9 ? (day / 10) : ''}"
+                             class="summary__column--stars__star-row__star__digit"></div>
                         <div th:text="${day % 10}" class="summary__column--stars__star-row__star__digit">1</div>
-                    </div>
+                    </a>
                 </div>
             </div>
             <div class="summary__column summary__column--user">User</div>
@@ -41,11 +43,14 @@
                                         : member.getStarsForDay(day)  == 1
                                                 ? 'silver-star'
                                                 : 'no-star'}"
-                             class="summary__column--stars__star-row__star__symbol">*</div>
+                             class="summary__column--stars__star-row__star__symbol">*
+                        </div>
                     </div>
                 </div>
             </div>
-            <div th:text="${member.name == null ? member.getAnonymous() : member.name}" class="summary__column summary__column--user">Software Engineer</div>
+            <div th:text="${member.name == null ? member.getAnonymous() : member.name}"
+                 class="summary__column summary__column--user">Software Engineer
+            </div>
         </div>
     </div>
     <div class="stats__days">
