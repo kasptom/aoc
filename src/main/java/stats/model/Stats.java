@@ -10,7 +10,8 @@ import java.util.stream.Collectors;
 
 @Getter
 public class Stats {
-    HashMap<String, Member> members = new HashMap<>();
+    HashMap<Integer, Member> members = new HashMap<>();
+    List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
 
     @JsonProperty
     String event;
@@ -18,7 +19,7 @@ public class Stats {
     private List<Member> sortedMembers;
 
     @JsonProperty
-    public void setMembers(HashMap<String, Member> members) {
+    public void setMembers(HashMap<Integer, Member> members) {
         this.members = members;
         this.sortedMembers = members.values()
                 .stream()
@@ -36,8 +37,20 @@ public class Stats {
     }
 
     private void updateMemberStats() {
-        for (var member: sortedMembers) {
+        this.updateRankPerDays();
+        for (var member : sortedMembers) {
             updateMemberStats(member);
+        }
+    }
+
+    private void updateRankPerDays() {
+        List<Member> firstPart = new ArrayList<>(members.values());
+        List<Member> secondPart = new ArrayList<>(members.values());
+
+        // TODO sort by timestamps
+
+        for (int i = 0; i < 25; i++) {
+            ranksPerDayPerPart.add(List.of(firstPart, secondPart));
         }
     }
 
@@ -45,8 +58,20 @@ public class Stats {
         member.dayPoints = new ArrayList<>();
         member.daysRanks = new ArrayList<>();
         for (int dayIdx = 0; dayIdx < 25; dayIdx++) {
-            member.dayPoints.add(List.of(0, 0));
-            member.daysRanks.add(List.of(0, 0));
+            int pointsFirst = getPoints(dayIdx, member, 0);
+            int pointsSecond = getPoints(dayIdx, member, 1);
+            int rankFirst = getRank(dayIdx, member, 0);
+            int rankSecond = getRank(dayIdx, member, 1);
+            member.dayPoints.add(List.of(pointsFirst, pointsSecond));
+            member.daysRanks.add(List.of(rankFirst, rankSecond));
         }
+    }
+
+    private int getRank(int dayIdx, Member member, int partIdx) {
+        return this.ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
+    }
+
+    private int getPoints(int dayIdx, Member member, int partIdx) {
+        return 100 - getRank(dayIdx, member, partIdx);
     }
 }

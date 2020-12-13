@@ -1,13 +1,14 @@
 package stats.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 @Getter
+@EqualsAndHashCode(of = "id")
 public class Member {
     static final String MEMBER_ROW_FORMAT = "%-25s %12d %12d";
 
