@@ -41,17 +41,34 @@ public class Stats {
         for (var member : sortedMembers) {
             updateMemberStats(member);
         }
+        System.out.println("init finished");
     }
 
+
     private void updateRankPerDays() {
-        List<Member> firstPart = new ArrayList<>(members.values());
-        List<Member> secondPart = new ArrayList<>(members.values());
-
-        // TODO sort by timestamps
-
         for (int i = 0; i < 25; i++) {
+            final int dayIdx = i;
+            sortedMembers.forEach(member -> member
+                    .getCompletionDayLevel()
+                    .computeIfPresent(dayIdx + 1, (idx, day) -> {
+                        if (day.first != null) day.stars.add(day.first);
+                        if (day.second != null) day.stars.add(day.second);
+                        return day;
+                    }));
+            List<Member> firstPart = getCopyWithFilteredUsers(i, 0);
+            List<Member> secondPart = getCopyWithFilteredUsers(i, 1);
+            firstPart.sort(new TimestampComparator(i, 0));
+            secondPart.sort(new TimestampComparator(i, 1));
             ranksPerDayPerPart.add(List.of(firstPart, secondPart));
         }
+    }
+
+    private List<Member> getCopyWithFilteredUsers(int dayIdx, int partIdx) {
+        List<Member> members = new ArrayList<>(this.members.values());
+        return members.stream()
+                .filter(member -> member.getCompletionDayLevel().containsKey(dayIdx + 1)
+                        && member.getCompletionDayLevel().get(dayIdx + 1).getStars().size() > partIdx)
+                .collect(Collectors.toList());
     }
 
     private void updateMemberStats(Member member) {

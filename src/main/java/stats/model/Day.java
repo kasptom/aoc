@@ -31,8 +31,6 @@ public class Day {
     }
 
     public String getTime(int part) {
-        stars.clear();
-        stars.add(first); stars.add(second);
         var star = stars.get(part - 1);
         if (star == null) {
             return "N/A";

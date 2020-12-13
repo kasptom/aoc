@@ -23,9 +23,9 @@
                 <div class="summary__column--stars__star-row">
                     <a th:href="'https://adventofcode.com/' + ${stats.event} + '/day' + ${day}"
                        th:each="day : ${days}" class="summary__column--stars__star-row__star">
-                        <div th:text="${day > 9 ? (day / 10) : ''}"
+                        <div th:text="${(day + 1) > 9 ? ((day + 1) / 10) : ''}"
                              class="summary__column--stars__star-row__star__digit"></div>
-                        <div th:text="${day % 10}" class="summary__column--stars__star-row__star__digit">1</div>
+                        <div th:text="${(day + 1) % 10}" class="summary__column--stars__star-row__star__digit">1</div>
                     </a>
                 </div>
             </div>

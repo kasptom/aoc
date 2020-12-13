@@ -64,11 +64,11 @@ public class Member {
 
     public int getDayRankChange(int dayIdx) {
         if (dayIdx == 0) return getDayRank(dayIdx, 1);
-        return getDayRank(dayIdx, 1) - getDayRank(dayIdx, 1);
+        return getDayRank(dayIdx, 1) - getDayRank(dayIdx - 1, 1);
     }
 
     public int getDayPointsChange(int dayIdx) {
         if (dayIdx == 0) return getDayPoints(dayIdx, 1);
-        return getDayPoints(dayIdx, 1) - getDayPoints(dayIdx, 1);
+        return getDayPoints(dayIdx, 1) - getDayPoints(dayIdx - 1, 1);
     }
 }

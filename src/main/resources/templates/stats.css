@@ -131,7 +131,7 @@ a:hover, a:focus {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 1px;
+    padding: 1px 2px 1px 2px;
 }
 
 .stats__days__row__day__details {
@@ -142,7 +142,6 @@ a:hover, a:focus {
 
 .stats__days__row__day__details__col {
     min-width: 130px;
-    margin: 1px;
     display: flex;
     flex-direction: row;
     justify-content: center;
