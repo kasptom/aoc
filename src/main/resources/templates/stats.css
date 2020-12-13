@@ -1,9 +1,16 @@
+html {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   background: #0f0f23; /*337 x 5*/
   color: #cccccc;
   font-family: "Source Code Pro", monospace;
   font-size: 14pt;
   min-width: 60em;
+  height: 98%;
+  width: 98%;
 }
 
 code:before {
@@ -39,28 +46,39 @@ a:hover, a:focus {
 
 .stats {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
 }
 
 .stats__row {
   display: flex;
   flex-direction: row;
+  align-items: center;
+  padding: 1px 2px 1px 2px;
 }
 
+.stats__row__column {
+  display: flex;
+  flex-direction: column;
+  padding: 2px 4px 2px 4px;
+  min-width: 66px;
+}
+
+.stats__data,
 .stats__column {
-  padding: 1px 4px 4px 1px;
+  padding: 1px 4px 1px 4px;
   min-width: 300px;
   margin: 1px;
 }
 
-.stats__column--centered {
+.stats__data {
+  overflow-x: scroll;
+  display: flex;
+  flex-direction: row;
+}
+
+.stats__row--centered {
   display: flex;
   justify-content: center;
 }
 
-.stats__row--full-width-centered {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
 

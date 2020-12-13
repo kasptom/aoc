@@ -33,7 +33,6 @@ public class StatsPrinter {
         variables.put("stats", stats);
         variables.put("members", stats.getMembersSorted());
         variables.put("days", IntStream.range(1,26).boxed().collect(Collectors.toList()));
-        variables.put("places", IntStream.range(1, stats.getMembersCount() + 1).boxed().collect(Collectors.toList()));
         IContext context = new Context(Locale.getDefault(), variables);
 
         DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss");

@@ -7,25 +7,38 @@
 </head>
 <body>
 <div class="stats">
-   <div class="stats__row">
-       <div class="stats__column">ID</div>
-       <div th:each="member : ${members}"
-            th:text="${'#' + member.id}"
-            class="stats__column stats__column--centered">#123123</div>
-   </div>
-    <div class="stats__row">
-        <div class="stats__column">Name</div>
-        <div th:each="member : ${members}"
-             th:text="${member.name != null ? member.name : '???'}"
-             class="stats__column stats__column--centered">Mother Hacker</div>
+    <div class="stats__column stats__label-column">
+        <div class="stats__row">ID</div>
+        <div class="stats__row">Name</div>
+        <div class="stats__row">Place</div>
+        <div class="stats__row" th:each="day : ${days}">
+            <div class="stats__row__column" th:text="'Day ' + ${day}">Day 1</div>
+            <div class="stats__row__column">
+                <div>part 1</div>
+                <div>part 2</div>
+            </div>
+        </div>
     </div>
-    <div class="stats__row">
-        <div class="stats__column">Place</div>
-        <div th:each="place : ${places}"
-             th:text="${'#' + place}"
-             class="stats__column stats__column--centered">1</div>
+    <div class="stats__data">
+        <div th:each="member : ${members}" class="stats__column">
+            <div th:text="${'#' + member.id}"
+                 class="stats__row stats__row--centered">#123123
+            </div>
+            <div th:text="${member.name != null ? member.name : '???'}"
+                 class="stats__row stats__row--centered">Mother Hacker
+            </div>
+            <div th:text="'#' + ${members.indexOf(member) + 1}"
+                 class="stats__row stats__row--centered">#1
+            </div>
+            <div class="stats__row" th:each="day : ${days}">
+                <div class="stats__row__column" th:text="'Day ' + ${day}">Day 1</div>
+                <div class="stats__row__column">
+                    <div th:text="${member.getTime(day, 1)}">2020-12-01 06:04:21</div>
+                    <div th:text="${member.getTime(day, 2)}">2020-12-01 06:04:21</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="stats__row stats__row--full-width-centered">Stats</div>
 </div>
 </body>
 </html>
