@@ -72,9 +72,9 @@
                             class="stats__days__row__day__details__col">P1(DRNK)</div>
                     <div th:text="${member.getDayPoints(day, 1)} + '(' + ${member.getDayRank(day, 1)} + ')'"
                          class="stats__days__row__day__details__col">P2(DRNK)</div>
-                    <div th:text="${member.getPointsAtDay(day)}"
+                    <div th:text="${member.getPointsAtDay(day)} + '(' + ${member.getPointsDelta(day) > 0 ? '+' : ''} + ${member.getPointsDelta(day)} + ')'"
                          class="stats__days__row__day__details__col stats__days__row__day__details__col--small">PTS(+)</div>
-                    <div th:text="${member.getRankAtDay(day)}"
+                    <div th:text="${member.getRankAtDay(day)} + '(' + ${member.getRankDelta(day) > 0 ? '+' : ''} + ${member.getRankDelta(day)} + ')'"
                          class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK(+/-)</div>
                 </div>
             </div>

@@ -1,6 +1,7 @@
 package stats.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Getter;
 
 import java.time.Duration;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Getter
+@JsonPropertyOrder({"owner_id", "event", "members"})
 public class Stats {
     public static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
     /**
@@ -21,23 +23,41 @@ public class Stats {
      */
     private static final int AOC_YEAR_WITH_FIRST_TASK_SHORTAGE = 2020;
 
-    HashMap<Integer, Member> members = new HashMap<>();
+    @JsonProperty("owner_id")
+    Long ownerId;
+
+    @JsonProperty
+    Integer event;
+
+    @JsonProperty
+    HashMap<Integer, Member> members;
+
     List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
+    List<List<Member>> rankTillDay = new ArrayList<>();
     List<Integer> days;
+    private boolean updateMembersRequired;
 
-    int event;
 
-    @JsonProperty(index = 1)
     public void setEvent(int event) {
         this.event = event;
         days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
+        if (updateMembersRequired) {
+            this.updateMembers(this.members);
+        }
     }
 
     private List<Member> sortedMembers;
 
-    @JsonProperty
     public void setMembers(HashMap<Integer, Member> members) {
         this.members = members;
+        if (this.event == null) {
+            this.updateMembersRequired = true;
+            return;
+        }
+        updateMembers(members);
+    }
+
+    private void updateMembers(HashMap<Integer, Member> members) {
         this.sortedMembers = members.values()
                 .stream()
                 .sorted((first, second) -> Long.compare(second.localScore, first.localScore))
@@ -58,9 +78,25 @@ public class Stats {
         for (var member : sortedMembers) {
             updateMemberStats(member);
         }
+        updateTillDayRanks();
+
         System.out.println("init finished");
     }
 
+    private void updateTillDayRanks() {
+        for (var member : sortedMembers) {
+            for (int dayIdx = 0; dayIdx < days.size(); dayIdx++) {
+                var rankOrderedMembersAtDay = new ArrayList<>(sortedMembers);
+                rankOrderedMembersAtDay.sort(new PointsTillDayComparator(dayIdx));
+                rankTillDay.add(rankOrderedMembersAtDay);
+
+                member.tillDayRanks.add(rankTillDay.get(dayIdx).indexOf(member) + 1);
+                if (AOC_YEAR_WITH_FIRST_TASK_SHORTAGE == event && dayIdx == 0) {
+                    member.tillDayRanks.set(0, members.size());
+                }
+            }
+        }
+    }
 
     private void updateRankPerDays() {
         for (int i = 0; i < days.size(); i++) {
@@ -98,6 +134,7 @@ public class Stats {
     private void updateMemberStats(Member member) {
         member.dayPoints = new ArrayList<>();
         member.daysRanks = new ArrayList<>();
+        member.tillDayRanks = new ArrayList<>();
         for (int dayIdx = 0; dayIdx < getDaysCount(); dayIdx++) {
             int pointsFirst = getPoints(dayIdx, member, 0);
             int pointsSecond = getPoints(dayIdx, member, 1);
@@ -105,10 +142,11 @@ public class Stats {
             int rankSecond = getRank(dayIdx, member, 1);
             member.dayPoints.add(List.of(pointsFirst, pointsSecond));
             member.daysRanks.add(List.of(rankFirst, rankSecond));
-        }
-        if (event == AOC_YEAR_WITH_FIRST_TASK_SHORTAGE) {
-            member.dayPoints.set(0, List.of(0, 0));
-            member.daysRanks.set(0, List.of(members.size(), members.size()));
+
+            if (event == AOC_YEAR_WITH_FIRST_TASK_SHORTAGE) {
+                member.dayPoints.set(0, List.of(0, 0));
+                member.daysRanks.set(0, List.of(members.size(), members.size()));
+            }
         }
     }
 

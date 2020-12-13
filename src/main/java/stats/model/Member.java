@@ -38,6 +38,7 @@ public class Member {
 
     List<List<Integer>> daysRanks;
     List<List<Integer>> dayPoints;
+    List<Integer> tillDayRanks;
 
     public int getStarsForDay(int dayIdx) {
         if (!completionDayLevel.containsKey(dayIdx + 1)) {
@@ -73,6 +74,15 @@ public class Member {
     }
 
     public int getRankAtDay(int dayIdx) {
-        return 123;
+        return tillDayRanks.get(dayIdx);
+    }
+
+    public int getPointsDelta(int dayIdx) {
+        return getPointsAtDay(dayIdx) - getPointsAtDay(dayIdx - 1);
+    }
+
+    public int getRankDelta(int dayIdx) {
+        if (dayIdx == 0) return 0;
+        return getRankAtDay(dayIdx - 1) - getRankAtDay(dayIdx);
     }
 }
