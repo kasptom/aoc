@@ -3,7 +3,9 @@ package stats.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 @Getter
 public class Member {
@@ -28,22 +30,44 @@ public class Member {
     long lastStartTimestamp;
 
     @JsonProperty("completion_day_level")
-    HashMap<String, Day> completionDayLevel;
+    HashMap<Integer, Day> completionDayLevel;
+
+    List<List<Integer>> daysRanks;
+
+    List<List<Integer>> dayPoints;
 
     public int getStarsForDay(int dayIdx) {
-        if (!completionDayLevel.containsKey(String.valueOf(dayIdx))) {
+        if (!completionDayLevel.containsKey(dayIdx)) {
             return 0;
         }
-        Day day = completionDayLevel.get(String.valueOf(dayIdx));
+        Day day = completionDayLevel.get(dayIdx);
         return day.getStarsCount();
     }
 
     public String getTime(int dayIdx, int part) {
-        var day = completionDayLevel.get(String.valueOf(dayIdx));
+        var day = completionDayLevel.get(dayIdx);
         return day == null ? "N/A" : day.getTime(part);
     }
 
     public String getAnonymous() {
         return "(anonymous user #" + id + ")";
+    }
+
+    public int getDayRank(int dayIdx, int partIdx) {
+        return daysRanks.get(dayIdx).get(partIdx);
+    }
+
+    public int getDayPoints(int dayIdx, int partIdx) {
+        return dayPoints.get(dayIdx).get(partIdx);
+    }
+
+    public int getDayRankChange(int dayIdx) {
+        if (dayIdx == 0) return getDayRank(dayIdx, 1);
+        return getDayRank(dayIdx, 1) - getDayRank(dayIdx, 1);
+    }
+
+    public int getDayPointsChange(int dayIdx) {
+        if (dayIdx == 0) return getDayPoints(dayIdx, 1);
+        return getDayPoints(dayIdx, 1) - getDayPoints(dayIdx, 1);
     }
 }

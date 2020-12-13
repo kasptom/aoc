@@ -21,6 +21,10 @@ public class Day {
 
     List<Star> stars = new ArrayList<>();
 
+    List<Integer> dayRank = new ArrayList<>();
+    List<Integer> dayPoints = new ArrayList<>();
+    int dayChange = 0;
+
     int getStarsCount() {
         if (second != null) return 2;
         return first != null ? 1 : 0;
