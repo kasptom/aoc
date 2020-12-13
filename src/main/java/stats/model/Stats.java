@@ -12,7 +12,8 @@ public class Stats {
     @JsonProperty
     HashMap<String, Member> members;
 
-    String test = "test";
+    @JsonProperty
+    String event;
 
     public List<Member> getMembersSorted() {
         return members.values()
