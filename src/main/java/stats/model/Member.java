@@ -37,7 +37,6 @@ public class Member {
     HashMap<Integer, Day> completionDayLevel;
 
     List<List<Integer>> daysRanks;
-
     List<List<Integer>> dayPoints;
 
     public int getStarsForDay(int dayIdx) {
@@ -65,13 +64,15 @@ public class Member {
         return dayPoints.get(dayIdx).get(partIdx);
     }
 
-    public int getDayRankChange(int dayIdx) {
-        if (dayIdx == 0) return getDayRank(dayIdx, 1);
-        return getDayRank(dayIdx, 1) - getDayRank(dayIdx - 1, 1);
+    public int getPointsAtDay(int dayIdx) {
+        return dayPoints.subList(0, dayIdx + 1)
+                .stream()
+                .flatMap(List::stream)
+                .mapToInt(Integer::intValue)
+                .sum();
     }
 
-    public int getDayPointsChange(int dayIdx) {
-        if (dayIdx == 0) return getDayPoints(dayIdx, 1);
-        return getDayPoints(dayIdx, 1) - getDayPoints(dayIdx - 1, 1);
+    public int getRankAtDay(int dayIdx) {
+        return 123;
     }
 }

@@ -15,14 +15,20 @@ import java.util.stream.IntStream;
 @Getter
 public class Stats {
     private static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
+    /**
+     * Because of an outage during the day 1 puzzle unlock, day 1 is worth no points.
+     * https://adventofcode.com/2020/leaderboard
+     */
+    private static final int AOC_YEAR_WITH_FIRST_TASK_SHORTAGE = 2020;
+
     HashMap<Integer, Member> members = new HashMap<>();
     List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
     List<Integer> days;
 
-    String event;
+    int event;
 
     @JsonProperty(index = 1)
-    public void setEvent(String event) {
+    public void setEvent(int event) {
         this.event = event;
         days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
     }
@@ -93,6 +99,10 @@ public class Stats {
             member.dayPoints.add(List.of(pointsFirst, pointsSecond));
             member.daysRanks.add(List.of(rankFirst, rankSecond));
         }
+        if (event == AOC_YEAR_WITH_FIRST_TASK_SHORTAGE) {
+            member.dayPoints.set(0, List.of(0, 0));
+            member.daysRanks.set(0, List.of(members.size(), members.size()));
+        }
     }
 
     private int getRank(int dayIdx, Member member, int partIdx) {
@@ -105,7 +115,7 @@ public class Stats {
     }
 
     private long getDaysCount() {
-        var lastTaskDate = ZonedDateTime.of(Integer.parseInt(event), 12, 25, 0, 0, 0, 0, AOC_EST_ZONE);
+        var lastTaskDate = ZonedDateTime.of(event, 12, 25, 0, 0, 0, 0, AOC_EST_ZONE);
         var timeNowEct = ZonedDateTime.now(AOC_EST_ZONE);
         var daysToChristmas = Duration.between(timeNowEct, lastTaskDate).toDays();
         return Math.min(26L, 25L - daysToChristmas);

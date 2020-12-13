@@ -58,24 +58,24 @@
             <div th:each="day : ${days}" class="stats__days__row__day">
                 <div th:text="'Day ' + ${day + 1}"></div>
                 <div class="stats__days__row__day__details">
-                    <div class="stats__days__row__day__details__col">(P1 RNK)(+)</div>
-                    <div class="stats__days__row__day__details__col ">(P2 RNK)(+)</div>
-                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">CHG</div>
-                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK (+/-)</div>
+                    <div class="stats__days__row__day__details__col">P1(DRNK)</div>
+                    <div class="stats__days__row__day__details__col ">P2(DRNK)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">PTS(+)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK(+/-)</div>
                 </div>
             </div>
         </div>
         <div th:each="member : ${members}" class="stats__days__row">
             <div th:each="day : ${days}" class="stats__days__row__day">
                 <div class="stats__days__row__day__details">
-                    <div th:text="${member.getDayRank(day, 0)} + '(' + ${member.getDayPoints(day, 0)} + ')'"
-                            class="stats__days__row__day__details__col">(P1 RNK)(+)</div>
-                    <div th:text="${member.getDayRank(day, 1)} + '(' + ${member.getDayPoints(day, 1)} + ')'"
-                         class="stats__days__row__day__details__col">(P2 RNK)(+)</div>
-                    <div th:text="${member.getDayPointsChange(day)}"
-                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">CHG</div>
-                    <div th:text="${member.getDayRankChange(day)}"
-                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK (+/-)</div>
+                    <div th:text="${member.getDayPoints(day, 0)} + '(' + ${member.getDayRank(day, 0)} + ')'"
+                            class="stats__days__row__day__details__col">P1(DRNK)</div>
+                    <div th:text="${member.getDayPoints(day, 1)} + '(' + ${member.getDayRank(day, 1)} + ')'"
+                         class="stats__days__row__day__details__col">P2(DRNK)</div>
+                    <div th:text="${member.getPointsAtDay(day)}"
+                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">PTS(+)</div>
+                    <div th:text="${member.getRankAtDay(day)}"
+                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">RNK(+/-)</div>
                 </div>
             </div>
         </div>
