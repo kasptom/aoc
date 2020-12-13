@@ -3,24 +3,23 @@ package stats;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import stats.model.Stats;
+import utils.FileUtils;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Objects;
+import java.nio.file.Path;
 
 public class StatsApp {
     public static void main(String[] args) throws IOException {
-        ClassLoader classLoader = StatsApp.class.getClassLoader();
-        byte[] jsonData = getData(classLoader);
+        byte[] jsonData = getData();
         ObjectMapper objectMapper = getObjectMapper();
         Stats stats = objectMapper.readValue(jsonData, Stats.class);
-        System.out.println(stats);
+        StatsPrinter.print(stats);
     }
 
-    private static byte[] getData(ClassLoader classLoader) throws IOException {
-        File inputFile = new File(Objects.requireNonNull(classLoader.getResource("stats/private_leaderboard.json")).getFile());
-        return Files.readAllBytes(inputFile.toPath());
+    private static byte[] getData() throws IOException {
+        Path fullPath = FileUtils.getResourcePath("stats/private_leaderboard.json");
+        return Files.readAllBytes(fullPath);
     }
 
     private static ObjectMapper getObjectMapper() {

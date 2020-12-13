@@ -133,3 +133,6 @@ src/main/resources/input*.txt
 src/main/resources/aoc*/input*.txt
 !src/main/resources/*.zip
 src/main/resources/stats
+output.html
+stats.scss
+src/main/resources/templates/aoc.css

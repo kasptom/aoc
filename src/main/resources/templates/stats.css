@@ -1,0 +1,66 @@
+body {
+  background: #0f0f23; /*337 x 5*/
+  color: #cccccc;
+  font-family: "Source Code Pro", monospace;
+  font-size: 14pt;
+  min-width: 60em;
+}
+
+code:before {
+  z-index: -1;
+  content: "";
+  position: absolute;
+  display: block;
+  left: -2px;
+  right: -2px;
+  top: 3px;
+  bottom: 0;
+  border: 1px solid #333340;
+  background: #10101a;
+}
+
+.members-header {
+  padding: 1px 8px 1px 8px;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.member {
+  padding: 1px 8px 1px 8px;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-start;
+}
+
+.member__col {
+  padding: 0 4px 0 4px;
+}
+
+.member__col--id {
+  width: 120px;
+}
+
+.member__col--name {
+  width: 300px;
+}
+
+.member__col--stars{
+  color: #ffff66;
+}
+
+.member__col--days {
+  display: flex;
+  flex-direction: column;
+}
+
+.members-header__days--label {
+  display: flex;
+  justify-content: center;
+}
+
+.members-header__days {
+  display: flex;
+  flex-direction: row;
+}
+
