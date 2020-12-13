@@ -121,10 +121,11 @@ public class Stats {
         return members.size() - getRank(dayIdx, member, partIdx) + 1;
     }
 
-    private long getDaysCount() {
-        var lastTaskDate = ZonedDateTime.of(event, 12, 25, 0, 0, 0, 0, AOC_EST_ZONE);
+    public long getDaysCount() {
+        var lastTaskDateStart = ZonedDateTime.of(event, 12, 25, 0, 0, 0, 0, AOC_EST_ZONE);
         var timeNowEct = ZonedDateTime.now(AOC_EST_ZONE);
-        var daysToChristmas = Duration.between(timeNowEct, lastTaskDate).toDays();
-        return Math.min(26L, 25L - daysToChristmas);
+//        var timeNowEct = ZonedDateTime.of(event, 12, 13, 23, 59, 0, 0, AOC_EST_ZONE);
+        var daysToChristmas = Math.ceil(Duration.between(timeNowEct, lastTaskDateStart).toSeconds() / 86400.0);
+        return Math.min(25L, 25L - (long) daysToChristmas);
     }
 }
