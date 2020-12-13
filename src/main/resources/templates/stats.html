@@ -14,7 +14,7 @@
 </h1>
 <div class="stats">
     <div class="stats__user-summaries">
-        <div class="stats__user-summaries__summary">
+        <div class="stats__user-summaries__summary stats__header">
             <div class="summary__column summary__column--place"></div>
             <div class="summary__column">Score</div>
             <div class="summary__column">(Global)</div>
@@ -54,7 +54,12 @@
         </div>
     </div>
     <div class="stats__days">
-
+        <div class="stats__days__row stats__header">
+            <div th:each="day : ${days}" th:text="'Day ' + ${day}" class="stats__days__row__day"></div>
+        </div>
+        <div class="stats__days__row">
+            EACH USER 25 x day
+        </div>
     </div>
 </div>
 </body>

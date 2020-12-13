@@ -62,6 +62,10 @@ a:hover, a:focus {
     flex-direction: row;
 }
 
+.stats__header {
+    min-height: 75px;
+}
+
 .stats__user-summaries {
     display: flex;
     flex-direction: column;
@@ -112,4 +116,16 @@ a:hover, a:focus {
 .stats__days {
     display: flex;
     flex-direction: column;
+    overflow-x: scroll;
+}
+
+.stats__days__row {
+    display: flex;
+    flex-direction: row;
+}
+
+.stats__days__row__day {
+    min-width: 100px;
+    display: flex;
+    justify-content: center;
 }
