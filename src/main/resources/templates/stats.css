@@ -69,6 +69,8 @@ a:hover, a:focus {
 .stats__user-summaries {
     display: flex;
     flex-direction: column;
+    max-width: 50%;
+    overflow-x: scroll;
 }
 
 .stats__user-summaries__summary {
@@ -116,6 +118,7 @@ a:hover, a:focus {
 .stats__days {
     display: flex;
     flex-direction: column;
+    max-width: 50%;
     overflow-x: scroll;
 }
 
