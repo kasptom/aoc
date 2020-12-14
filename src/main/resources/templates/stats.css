@@ -155,6 +155,10 @@ a:hover, a:focus {
     min-width: 85px;
 }
 
+.stats__days__row__day__details__col--timestamp {
+    cursor: alias;
+}
+
 /*.stats__days__row__day__details__col--minus {*/
 .minus {
     color: #ff0000;

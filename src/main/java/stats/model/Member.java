@@ -48,7 +48,7 @@ public class Member {
         return day.getStarsCount();
     }
 
-    public String getTime(int dayIdx, int part) {
+    public String getTimestamp(int dayIdx, int part) {
         var day = completionDayLevel.get(dayIdx + 1);
         return day == null ? "N/A" : day.getTimestampStr(part);
     }

@@ -31,8 +31,11 @@ public class Day {
         return first != null ? 1 : 0;
     }
 
-    public String getTimestampStr(int part) {
-        var star = stars.get(part - 1);
+    public String getTimestampStr(int partIdx) {
+        if (stars.size() <= partIdx) {
+            return "N/A";
+        }
+        var star = stars.get(partIdx);
         if (star == null) {
             return "N/A";
         }

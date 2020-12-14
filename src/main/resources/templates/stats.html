@@ -18,7 +18,7 @@
         <div class="stats__user-summaries__summary stats__header">
             <div class="summary__column summary__column--place"></div>
             <div class="summary__column">Score</div>
-            <div class="summary__column">(Global)</div>
+            <div class="summary__column" th:title="'global score of a user'">(Global)</div>
             <div class="summary__column summary__column--stars">
                 <div>Stars</div>
                 <div class="summary__column--stars__star-row">
@@ -70,9 +70,11 @@
             <div th:each="day : ${days}" class="stats__days__row__day">
                 <div class="stats__days__row__day__details">
                     <div th:text="${member.getDayPoints(day, 0)} + '(' + ${member.getDayRank(day, 0)} + ')'"
-                            class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P1(DRK)</div>
+                         th:title="${member.getTimestamp(day, 0)}"
+                            class="stats__days__row__day__details__col stats__days__row__day__details__col--small stats__days__row__day__details__col--timestamp">P1(DRK)</div>
                     <div th:text="${member.getDayPoints(day, 1)} + '(' + ${member.getDayRank(day, 1)} + ')'"
-                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P2(DRK)</div>
+                         th:title="${member.getTimestamp(day, 1)}"
+                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small stats__days__row__day__details__col--timestamp">P2(DRK)</div>
                     <div th:text="${member.getPointsAtDay(day)} + '(' + ${member.getPointsDelta(day) > 0 ? '+' : ''} + ${member.getPointsDelta(day)} + ')'"
                          class="stats__days__row__day__details__col">PTS(+)</div>
                     <div th:text="${member.getRankAtDay(day)} + '(' + ${member.getRankDelta(day) > 0 ? '+' : ''} + ${member.getRankDelta(day)} + ')'"
