@@ -131,9 +131,10 @@ public class Stats {
     }
 
     private boolean isWithinDeadline(int dayIdx, Day day, int partIdx) {
-        ZonedDateTime dayDeadline = ZonedDateTime.of(event, 12, dayIdx + 2, 0, 0, 0, 0, AOC_EST_ZONE);
-        ZonedDateTime submitTime = day.getDateTime(partIdx);
-        return submitTime.isBefore(dayDeadline);
+        return true;
+//        ZonedDateTime dayDeadline = ZonedDateTime.of(event, 12, dayIdx + 2, 0, 0, 0, 0, AOC_EST_ZONE);
+//        ZonedDateTime submitTime = day.getDateTime(partIdx);
+//        return submitTime.isBefore(dayDeadline);
     }
 
     private void updateMemberStats(Member member) {
@@ -156,12 +157,18 @@ public class Stats {
     }
 
     private int getRank(int dayIdx, Member member, int partIdx) {
-        var rank = this.ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
-        return rank == -1 ? members.size() : rank + 1;
+        var index = getMemberListIndex(dayIdx, member, partIdx);
+        return index == -1 ? members.size() : index + 1;
     }
 
     private int getPoints(int dayIdx, Member member, int partIdx) {
+        var index = getMemberListIndex(dayIdx, member, partIdx);
+        if (index == -1) return 0;
         return members.size() - getRank(dayIdx, member, partIdx) + 1;
+    }
+
+    private int getMemberListIndex(int dayIdx, Member member, int partIdx) {
+        return this.ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
     }
 
     public long getDaysCount() {
