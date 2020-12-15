@@ -38,20 +38,21 @@ public class Stats {
     private boolean updateMembersRequired;
     private List<Member> sortedMembers;
     String ownerName;
+    private boolean updateOwnerNameRequired;
 
 
     public void setEvent(int event) {
         this.event = event;
         days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
         if (updateMembersRequired) {
-            this.updateMembers(this.members);
+            updateMembers(members);
         }
     }
 
     public void setMembers(HashMap<Long, Member> members) {
         this.members = members;
-        if (this.event == null) {
-            this.updateMembersRequired = true;
+        if (event == null) {
+            updateMembersRequired = true;
             return;
         }
         updateMembers(members);
@@ -59,15 +60,26 @@ public class Stats {
 
     public void setOwnerId(Long ownerId) {
         this.ownerId = ownerId;
-        this.ownerName = this.members.get(ownerId).name;
+        if (members == null) {
+            updateOwnerNameRequired = true;
+            return;
+        }
+        updateOwnerName(ownerId);
+    }
+
+    private void updateOwnerName(Long ownerId) {
+        ownerName = members.get(ownerId).name;
     }
 
     private void updateMembers(HashMap<Long, Member> members) {
-        this.sortedMembers = members.values()
+        sortedMembers = members.values()
                 .stream()
                 .sorted((first, second) -> Long.compare(second.localScore, first.localScore))
                 .collect(Collectors.toList());
-        this.updateMemberStats();
+        updateMemberStats();
+        if (updateOwnerNameRequired) {
+            updateOwnerName(ownerId);
+        }
     }
 
     public List<Member> getMembersSorted() {
@@ -79,7 +91,7 @@ public class Stats {
     }
 
     private void updateMemberStats() {
-        this.updateRankPerDays();
+        updateRankPerDays();
         for (var member : sortedMembers) {
             updateMemberStats(member);
         }
@@ -168,7 +180,7 @@ public class Stats {
     }
 
     private int getMemberListIndex(int dayIdx, Member member, int partIdx) {
-        return this.ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
+        return ranksPerDayPerPart.get(dayIdx).get(partIdx).indexOf(member);
     }
 
     public long getDaysCount() {
