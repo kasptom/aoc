@@ -67,18 +67,23 @@ public class Day21 implements IAocTask {
 
     private char[] loadRunScript() {
         return new SpringScriptBuilder()
-                .not(REG_A, REG_T)
-                .not(REG_C, REG_J)
-                .or(REG_J, REG_T)
-                .and(REG_D, REG_J)
-                .and(REG_T, REG_J)
-                // ---
-                .and(REG_G, REG_T)
-                .and(REG_T, REG_J)
-                //---
-                .not(REG_A, REG_T)
+                .not(REG_T, REG_J)
+                .or(REG_J, REG_T) // T and J are true
+                .not(REG_A, REG_J)
+                //
+                .and(REG_A, REG_T)
+                .and(REG_D, REG_T)
+                .and(REG_H, REG_T)
+                //
                 .or(REG_T, REG_J)
-                // ---
+                //
+                .and(REG_A, REG_T)
+                .and(REG_B, REG_T)
+                .and(REG_C, REG_T)
+                .and(REG_D, REG_T)
+                .not(REG_T, REG_T)
+                //
+                .and(REG_T, REG_J)
                 .run()
                 .build();
     }

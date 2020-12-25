@@ -64,4 +64,13 @@ public class Aoc2019Utils {
         parsedCode = largerMemory;
         return parsedCode;
     }
+
+    public static List<Pair<Integer>> createMoves() {
+        List<Pair<Integer>> moves = new ArrayList<>();
+        moves.add(new Pair<>(0, -1));
+        moves.add(new Pair<>(1, 0));
+        moves.add(new Pair<>(0, 1));
+        moves.add(new Pair<>(-1, 0));
+        return moves;
+    }
 }

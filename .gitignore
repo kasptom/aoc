@@ -131,5 +131,10 @@ gradle-app.setting
 
 src/main/resources/input*.txt
 src/main/resources/aoc*/input*.txt
-!src/main/resources/aoc2019/input_05.txt
-!src/main/resources/aoc2019/*.zip
+!src/main/resources/*.zip
+src/main/resources/stats
+output*.html
+stats.css
+src/main/resources/templates/aoc.css
+src/main/generated
+src/test/generated_tests

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="'AoC Stats ' + ${stats.event}">AoC 2020 Stats</title>
+    <link th:href="@{stats.css}" rel="stylesheet" type="text/css"/>
+</head>
+<body>
+<h1>
+    <a th:href="'https://adventofcode.com'">AoC</a>
+    <a th:href="'https://adventofcode.com/' + ${stats.event}"
+       th:text="${stats.event}"> 2020 </a>
+    <a th:href="'https://github.com/kasptom/aoc'">Stats</a>
+    <span style="font-size: smaller" th:text="${stats.ownerName} + '\'s Private Leaderboard'"></span>
+</h1>
+<div class="stats">
+    <div class="stats__user-summaries">
+        <div class="stats__user-summaries__summary stats__header">
+            <div class="summary__column summary__column--place"></div>
+            <div class="summary__column">Score</div>
+            <div class="summary__column" th:title="'global score of a user'">(Global)</div>
+            <div class="summary__column summary__column--stars">
+                <div>Stars</div>
+                <div class="summary__column--stars__star-row">
+                    <a th:href="'https://adventofcode.com/' + ${stats.event} + '/day' + ${day + 1}"
+                       th:each="day : ${days}" class="summary__column--stars__star-row__star">
+                        <div th:text="${(day + 1) > 9 ? ((day + 1) / 10) : ''}"
+                             class="summary__column--stars__star-row__star__digit"></div>
+                        <div th:text="${(day + 1) % 10}" class="summary__column--stars__star-row__star__digit">1</div>
+                    </a>
+                </div>
+            </div>
+            <div class="summary__column summary__column--user">User</div>
+        </div>
+        <div th:each="member : ${members}" class="stats__user-summaries__summary">
+            <div th:text="${members.indexOf(member) + 1} + ')'" class="summary__column summary__column--place">1)</div>
+            <div th:text="${member.localScore}" class="summary__column">3210</div>
+            <div th:text="'(' + ${member.globalScore} + ')'" class="summary__column">123</div>
+            <div class="summary__column summary__column--stars">
+                <div class="summary__column--stars__star-row">
+                    <div th:each="day : ${days}" class="summary__column--stars__star-row__star">
+                        <div th:class="${member.getStarsForDay(day) == 2
+                                        ? 'gold-star'
+                                        : member.getStarsForDay(day)  == 1
+                                                ? 'silver-star'
+                                                : 'no-star'}"
+                             class="summary__column--stars__star-row__star__symbol">*
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div th:text="${member.name == null ? member.getAnonymous() : member.name}"
+                 class="summary__column summary__column--user">Software Engineer
+            </div>
+        </div>
+    </div>
+    <div class="stats__days">
+        <div class="stats__days__row stats__header">
+            <div th:each="day : ${days}" class="stats__days__row__day">
+                <div th:text="'Day ' + ${day + 1}"></div>
+                <div class="stats__days__row__day__details">
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P1(DRK)</div>
+                    <div class="stats__days__row__day__details__col stats__days__row__day__details__col--small">P2(DRK)</div>
+                    <div class="stats__days__row__day__details__col">PTS(+)</div>
+                    <div class="stats__days__row__day__details__col">RNK(+/-)</div>
+                </div>
+            </div>
+        </div>
+        <div th:each="member : ${members}" class="stats__days__row">
+            <div th:each="day : ${days}" class="stats__days__row__day">
+                <div class="stats__days__row__day__details">
+                    <div th:text="${member.getDayPoints(day, 0)} + '(' + ${member.getDayRank(day, 0)} + ')'"
+                         th:title="${member.getTimestamp(day, 0)}"
+                            class="stats__days__row__day__details__col stats__days__row__day__details__col--small stats__days__row__day__details__col--timestamp">P1(DRK)</div>
+                    <div th:text="${member.getDayPoints(day, 1)} + '(' + ${member.getDayRank(day, 1)} + ')'"
+                         th:title="${member.getTimestamp(day, 1)}"
+                         class="stats__days__row__day__details__col stats__days__row__day__details__col--small stats__days__row__day__details__col--timestamp">P2(DRK)</div>
+                    <div th:text="${member.getPointsAtDay(day)} + '(' + ${member.getPointsDelta(day) > 0 ? '+' : ''} + ${member.getPointsDelta(day)} + ')'"
+                         class="stats__days__row__day__details__col">PTS(+)</div>
+                    <div th:text="${member.getRankAtDay(day)} + '(' + ${member.getRankDelta(day) > 0 ? '+' : ''} + ${member.getRankDelta(day)} + ')'"
+                         th:class="${member.getRankDelta(day) > 0
+                                        ? 'plus stats\_\_days\_\_row\_\_day\_\_details\_\_col'
+                                        : (member.getRankDelta(day) < 0
+                                            ? 'minus stats\_\_days\_\_row\_\_day\_\_details\_\_col'
+                                            : 'stats\_\_days\_\_row\_\_day\_\_details\_\_col')}">RNK(+/-)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

@@ -27,9 +27,10 @@ public class Day16 implements IAocTask {
 //            printSum(signal);
         }
 
-        printDigits(signal, 0, j, 8);
+        printEightDigits(signal, 0, j);
     }
 
+    @SuppressWarnings("unused")
     private void printSum(int[] signal) {
         System.out.printf("sum: %d%n", Arrays.stream(signal).sum());
     }
@@ -38,33 +39,39 @@ public class Day16 implements IAocTask {
     public void solvePartTwo(List<String> lines) {
         String backup = lines.get(0).trim();
         int phasesNumber = 100;
+        int signalRepeats = 10000;
 
-        HashMap<Integer, List<Integer>> positionToPattern = generatePositionPattern(backup.length() * 20);
+        String received = repeatSignal(backup, signalRepeats);
+        int[] signal = readSignal(received);
 
+        System.out.printf("signal length: %d\n", signal.length);
 
-        for (int repeats = 2; repeats <= 20; repeats++) { // should be 10k
-            System.out.printf("------------- %d%n", repeats);
-            // TODO there is no ez way
-            String received;
-            StringBuilder repeatedSignal = new StringBuilder();
-            for (int i = 0; i < repeats; i++) {
-                repeatedSignal.append(backup);
-            }
-            received = repeatedSignal.toString();
-            int[] signal = readSignal(received);
-            System.out.printf("signal length: %d\n", signal.length);
-            // TODO 100 phases SMH
-            int j;
-            for (j = 0; j < phasesNumber; j++) {
-                signal = runFlawedFrequencyTransmission(signal, positionToPattern);
-//            printDigits(signal, 0, j + 1, signal.length);
-//            printSum(signal);
-            }
-            // ...
+        int j;
+        for (j = 0; j < phasesNumber; j++) {
+            runFastPartialFlawedFrequencyTransmission(signal);
+        }
 
-            int offset = getPartTwoOffset(signal);
-            offset = 0; // testing
-            printDigits(signal, offset, 100, 8);
+        int offset = getPartTwoOffset(signal);
+        printEightDigits(signal, offset, 100);
+    }
+
+    private String repeatSignal(String backup, int signalRepeats) {
+        String received;
+        StringBuilder repeatedSignal = new StringBuilder();
+        for (int i = 0; i < signalRepeats; i++) {
+            repeatedSignal.append(backup);
+        }
+        received = repeatedSignal.toString();
+        return received;
+    }
+
+    private void runFastPartialFlawedFrequencyTransmission(int[] signal) {
+        for (int i = signal.length - 2; i >= signal.length / 2; i--) {
+            signal[i] = signal[i + 1] + signal[i];
+        }
+
+        for (int i = signal.length / 2; i < signal.length; i++) {
+            signal[i] = signal[i] % 10;
         }
     }
 
@@ -76,14 +83,10 @@ public class Day16 implements IAocTask {
         return Integer.parseInt(offset.toString());
     }
 
-    private void printEightOffsetDigits(int[] signal, int j) {
-
-    }
-
-    private void printDigits(int[] signal, int offset, int j, int digitsCount) {
+    private void printEightDigits(int[] signal, int offset, int j) {
         System.out.printf("After %3d phases: ", j);
-        for (int i = 0; i < digitsCount; i++) {
-            System.out.print(signal[offset + i] + " ");
+        for (int i = 0; i < 8; i++) {
+            System.out.print(signal[offset + i]);
         }
         System.out.println();
     }
