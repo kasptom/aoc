@@ -14,8 +14,8 @@ public class Day22 implements IAocTask {
     @Override
     public void solvePartOne(List<String> lines) {
         int playerSeparatorIdx = lines.indexOf("");
-        List<Integer> firstPlayer = lines.subList(1, playerSeparatorIdx).stream().map(Integer::valueOf).collect(Collectors.toList());
-        List<Integer> secondPlayer = lines.subList(playerSeparatorIdx + 2, lines.size()).stream().map(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> firstPlayer = createPlayer(lines, playerSeparatorIdx, 1);
+        List<Integer> secondPlayer = createPlayer(lines, lines.size(), playerSeparatorIdx + 2);
         while (!firstPlayer.isEmpty() && !secondPlayer.isEmpty()) {
             playRound(firstPlayer, secondPlayer);
         }
@@ -48,14 +48,18 @@ public class Day22 implements IAocTask {
     @Override
     public void solvePartTwo(List<String> lines) {
         int playerSeparatorIdx = lines.indexOf("");
-        List<Integer> firstPlayer = lines.subList(1, playerSeparatorIdx).stream().map(Integer::valueOf).collect(Collectors.toList());
-        List<Integer> secondPlayer = lines.subList(playerSeparatorIdx + 2, lines.size()).stream().map(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> firstPlayer = createPlayer(lines, playerSeparatorIdx, 1);
+        List<Integer> secondPlayer = createPlayer(lines, lines.size(), playerSeparatorIdx + 2);
         Set<String> firstSnapshot = new HashSet<>();
         Set<String> secondSnapshot = new HashSet<>();
         int winner = playRecursive(firstPlayer, secondPlayer, firstSnapshot, secondSnapshot, 1, 1);
 //        System.out.println("The winner of game 1 id player " + winner);
         long winnerScore = calculateWinnerScore(winner != 2 ? firstPlayer : secondPlayer);
         System.out.println(winnerScore);
+    }
+
+    private List<Integer> createPlayer(List<String> lines, int playerSeparatorIdx, int i) {
+        return lines.subList(i, playerSeparatorIdx).stream().map(Integer::valueOf).collect(Collectors.toList());
     }
 
     /**

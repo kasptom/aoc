@@ -27,9 +27,11 @@ public class Day11 implements IAocTask {
         loadLayout(lines);
 //        printLayout();
         BiFunction<Integer, Integer, Integer> neighbourCounter = this::countOccupiedAdjacent;
-        while (updateLayout(neighbourCounter, 4)) {
+        boolean layoutUpdated = updateLayout(neighbourCounter, 4);
+        while (layoutUpdated) {
+            layoutUpdated =updateLayout(neighbourCounter, 4);
         }
-        ;
+
         int occupied = getOccupiedAfterLastChange();
         System.out.println(occupied);
 //        printLayout();
@@ -40,9 +42,11 @@ public class Day11 implements IAocTask {
         loadLayout(lines);
 //        printLayout();
         BiFunction<Integer, Integer, Integer> neighbourCounter = this::countOccupiedAdjacentV2;
-        while (updateLayout(neighbourCounter, 5)) {
+        boolean layoutUpdated = updateLayout(neighbourCounter, 5);
+        while (layoutUpdated) {
+            layoutUpdated = updateLayout(neighbourCounter, 5);
         }
-        ;
+
         int occupied = getOccupiedAfterLastChange();
         System.out.println(occupied);
 //        printLayout();
@@ -151,12 +155,12 @@ public class Day11 implements IAocTask {
         }
     }
 
-    private void printLayout() {
-        for (int i = 0; i < height; i++) {
-            for (int j = 0; j < width; j++) {
-                System.out.print(layout[i][j]);
-            }
-            System.out.println();
-        }
-    }
+//    private void printLayout() {
+//        for (int i = 0; i < height; i++) {
+//            for (int j = 0; j < width; j++) {
+//                System.out.print(layout[i][j]);
+//            }
+//            System.out.println();
+//        }
+//    }
 }

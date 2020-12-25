@@ -29,7 +29,7 @@ public class Day18 implements IAocTask {
     @Override
     public void solvePartTwo(List<String> lines) {
         List<Task> tasks = getTasks(lines);
-        long sum = tasks.stream().map(task -> task.solve2()).reduce(Long::sum).orElse(-1L);
+        long sum = tasks.stream().map(Task::solve2).reduce(Long::sum).orElse(-1L);
         System.out.println(sum);
     }
 }
@@ -64,15 +64,24 @@ class Task {
                 queue.add(token);
             } else if (token.isValue()) {
                 queue.add(token);
-                while(compressRightEnd(queue));
+                boolean compressed = compressRightEnd(queue);
+                while (compressed) {
+                    compressed = compressRightEnd(queue);
+                }
             } else if (token.isRPar()) {
                 queue.add(token);
-                while(compressRightEnd(queue));
+                boolean compressed = compressRightEnd(queue);
+                while (compressed) {
+                    compressed = compressRightEnd(queue);
+                }
             } else if (token.isLPar()) {
                 queue.add(token);
             }
         }
-        while(compressRightEnd(queue));
+        boolean compressed = compressRightEnd(queue);
+        while (compressed) {
+            compressed = compressRightEnd(queue);
+        }
         return queue.element().value;
     }
 
@@ -153,7 +162,7 @@ class Task {
     private void compressMullsNoParen(LinkedList<Token> queue) {
         long product = 1L;
         for (int i = 0; i < queue.size(); i += 2) {
-             product *= queue.get(i).value;
+            product *= queue.get(i).value;
         }
         queue.clear();
         queue.add(new Token(product, VAL));
@@ -181,7 +190,7 @@ class Task {
     }
 
     private int findLastLPar(LinkedList<Token> queue) {
-        for (int i = queue.size() - 1; i >= 0 ; i--) {
+        for (int i = queue.size() - 1; i >= 0; i--) {
             if (queue.get(i).isLPar()) {
                 return i;
             }
@@ -225,10 +234,6 @@ class Task {
 
         boolean isAdd() {
             return type.equals(ADD);
-        }
-
-        boolean isMull() {
-            return type.equals(MUL);
         }
 
         boolean isMulOrAdd() {
@@ -279,7 +284,6 @@ class Task {
         static Map<String, TokenType> STR_TO_TOKEN_TYPE = Map.of("(", L_PAR, ")", R_PAR, "X", VAL, "*", MUL, "+", ADD);
         static Map<TokenType, String> TOKEN_TYPE_TO_STR = Map.of(L_PAR, "(", R_PAR, ")", VAL, "X", MUL, "*", ADD, "+");
         static EnumSet<TokenType> OPS = EnumSet.range(ADD, R_PAR);
-        static EnumSet<TokenType> PARENTHESES = EnumSet.of(L_PAR, R_PAR);
 
         static TokenType parse(String input) {
             String token = input.matches("\\d+") ? "X" : input;

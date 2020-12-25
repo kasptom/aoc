@@ -20,15 +20,15 @@ public class Day23 implements IAocTask {
         int moves = 100;
         List<Integer> cupsList = Arrays.stream(lines.get(0).split("")).map(Integer::valueOf).collect(Collectors.toList());
         int maxValue = cupsList.stream().max(Integer::compareTo).orElse(-1);
-        int[] cups = new int[cupsList.size()];
         HashMap<Integer, Integer> cupToNextIdx = new HashMap<>();
-        HashMap<Integer, Integer> cupToPrevIdx = new HashMap<>();
-        HashMap<Integer, Integer> cupToIdx = new HashMap<>();
-        solve(moves, cupsList, maxValue, cups, cupToNextIdx, cupToPrevIdx, cupToIdx);
+        int[] cups = new int[cupsList.size()];
+        solve(moves, cupsList, maxValue, cups, cupToNextIdx);
         printLabelsAfterCupOne(cups, cupToNextIdx);
     }
 
-    private void solve(int moves, List<Integer> cupsList, int maxValue, int[] cups, HashMap<Integer, Integer> cupToNextIdx, HashMap<Integer, Integer> cupToPrevIdx, HashMap<Integer, Integer> cupToIdx) {
+    private void solve(int moves, List<Integer> cupsList, int maxValue, int[] cups, HashMap<Integer, Integer> cupToNextIdx) {
+        HashMap<Integer, Integer> cupToPrevIdx = new HashMap<>();
+        HashMap<Integer, Integer> cupToIdx = new HashMap<>();
         for (int i = 0; i < cupsList.size(); i++) {
             cups[i] = cupsList.get(i);
             cupToPrevIdx.put(cups[i], i - 1 < 0 ? cupsList.size() - 1 : i - 1);
@@ -102,11 +102,9 @@ public class Day23 implements IAocTask {
         cupsList.addAll(IntStream.range(maxValue + 1, 1_000_001).boxed().collect(Collectors.toList()));
         maxValue = 1_000_000;
 
-        int[] cups = new int[cupsList.size()];
         HashMap<Integer, Integer> cupToNextIdx = new HashMap<>();
-        HashMap<Integer, Integer> cupToPrevIdx = new HashMap<>();
-        HashMap<Integer, Integer> cupToIdx = new HashMap<>();
-        solve(moves, cupsList, maxValue, cups, cupToNextIdx, cupToPrevIdx, cupToIdx);
+        int[] cups = new int[cupsList.size()];
+        solve(moves, cupsList, maxValue, cups, cupToNextIdx);
         long product = getProductOfNextTwoAfterOne(cups, cupToNextIdx);
         System.out.println(product);
     }

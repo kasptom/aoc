@@ -107,9 +107,9 @@ public class Day20 implements IAocTask {
             }
         }
         int allPounds = 0;
-        for (int i = 0; i < image.length; i++) {
+        for (char[] chars : image) {
             for (int j = 0; j < image.length; j++) {
-                if (image[i][j] == '#') {
+                if (chars[j] == '#') {
                     allPounds++;
                 }
             }
@@ -150,24 +150,13 @@ public class Day20 implements IAocTask {
 
 
         System.out.println("----- TILES ----\n");
-        Tile[][] tileGrid = null;
-        for (var cornerId : corners) {
-            Tile corner = tilesMap.get(cornerId);
-            try {
-                tileGrid = createTileGrid(SIDE_SIZE, corner);
-                validateTileGrid(tileGrid);
-                break;
-            } catch (Exception e) {
-                tileGrid = null;
-                System.out.println("Trying other corner because: ");
-                e.printStackTrace();
-            }
-        }
+        Tile[][] tileGrid;
+        Tile corner = tilesMap.get(corners.get(0));
+        tileGrid = createTileGrid(SIDE_SIZE, corner);
         System.out.println(" -------------- ");
-        if (tileGrid == null) throw new RuntimeException("No valid ordering found");
-        for (int i = 0; i < tileGrid.length; i++) {
+        for (Tile[] value : tileGrid) {
             for (int j = 0; j < tileGrid.length; j++) {
-                System.out.print(tileGrid[i][j].id + " ");
+                System.out.print(value[j].id + " ");
             }
             System.out.println();
         }
@@ -177,42 +166,6 @@ public class Day20 implements IAocTask {
         return toImage(tileGrid);
     }
 
-    private void validateTileGrid(Tile[][] tileGrid) {
-        for (int i = 0; i < tileGrid.length; i++) {
-            for (int j = 0; j < tileGrid.length; j++) {
-                validateTile(tileGrid, j, i, tileGrid.length);
-            }
-        }
-    }
-
-    private void validateTile(Tile[][] tileGrid, int x, int y, int count) {
-//        Tile tile = tileGrid[y][x];
-//        if (x == 0 && y == 0 && (tile.getNeigh(NORTH) != null || tile.getNeigh(WEST) != null)) {
-//            throw new RuntimeException(String.format("invalid top left (%d, %d) %n%s", x, y, tile));
-//        }
-//        else if (x == 0 && y == count - 1 && (tile.getNeigh(SOUTH) != null || tile.getNeigh(WEST) != null)) {
-//            throw new RuntimeException(String.format("invalid bottom left (%d, %d) %n%s", x, y, tile));
-//        }
-//        else if (x == 0 && tile.getNeigh(EAST) != null) {
-//            throw new RuntimeException(String.format("invalid left edge (%d, %d) %n%s", x, y, tile));
-//        }
-//        else if (x == count - 1 && tile.getNeigh(WEST) != null) {
-//            throw new RuntimeException(String.format("invalid right edge (%d, %d) %n%s", x, y, tile));
-//        }
-//        else if (y == 0 && tile.getNeigh(NORTH) != null) {
-//            throw new RuntimeException(String.format("invalid top edge (%d, %d) %n%s", x, y, tile));
-//        }
-//        else if (y == count - 1 && tile.getNeigh(SOUTH) != null) {
-//            throw new RuntimeException(String.format("invalid bottom dedge (%d, %d) %n%s", x, y, tile));
-//        }
-//        else if (y > 0) {
-//            Tile upper = tileGrid[y - 1][x];
-//            if (upper.getNeigh(SOUTH).id != tile.id || tile.getNeigh(NORTH).id != upper.id) {
-//                throw new RuntimeException(String.format("invalid (%d, %d) %n%s", x, y, tile));
-//            }
-//        }
-    }
-
     private char[][] toImage(Tile[][] tileGrid) {
         int IMG_SIDE_NOT_CROPPED = tileGrid.length * TILE_SIZE;
         char[][] image = new char[IMG_SIDE_NOT_CROPPED][IMG_SIDE_NOT_CROPPED];
@@ -220,9 +173,7 @@ public class Day20 implements IAocTask {
             for (int j = 0; j < tileGrid.length; j++) {
                 var tile = tileGrid[i][j];
                 for (int k = 0; k < TILE_SIZE; k++) {
-                    for (int l = 0; l < TILE_SIZE; l++) {
-                        image[i * TILE_SIZE + k][j * TILE_SIZE + l] = tile.tile[k][l];
-                    }
+                    System.arraycopy(tile.tile[k], 0, image[i * TILE_SIZE + k], j * 10, TILE_SIZE);
                 }
             }
         }
@@ -241,11 +192,11 @@ public class Day20 implements IAocTask {
         int x = 0;
         int y = 0;
         for (int i = 0; i < image.length; i++) {
-            if (isToCut(i, image.length)) {
+            if (isToCut(i)) {
                 continue;
             }
             for (int j = 0; j < image.length; j++) {
-                if (isToCut(j, image.length)) {
+                if (isToCut(j)) {
                     continue;
                 }
 //                System.out.format("x=%d, y=%d%n", x, y);
@@ -258,7 +209,7 @@ public class Day20 implements IAocTask {
         }
     }
 
-    private boolean isToCut(int notCroppedIdx, int notCroppedLength) {
+    private boolean isToCut(int notCroppedIdx) {
 //        if (notCroppedIdx == 0 || notCroppedIdx == notCroppedLength - 1) {
 //            return false;
 //        }
@@ -566,8 +517,6 @@ public class Day20 implements IAocTask {
             } else throw new RuntimeException("Not supported dir " + neighDirection);
             return false;
         }
-
-        enum Dir {NORTH, EAST, SOUTH, WEST}
     }
 
     // https://www.geeksforgeeks.org/rotate-a-matrix-by-90-degree-in-clockwise-direction-without-using-any-extra-space/
@@ -583,6 +532,7 @@ public class Day20 implements IAocTask {
             }
         }
     }
+
     static void flipVertical(char[][] matrix, int N) {
         for (int i = 0; i < N / 2; i++) {
             for (int j = 0; j < N; j++) {
@@ -594,7 +544,9 @@ public class Day20 implements IAocTask {
     }
 
     static class Point {
-        int x; int y;
+        int x;
+        int y;
+
         public Point(int x, int y) {
             this.x = x;
             this.y = y;

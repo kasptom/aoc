@@ -127,24 +127,16 @@ class Passport {
 }
 
 enum PassportFields {
-    byr("Birth Year"),
-    iyr("Issue Year"),
-    eyr("Expiration Year"),
-    hgt("Height"),
-    hcl("Hair Color"),
-    ecl("Eye Color"),
-    pid("Passport ID"),
-    cid("Country ID");
-
-    private final String description;
+    byr, // Birth Year
+    iyr, // Issue Year
+    eyr, // Expiration Year
+    hgt, // Height
+    hcl, // Hair Color
+    ecl, // Eye Color
+    pid, // Passport ID
+    cid; // Country ID
 
     static final EnumSet<PassportFields> REQUIRED_FIELDS = EnumSet.of(byr, iyr, eyr, hgt, hcl, ecl, pid);
-    static final EnumSet<PassportFields> OPTIONAL_FIELDS = EnumSet.of(cid);
-
-    PassportFields(String description) {
-        this.description = description;
-    }
-
 
     @Override
     public String toString() {

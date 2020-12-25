@@ -26,7 +26,6 @@ public class Day24 implements IAocTask {
         TileNode reference = new TileNode(new Point(0, 0, 0));
         pointToTile.put(reference.point, reference);
         for (var locations : tileLocations) {
-            ;
             reference.move(locations, 0);
         }
         long blackCount = pointToTile.values().stream().filter(tile -> tile.color == TileNode.Color.BLACK).count();

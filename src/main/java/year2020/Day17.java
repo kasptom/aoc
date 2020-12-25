@@ -31,7 +31,7 @@ public class Day17 implements IAocTask {
 
     @Override
     public void solvePartTwo(List<String> lines) {
-        return;
+        // TODO fix: 1st part overridden by the 2nd :(
     }
 
     private void loadInput(char[][][][] cube, List<String> lines) {
@@ -83,8 +83,8 @@ public class Day17 implements IAocTask {
                 dw = new int[]{-1, 0, 1};
             }
 
-            for (int i = 0; i < dw.length; i++) {
-                int nW = w + dw[i];
+            for (int value : dw) {
+                int nW = w + value;
                 if (isActive(nX, nY, nZ, nW, backup)) {
                     count++;
                 }
@@ -122,9 +122,7 @@ public class Day17 implements IAocTask {
         for (int i = 0; i < DIM_SIZE; i++) {
             for (int j = 0; j < DIM_SIZE; j++) {
                 for (int k = 0; k < DIM_SIZE; k++) {
-                    for (int l = 0; l < DIM_SIZE; l++) {
-                        backup[i][j][k][l] = cube[i][j][k][l];
-                    }
+                    System.arraycopy(cube[i][j][k], 0, backup[i][j][k], 0, DIM_SIZE);
                 }
             }
         }

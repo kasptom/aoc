@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class Day01 implements IAocTask {
-    private int SUM_TO_FIND = 2020;
+    private final int SUM_TO_FIND = 2020;
 
     @Override
     public String getFileName() {

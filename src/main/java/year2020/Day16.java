@@ -47,7 +47,6 @@ public class Day16 implements IAocTask {
     @Override
     public void solvePartTwo(List<String> lines) {
         int rulesEndIdx = lines.indexOf("your ticket:") - 1;
-        int myTicketEndIdx = lines.indexOf("nearby tickets:") - 1;
         List<Day16.Rule> rules = lines.subList(0, rulesEndIdx).stream().map(Day16.Rule::parse)
                 .collect(Collectors.toList());
         Ticket myTicket = Ticket.parse(lines.get(rulesEndIdx + 2));
@@ -62,7 +61,6 @@ public class Day16 implements IAocTask {
 
     private List<String> getNamesOrder(List<Ticket> tickets, List<Rule> rules) {
         HashMap<Integer, List<String>> indexToName = new HashMap<>();
-        TreeSet<Integer> used = new TreeSet<>();
         for (int fieldIdx = 0; fieldIdx < tickets.get(0).fields.size(); fieldIdx++) {
             for (var rule : rules) {
 //                System.out.println(rule);
@@ -80,19 +78,17 @@ public class Day16 implements IAocTask {
                     indexToName.get(fieldIdx).add(rule.name);
 //                    rules.remove(rule);
 //                    break;
-                    used.add(fieldIdx);
                 }
             }
         }
-        List<String> names = removeCollisions(indexToName);
-        return names;
+        return removeCollisions(indexToName);
     }
 
     private List<String> removeCollisions(HashMap<Integer, List<String>> indexToName) {
         TreeMap<Integer, String> fixedIndexToName = new TreeMap<>();
         List<Integer> keys = new ArrayList<>(indexToName.keySet());
         while (!keys.isEmpty()) {
-            Integer removed = -1;
+            Integer removed;
             for (int i = 0; i < keys.size(); i++) {
                 var key = keys.get(i);
                 if (indexToName.get(key).size() == 1) {
@@ -105,8 +101,7 @@ public class Day16 implements IAocTask {
                 }
             }
         }
-        var result = new ArrayList<>(fixedIndexToName.values());
-        return result;
+        return new ArrayList<>(fixedIndexToName.values());
     }
 
     private long multiplyDepartures(Ticket myTicket, List<String> namesOrder) {
