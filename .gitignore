@@ -136,3 +136,5 @@ src/main/resources/stats
 output.html
 stats.css
 src/main/resources/templates/aoc.css
+src/main/generated
+src/test/generated_tests
