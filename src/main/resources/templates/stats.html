@@ -22,7 +22,7 @@
             <div class="summary__column summary__column--stars">
                 <div>Stars</div>
                 <div class="summary__column--stars__star-row">
-                    <a th:href="'https://adventofcode.com/' + ${stats.event} + '/day' + ${day}"
+                    <a th:href="'https://adventofcode.com/' + ${stats.event} + '/day' + ${day + 1}"
                        th:each="day : ${days}" class="summary__column--stars__star-row__star">
                         <div th:text="${(day + 1) > 9 ? ((day + 1) / 10) : ''}"
                              class="summary__column--stars__star-row__star__digit"></div>

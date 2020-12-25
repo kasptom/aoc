@@ -7,6 +7,7 @@ import stats.model.*;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ public class StatsFactory {
 
     private static void updateMembers(Stats stats) {
         HashMap<Long, Member> members = stats.getMembers();
-        List<Integer> days = IntStream.range(0, (int) stats.getDaysCount()).boxed().collect(Collectors.toList());
+        List<Integer> days = createDaysDecreasingOrder(stats);
         stats.setDays(days);
 
         List<Member> sortedMembers = members.values()
@@ -46,6 +47,12 @@ public class StatsFactory {
         stats.setSortedMembers(sortedMembers);
 
         updateMemberStats(stats);
+    }
+
+    private static List<Integer> createDaysDecreasingOrder(Stats stats) {
+        return IntStream.range(0, (int) stats.getDaysCount())
+                .boxed().sorted(Comparator.reverseOrder())
+                .collect(Collectors.toList());
     }
 
     private static void updateMemberStats(Stats stats) {
