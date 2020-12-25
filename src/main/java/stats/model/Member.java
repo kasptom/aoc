@@ -14,18 +14,18 @@ import java.util.List;
 public class Member {
     static final String MEMBER_ROW_FORMAT = "%-25s %12d %12d";
 
-    long id;
-    int stars;
-    String name;
-    int localScore;
-    long globalScore;
-    long lastStartTimestamp;
+    private long id;
+    private int stars;
+    private String name;
+    private int localScore;
+    private long globalScore;
+    private long lastStartTimestamp;
+    private HashMap<Integer, Day> completionDayLevel;
 
-    List<Integer> scoreHistory = new ArrayList<>();
-    HashMap<Integer, Day> completionDayLevel;
-    List<List<Integer>> daysRanks;
-    List<List<Integer>> dayPoints;
-    List<Integer> tillDayRanks;
+    private List<Integer> scoreHistory = new ArrayList<>();
+    private List<List<Integer>> daysRanks;
+    private List<List<Integer>> dayPoints;
+    private List<Integer> tillDayRanks;
 
     public int getStarsForDay(int dayIdx) {
         if (!completionDayLevel.containsKey(dayIdx + 1)) {

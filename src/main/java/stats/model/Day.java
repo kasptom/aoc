@@ -15,13 +15,13 @@ import java.util.List;
 public class Day {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    Star first;
-    Star second;
+    private Star first;
+    private Star second;
 
-    List<Star> stars = new ArrayList<>();
-    List<Integer> dayRank = new ArrayList<>();
-    List<Integer> dayPoints = new ArrayList<>();
-    int dayChange = 0;
+    private List<Star> stars = new ArrayList<>();
+    private List<Integer> dayRank = new ArrayList<>();
+    private List<Integer> dayPoints = new ArrayList<>();
+    private int dayChange = 0;
 
     int getStarsCount() {
         if (second != null) return 2;

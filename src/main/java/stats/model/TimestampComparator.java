@@ -14,8 +14,8 @@ public class TimestampComparator implements Comparator<Member> {
 
     @Override
     public int compare(Member one, Member other) {
-        Day oneDay = one.completionDayLevel.get(dayIdx + 1);
-        Day otherDay = other.completionDayLevel.get(dayIdx + 1);
+        Day oneDay = one.getCompletionDayLevel().get(dayIdx + 1);
+        Day otherDay = other.getCompletionDayLevel().get(dayIdx + 1);
         var oneStar = oneDay.getStars().get(partIdx);
         var otherStar = otherDay.getStars().get(partIdx);
         return Long.compare(oneStar.timestamp, otherStar.timestamp);

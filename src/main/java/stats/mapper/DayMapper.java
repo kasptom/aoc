@@ -7,6 +7,7 @@ import stats.model.Day;
 
 @Mapper(uses = StarMapper.class)
 public interface DayMapper {
+
     @Mapping(target = "stars", ignore = true)
     @Mapping(target = "dayRank", ignore = true)
     @Mapping(target = "dayPoints", ignore = true)

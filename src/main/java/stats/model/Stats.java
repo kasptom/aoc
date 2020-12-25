@@ -22,26 +22,25 @@ public class Stats {
      */
     private static final int AOC_YEAR_WITH_FIRST_TASK_SHORTAGE = 2020;
 
-    Long ownerId;
-    Integer event;
-    HashMap<Long, Member> members;
+    private Long ownerId;
+    private Integer event;
+    private HashMap<Long, Member> members;
 
-    List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
-    List<List<Member>> rankTillDay = new ArrayList<>();
-    List<Integer> days;
+    private List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
+    private List<List<Member>> rankTillDay = new ArrayList<>();
+    private List<Integer> days;
     private List<Member> sortedMembers;
-    String ownerName;
-    private boolean updateOwnerNameRequired;
+    private String ownerName;
 
     public void updateOwnerName(Long ownerId) {
-        ownerName = members.get(ownerId).name;
+        ownerName = members.get(ownerId).getName();
     }
 
     public void updateMembers(HashMap<Long, Member> members) {
         days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
         sortedMembers = members.values()
                 .stream()
-                .sorted((first, second) -> Long.compare(second.localScore, first.localScore))
+                .sorted((first, second) -> Long.compare(second.getLocalScore(), first.getLocalScore()))
                 .collect(Collectors.toList());
         updateMemberStats();
     }
@@ -67,9 +66,9 @@ public class Stats {
                 rankOrderedMembersAtDay.sort(new PointsTillDayComparator(dayIdx));
                 rankTillDay.add(rankOrderedMembersAtDay);
 
-                member.tillDayRanks.add(rankTillDay.get(dayIdx).indexOf(member) + 1);
+                member.getTillDayRanks().add(rankTillDay.get(dayIdx).indexOf(member) + 1);
                 if (AOC_YEAR_WITH_FIRST_TASK_SHORTAGE == event && dayIdx == 0) {
-                    member.tillDayRanks.set(0, members.size());
+                    member.getTillDayRanks().set(0, members.size());
                 }
             }
         }
@@ -81,8 +80,8 @@ public class Stats {
             sortedMembers.forEach(member -> member
                     .getCompletionDayLevel()
                     .computeIfPresent(dayIdx + 1, (idx, day) -> {
-                        if (day.first != null) day.stars.add(day.first);
-                        if (day.second != null) day.stars.add(day.second);
+                        if (day.getFirst() != null) day.getStars().add(day.getFirst());
+                        if (day.getSecond() != null) day.getStars().add(day.getSecond());
                         return day;
                     }));
             List<Member> firstPart = getCopyWithFilteredUsers(i, 0);
@@ -110,20 +109,20 @@ public class Stats {
     }
 
     private void updateMemberStats(Member member) {
-        member.dayPoints = new ArrayList<>();
-        member.daysRanks = new ArrayList<>();
-        member.tillDayRanks = new ArrayList<>();
+        member.setDayPoints(new ArrayList<>());
+        member.setDaysRanks(new ArrayList<>());
+        member.setTillDayRanks(new ArrayList<>());
         for (int dayIdx = 0; dayIdx < getDaysCount(); dayIdx++) {
             int pointsFirst = getPoints(dayIdx, member, 0);
             int pointsSecond = getPoints(dayIdx, member, 1);
             int rankFirst = getRank(dayIdx, member, 0);
             int rankSecond = getRank(dayIdx, member, 1);
-            member.dayPoints.add(List.of(pointsFirst, pointsSecond));
-            member.daysRanks.add(List.of(rankFirst, rankSecond));
+            member.getDayPoints().add(List.of(pointsFirst, pointsSecond));
+            member.getDaysRanks().add(List.of(rankFirst, rankSecond));
 
             if (event == AOC_YEAR_WITH_FIRST_TASK_SHORTAGE) {
-                member.dayPoints.set(0, List.of(0, 0));
-                member.daysRanks.set(0, List.of(members.size(), members.size()));
+                member.getDayPoints().set(0, List.of(0, 0));
+                member.getDaysRanks().set(0, List.of(members.size(), members.size()));
             }
         }
     }

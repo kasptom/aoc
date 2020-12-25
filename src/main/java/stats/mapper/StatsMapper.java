@@ -15,6 +15,5 @@ public interface StatsMapper {
     @Mapping(target = "days", ignore = true)
     @Mapping(target = "sortedMembers", ignore = true)
     @Mapping(target = "ownerName", ignore = true)
-    @Mapping(target = "updateOwnerNameRequired", ignore = true)
     Stats map(StatsDto dto);
 }
