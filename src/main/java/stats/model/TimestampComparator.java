@@ -1,16 +1,14 @@
 package stats.model;
 
+import lombok.RequiredArgsConstructor;
+
 import java.util.Comparator;
 
+@RequiredArgsConstructor
 public class TimestampComparator implements Comparator<Member> {
 
     private final int dayIdx;
     private final int partIdx;
-
-    public TimestampComparator(int dayIdx, int partIdx) {
-        this.dayIdx = dayIdx;
-        this.partIdx = partIdx;
-    }
 
     @Override
     public int compare(Member one, Member other) {
@@ -18,6 +16,6 @@ public class TimestampComparator implements Comparator<Member> {
         Day otherDay = other.getCompletionDayLevel().get(dayIdx + 1);
         var oneStar = oneDay.getStars().get(partIdx);
         var otherStar = otherDay.getStars().get(partIdx);
-        return Long.compare(oneStar.timestamp, otherStar.timestamp);
+        return Long.compare(oneStar.getTimestamp(), otherStar.getTimestamp());
     }
 }

@@ -6,5 +6,5 @@ import lombok.Getter;
 @Getter
 public class StarDto {
     @JsonProperty("get_star_ts")
-    long timestamp;
+    private long timestamp;
 }

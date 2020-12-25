@@ -6,5 +6,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Star {
-    long timestamp;
+    private long timestamp;
 }

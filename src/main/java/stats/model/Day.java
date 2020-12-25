@@ -10,6 +10,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import static stats.factory.StatsFactory.AOC_EST_ZONE;
+
 @Getter
 @Setter
 public class Day {
@@ -36,13 +38,13 @@ public class Day {
         if (star == null) {
             return "N/A";
         }
-        long timestamp = star.timestamp;
+        long timestamp = star.getTimestamp();
         return LocalDateTime.ofEpochSecond(timestamp, 0, ZoneOffset.of("+01:00")).format(DATE_TIME_FORMATTER);
     }
 
     public ZonedDateTime getDateTime(int partIdx) {
         var star = stars.get(partIdx);
-        long timestamp = star.timestamp;
-        return LocalDateTime.ofEpochSecond(timestamp, 0, Stats.AOC_EST_ZONE).atZone(Stats.AOC_EST_ZONE);
+        long timestamp = star.getTimestamp();
+        return LocalDateTime.ofEpochSecond(timestamp, 0, AOC_EST_ZONE).atZone(AOC_EST_ZONE);
     }
 }

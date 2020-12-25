@@ -8,11 +8,11 @@ import java.util.HashMap;
 @Getter
 public class StatsDto {
     @JsonProperty("owner_id")
-    Long ownerId;
+    private Long ownerId;
 
     @JsonProperty
-    Integer event;
+    private Integer event;
 
     @JsonProperty
-    HashMap<Long, MemberDto> members;
+    private HashMap<Long, MemberDto> members;
 }
