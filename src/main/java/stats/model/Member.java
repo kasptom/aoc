@@ -18,11 +18,11 @@ public class Member {
     int stars;
     String name;
     int localScore;
-    List<Integer> scoreHistory = new ArrayList<>();
     long globalScore;
     long lastStartTimestamp;
-    HashMap<Integer, Day> completionDayLevel;
 
+    List<Integer> scoreHistory = new ArrayList<>();
+    HashMap<Integer, Day> completionDayLevel;
     List<List<Integer>> daysRanks;
     List<List<Integer>> dayPoints;
     List<Integer> tillDayRanks;

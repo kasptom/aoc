@@ -17,6 +17,7 @@ public class Day {
 
     Star first;
     Star second;
+
     List<Star> stars = new ArrayList<>();
     List<Integer> dayRank = new ArrayList<>();
     List<Integer> dayPoints = new ArrayList<>();

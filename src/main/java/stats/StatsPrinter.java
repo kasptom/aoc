@@ -27,7 +27,7 @@ public class StatsPrinter {
 
         Map<String, Object> variables = new HashMap<>();
         variables.put("stats", stats);
-        variables.put("members", stats.getMembersSorted());
+        variables.put("members", stats.getSortedMembers());
         variables.put("days", stats.getDays());
         IContext context = new Context(Locale.getDefault(), variables);
 

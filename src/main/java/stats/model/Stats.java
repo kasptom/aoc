@@ -29,7 +29,6 @@ public class Stats {
     List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
     List<List<Member>> rankTillDay = new ArrayList<>();
     List<Integer> days;
-    private boolean updateMembersRequired;
     private List<Member> sortedMembers;
     String ownerName;
     private boolean updateOwnerNameRequired;
@@ -45,10 +44,6 @@ public class Stats {
                 .sorted((first, second) -> Long.compare(second.localScore, first.localScore))
                 .collect(Collectors.toList());
         updateMemberStats();
-    }
-
-    public List<Member> getMembersSorted() {
-        return sortedMembers;
     }
 
     public int getMembersCount() {
