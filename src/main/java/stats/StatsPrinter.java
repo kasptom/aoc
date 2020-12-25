@@ -10,6 +10,7 @@ import utils.FileUtils;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Locale;
@@ -34,7 +35,7 @@ public class StatsPrinter {
 //        DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss");
 //        String timestamp = LocalDateTime.now().format(df);
 //        PrintWriter out = new PrintWriter(new FileOutputStream("output_" + timestamp + ".html"));
-        PrintWriter out = new PrintWriter(new FileOutputStream("output.html"));
+        PrintWriter out = new PrintWriter(new FileOutputStream("output.html"), true, StandardCharsets.UTF_8);
         Files.copy(FileUtils.getResourcePath("templates/stats.css"), new FileOutputStream("stats.css"));
         templateEngine.process("stats", context, out);
         out.flush();
