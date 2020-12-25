@@ -1,8 +1,7 @@
 package stats.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.Duration;
 import java.time.ZoneOffset;
@@ -14,7 +13,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 @Getter
-@JsonPropertyOrder({"event", "members", "owner_id"})
+@Setter
 public class Stats {
     public static final ZoneOffset AOC_EST_ZONE = ZoneOffset.of("-05:00");
     /**
@@ -23,13 +22,8 @@ public class Stats {
      */
     private static final int AOC_YEAR_WITH_FIRST_TASK_SHORTAGE = 2020;
 
-    @JsonProperty("owner_id")
     Long ownerId;
-
-    @JsonProperty
     Integer event;
-
-    @JsonProperty
     HashMap<Long, Member> members;
 
     List<List<List<Member>>> ranksPerDayPerPart = new ArrayList<>();
@@ -40,46 +34,17 @@ public class Stats {
     String ownerName;
     private boolean updateOwnerNameRequired;
 
-
-    public void setEvent(int event) {
-        this.event = event;
-        days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
-        if (updateMembersRequired) {
-            updateMembers(members);
-        }
-    }
-
-    public void setMembers(HashMap<Long, Member> members) {
-        this.members = members;
-        if (event == null) {
-            updateMembersRequired = true;
-            return;
-        }
-        updateMembers(members);
-    }
-
-    public void setOwnerId(Long ownerId) {
-        this.ownerId = ownerId;
-        if (members == null) {
-            updateOwnerNameRequired = true;
-            return;
-        }
-        updateOwnerName(ownerId);
-    }
-
-    private void updateOwnerName(Long ownerId) {
+    public void updateOwnerName(Long ownerId) {
         ownerName = members.get(ownerId).name;
     }
 
-    private void updateMembers(HashMap<Long, Member> members) {
+    public void updateMembers(HashMap<Long, Member> members) {
+        days = IntStream.range(0, (int) getDaysCount()).boxed().collect(Collectors.toList());
         sortedMembers = members.values()
                 .stream()
                 .sorted((first, second) -> Long.compare(second.localScore, first.localScore))
                 .collect(Collectors.toList());
         updateMemberStats();
-        if (updateOwnerNameRequired) {
-            updateOwnerName(ownerId);
-        }
     }
 
     public List<Member> getMembersSorted() {

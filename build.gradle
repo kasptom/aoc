@@ -18,8 +18,10 @@ dependencies {
     compile group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
     compile group: 'org.thymeleaf', name: 'thymeleaf-spring4', version: '3.0.11.RELEASE'
     compile "org.slf4j:slf4j-nop:1.7.25"
+    implementation 'org.mapstruct:mapstruct:1.4.1.Final'
     compileOnly 'org.projectlombok:lombok:1.18.16'
     annotationProcessor 'org.projectlombok:lombok:1.18.16'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.1.Final'
     testCompileOnly 'org.projectlombok:lombok:1.18.16'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
 }

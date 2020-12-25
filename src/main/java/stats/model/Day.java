@@ -1,7 +1,7 @@
 package stats.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -11,17 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Getter
+@Setter
 public class Day {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    @JsonProperty("1")
     Star first;
-
-    @JsonProperty("2")
     Star second;
-
     List<Star> stars = new ArrayList<>();
-
     List<Integer> dayRank = new ArrayList<>();
     List<Integer> dayPoints = new ArrayList<>();
     int dayChange = 0;
