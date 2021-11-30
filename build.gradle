@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id "org.jetbrains.kotlin.jvm" version "1.5.31"
 }
 
 group 'com.github.kasptom'
@@ -12,16 +13,16 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-    compile group: 'org.magicwerk', name: 'brownies-collections', version: '0.9.13'
-    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0'
-    compile group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
-    compile group: 'org.thymeleaf', name: 'thymeleaf-spring4', version: '3.0.11.RELEASE'
-    compile "org.slf4j:slf4j-nop:1.7.25"
-    implementation 'org.mapstruct:mapstruct:1.4.1.Final'
-    compileOnly 'org.projectlombok:lombok:1.18.16'
-    annotationProcessor 'org.projectlombok:lombok:1.18.16'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.1.Final'
+    implementation group: 'org.magicwerk', name: 'brownies-collections', version: '0.9.13'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0'
+    implementation group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
+    implementation group: 'org.thymeleaf', name: 'thymeleaf-spring4', version: '3.0.11.RELEASE'
+    implementation 'org.slf4j:slf4j-nop:1.7.32'
+    implementation 'org.mapstruct:mapstruct:1.4.2.Final'
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
     testCompileOnly 'org.projectlombok:lombok:1.18.16'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.16'
 }
