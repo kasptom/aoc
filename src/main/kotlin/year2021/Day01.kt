@@ -6,23 +6,16 @@ class Day01 : IAocTaskKt {
 
     override fun getFileName() = "aoc2021/input_01.txt"
     override fun solvePartOne(lines: List<String>) {
-        val depths = lines.map { Integer.parseInt(it) }
-        var increases = 0
-        for (idx in 1 until depths.size) {
-            if (depths[idx - 1] < depths[idx]) increases++
-        }
+        val increases = lines.map { Integer.parseInt(it) }
+            .windowed(2, 1) { prevCur -> if (prevCur[0] < prevCur[1]) 1 else 0 }
+            .sumOf { it }
         println(increases)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        val depths = lines.map { Integer.parseInt(it) }
-        var increases = 0
-        var prevSum = depths[0] + depths[1] + depths[2]
-        for (idx in 1..depths.size - 3) {
-            val sum = depths[idx] + depths[idx + 1] + depths[idx + 2]
-            if (sum > prevSum) increases++
-            prevSum = sum
-        }
+        val increases = lines.map { Integer.parseInt(it) }
+            .windowed(4, 1) { if (it.subList(0, 3).sum() < it.subList(1, 4).sum()) 1 else 0 }
+            .sumOf { it }
         println(increases)
     }
 }
