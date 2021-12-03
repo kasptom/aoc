@@ -27,12 +27,10 @@ class Day03 : IAocTaskKt{
                 epsilon[idx] = 1
             }
         }
-        val gammaStr = Integer.parseInt(gamma.joinToString(""), 2)
-        val epsStr = Integer.parseInt(epsilon.joinToString(""), 2)
-        val powerConsumption = gammaStr * epsStr
-        println(gammaStr)
-        println(epsStr)
-        println(powerConsumption)
+        val gammaDec = Integer.parseInt(gamma.joinToString(""), 2)
+        val epsilonDec = Integer.parseInt(epsilon.joinToString(""), 2)
+        val powerConsumption = gammaDec * epsilonDec
+        println("$gammaDec * $epsilonDec = $powerConsumption")
     }
 
     override fun solvePartTwo(lines: List<String>) {
@@ -43,17 +41,17 @@ class Day03 : IAocTaskKt{
         var oxIdx = 0
         var coIdx = 0
 
-        println("OXS")
+//        println("OXS")
         while (oxLines.size != 1) {
-            val (onesCount, zerosCount) = countOnes(oxLines, oxIdx)
+            val (onesCount, zerosCount) = countZerosAndOnes(oxLines, oxIdx)
             val oxBit = if (onesCount >= zerosCount) 1 else 0
             oxLines.removeIf { Integer.parseInt("${it[oxIdx]}") != oxBit }
             oxIdx++
 //            println(oxLines)
         }
-        println("COS")
+//        println("COS")
         while (coLines.size != 1) {
-            val (onesCount, zerosCount) = countOnes(coLines, coIdx)
+            val (onesCount, zerosCount) = countZerosAndOnes(coLines, coIdx)
             val coBit = if (onesCount >= zerosCount) 0 else 1
             coLines.removeIf { Integer.parseInt("${it[coIdx]}") != coBit }
             coIdx++
@@ -62,13 +60,11 @@ class Day03 : IAocTaskKt{
 
         val oxyDec = Integer.parseInt(oxLines[0], 2)
         val carDec = Integer.parseInt(coLines[0], 2)
-        val powerConsumption = oxyDec * carDec
-        println(oxyDec)
-        println(carDec)
-        println(powerConsumption)
+        val lifeSupportRating = oxyDec * carDec
+        println("$oxyDec * $carDec = $lifeSupportRating")
     }
 
-    fun countOnes(lines: List<String>, pos: Int): Pair<Int, Int> {
+    private fun countZerosAndOnes(lines: List<String>, pos: Int): Pair<Int, Int> {
         var onesCounter = 0
         var zerosCounter = 0
 
@@ -78,9 +74,8 @@ class Day03 : IAocTaskKt{
                 else onesCounter++
             }
         }
-        //
 
-        println("zeros: ${zerosCounter}, ones ${onesCounter}")
+//        println("zeros: $zerosCounter, ones $onesCounter")
         return Pair(onesCounter, zerosCounter)
     }
 
