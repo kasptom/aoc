@@ -1,42 +1,48 @@
 package year2021
 
 import aoc.IAocTaskKt
+import year2021.Day02.Move.Direction.*
 
 class Day02 : IAocTaskKt {
     override fun getFileName(): String = "aoc2021/input_02.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val moves = lines.map(Move::parse)
-        val result = moves.filter { it.dir == "forward" }.sumOf{ it.value} *
-                moves.filter { it.dir == "up" }.sumOf { it.value } -
-                        moves.filter { it.dir == "down" }.sumOf{ it.value}
-        println(result)
-    }
-
-    data class Move(val dir: String, val value: Int) {
-        companion object {
-            fun parse(line: String): Move {
-                val (dir, valueStr) = line.split(" ")
-                val value = Integer.parseInt(valueStr)
-                return Move(dir, value)
-            }
-        }
+        val submarine = moves.fold(Submarine(), Submarine::move)
+        println(submarine.run { horPos * depth })
     }
 
     override fun solvePartTwo(lines: List<String>) {
         val moves = lines.map(Move::parse)
-        var aim = 0
-        var depth = 0
-        var horPos = 0
-        for (move in moves) {
-            if (move.dir == "up") aim += move.value
-            if (move.dir == "down") aim -= move.value
-            if (move.dir == "forward") {
-                horPos += move.value
-                depth += aim * move.value
+        val submarine = moves.fold(Submarine(), Submarine::move2)
+        println(submarine.run { horPos * depth })
+    }
+
+    data class Move(val dir: Direction, val value: Int) {
+        companion object {
+            fun parse(line: String): Move {
+                val (dir, valueStr) = line.split(" ")
+                val value = Integer.parseInt(valueStr)
+                return Move(Direction.valueOf(dir.uppercase()), value)
             }
         }
-        val result = horPos * depth
-        println(result)
+
+        enum class Direction {
+            UP, DOWN, FORWARD
+        }
+    }
+
+    data class Submarine(val aim: Int = 0, val depth: Int = 0, val horPos: Int = 0) {
+        fun move(move: Move): Submarine = when (move.dir) {
+            UP -> copy(depth = depth - move.value)
+            DOWN -> copy(depth = depth + move.value)
+            FORWARD -> copy(horPos = horPos + move.value)
+        }
+
+        fun move2(move: Move): Submarine = when (move.dir) {
+            UP -> copy(aim = aim - move.value)
+            DOWN -> copy(aim = aim + move.value)
+            FORWARD -> copy(horPos = horPos + move.value, depth = depth + aim * move.value)
+        }
     }
 }
