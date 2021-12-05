@@ -1,82 +1,60 @@
 package year2021
 
 import aoc.IAocTaskKt
+import utils.transpose
 
-class Day03 : IAocTaskKt{
+class Day03 : IAocTaskKt {
     override fun getFileName(): String = "aoc2021/input_03.txt"
-    var size = 0
 
     override fun solvePartOne(lines: List<String>) {
-        size = lines[0].length
-        val onesCounter = IntArray(size)
-        val zerosCounter = IntArray(size)
-        for (binary in lines) {
-            for (idx in 0 until size) {
-                if (binary[idx] == '0') zerosCounter[idx]++
-                else onesCounter[idx]++
-            }
-        }
-        val gamma = IntArray(size)
-        val epsilon = IntArray(size)
-        for (idx in 0 until size) {
-            if (onesCounter[idx] > zerosCounter[idx]) {
-                gamma[idx] = 1
-                epsilon[idx] = 0
-            } else {
-                gamma[idx] = 0
-                epsilon[idx] = 1
-            }
-        }
-        val gammaDec = Integer.parseInt(gamma.joinToString(""), 2)
-        val epsilonDec = Integer.parseInt(epsilon.joinToString(""), 2)
-        val powerConsumption = gammaDec * epsilonDec
-        println("$gammaDec * $epsilonDec = $powerConsumption")
+        val bitColumns: List<List<Int>> = lines
+            .map { it.split("").filter(String::isNotEmpty).map(String::toInt) }
+            .transpose()
+
+        val gammaStr = bitColumns
+            .map { column -> column.count { it == 1 } > column.count { it == 0 } }
+            .map { moreOnes -> if (moreOnes) 1 else 0 }
+            .joinToString("")
+
+        val gamma = gammaStr.toInt(2)
+
+        val epsilon = gammaStr.map { if (it == '0') '1' else '0' }
+            .joinToString("")
+            .toInt(2)
+
+        val powerConsumption = gamma * epsilon
+        println("$gamma * $epsilon = $powerConsumption")
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        size = lines[0].length
+        val oxygenOnePredicate: (Int, Int) -> Boolean = { onesCount, zerosCount -> onesCount >= zerosCount }
+        val oxygenRating = findBinNumber(lines, oxygenOnePredicate).toInt(2)
 
-        val oxLines = lines.toMutableList()
-        val coLines = lines.toMutableList()
-        var oxIdx = 0
-        var coIdx = 0
+        val carbonOnePredicate: (Int, Int) -> Boolean = { onesCount, zerosCount -> onesCount < zerosCount }
+        val carbonRating = findBinNumber(lines, carbonOnePredicate).toInt(2)
 
-//        println("OXS")
-        while (oxLines.size != 1) {
-            val (onesCount, zerosCount) = countZerosAndOnes(oxLines, oxIdx)
-            val oxBit = if (onesCount >= zerosCount) 1 else 0
-            oxLines.removeIf { Integer.parseInt("${it[oxIdx]}") != oxBit }
-            oxIdx++
-//            println(oxLines)
-        }
-//        println("COS")
-        while (coLines.size != 1) {
-            val (onesCount, zerosCount) = countZerosAndOnes(coLines, coIdx)
-            val coBit = if (onesCount >= zerosCount) 0 else 1
-            coLines.removeIf { Integer.parseInt("${it[coIdx]}") != coBit }
-            coIdx++
-//            println(coLines)
-        }
-
-        val oxyDec = Integer.parseInt(oxLines[0], 2)
-        val carDec = Integer.parseInt(coLines[0], 2)
-        val lifeSupportRating = oxyDec * carDec
-        println("$oxyDec * $carDec = $lifeSupportRating")
+        val lifeSupportRating = oxygenRating * carbonRating
+        println("$oxygenRating * $carbonRating = $lifeSupportRating")
     }
 
-    private fun countZerosAndOnes(lines: List<String>, pos: Int): Pair<Int, Int> {
-        var onesCounter = 0
-        var zerosCounter = 0
-
-        for (binary in lines) {
-            for (line in lines) {
-                if (binary[pos] == '0') zerosCounter++
-                else onesCounter++
-            }
+    private fun findBinNumber(
+        binaryNumbers: List<String>,
+        selectDigitOnePredicate: (Int, Int) -> Boolean
+    ): String {
+        var digitPos = 0
+        val matchingNumbers = binaryNumbers.toMutableList()
+        while (matchingNumbers.size != 1) {
+            val (zerosCount, onesCount) = countZerosAndOnesAt(matchingNumbers, digitPos)
+            val bit = if (selectDigitOnePredicate(onesCount, zerosCount)) '1' else '0'
+            matchingNumbers.removeIf { number -> number[digitPos] != bit }
+            digitPos++
         }
-
-//        println("zeros: $zerosCounter, ones $onesCounter")
-        return Pair(onesCounter, zerosCounter)
+        return matchingNumbers.first()
     }
 
+    private fun countZerosAndOnesAt(binaryNumbers: List<String>, column: Int): Pair<Int, Int> =
+        binaryNumbers
+            .map { binary -> binary[column] }
+            .partition { it == '0' }
+            .run { Pair(first.size, second.size) }
 }
