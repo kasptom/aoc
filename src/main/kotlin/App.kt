@@ -1,11 +1,11 @@
 import aoc.IAocTaskKt
-import year2021.Day05
+import year2021.Day06
 import java.io.BufferedReader
 import java.io.FileReader
 import java.util.stream.Collectors
 
 fun main() {
-    val task: IAocTaskKt = Day05()
+    val task: IAocTaskKt = Day06()
 
     val classLoader: ClassLoader = task.javaClass.classLoader
     val inputFile: java.io.File = java.io.File(
