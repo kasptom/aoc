@@ -40,4 +40,13 @@ internal class ListExtensionsTest {
         val thrown = assertThrows(AssertionError::class.java) { integersGrid.transpose() }
         assertEquals("All of the inner lists have to be the same size", thrown.message)
     }
+
+    @Test
+    fun testPermutations() {
+        val list = listOf(1, 2, 3)
+
+        val result = list.permutations()
+
+        assertEquals(6, result.size)
+    }
 }
