@@ -1,21 +1,11 @@
 import aoc.IAocTaskKt
-import year2021.Day08
-import year2021.Day09
-import year2021.Day10
-import java.io.BufferedReader
-import java.io.FileReader
-import java.util.stream.Collectors
+import utils.InputReader
+import year2021.Day11
 
 fun main() {
-    val task: IAocTaskKt = Day10()
-
-    val classLoader: ClassLoader = task.javaClass.classLoader
-    val inputFile: java.io.File = java.io.File(
-        java.util.Objects.requireNonNull(classLoader.getResource(task.getFileName())).file
-    )
-    val fileReader = FileReader(inputFile)
-    val reader = BufferedReader(fileReader)
-    val lines: List<String> = reader.lines().collect(Collectors.toUnmodifiableList())
+    val task: IAocTaskKt = Day11()
+    val lines: List<String> = InputReader(task.getFileName())
+        .readLines()
 
     task.solvePartOne(lines)
     task.solvePartTwo(lines)
