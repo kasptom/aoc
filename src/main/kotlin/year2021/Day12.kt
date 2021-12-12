@@ -4,7 +4,7 @@ import aoc.IAocTaskKt
 import java.util.regex.Pattern
 
 class Day12 : IAocTaskKt {
-    override fun getFileName() = "aoc2021/input_12_test.txt"
+    override fun getFileName() = "aoc2021/input_12.txt"
 
     val validPaths: MutableList<List<String>> = mutableListOf()
     val visitedSmallCaves: MutableSet<String> = mutableSetOf()
@@ -59,63 +59,44 @@ class Day12 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        val connections = lines.map(CaveConnection::parse)
-        for (connection in connections) {
-            for (cave in connection.connection) {
-                fromCaveToCaves.putIfAbsent(cave, emptyList())
-                fromCaveToCaves[cave] = (fromCaveToCaves[cave]!! + connection.other(cave)).sorted()
-            }
-        }
-        fromCaveToCaves.forEach(::println)
         validPaths.clear()
 
         for (smallCave in fromCaveToCaves.keys.filter { it.matches(smallCavePattern) && it != "end" && it != "start" }) {
-            visitedSmallCaves.clear()
-
-            visitedSmallCaves.add("start")
+            caveVisitsCount["start"] = 1
             traverseCaves2("start", listOf("start"), smallCave)
-            visitedSmallCaves.remove("start")
         }
 
-        validPaths.forEach(::println)
+//        validPaths.forEach(::println)
         println(validPaths.distinct().size)
     }
 
     private fun traverseCaves2(cave: String, path: List<String>, smallCaveYouCanVisitTwice: String) {
 //        println(cave)
-        if (path.size > 20) {
+        if (path.size > 40) {
             return
         }
         for (nextCave in fromCaveToCaves[cave]!!) {
             if (nextCave == "end") {
-                val completePath = path + nextCave
-                if (completePath.filter { it.matches(smallCavePattern) }
-                        .groupingBy { it }
-                        .eachCount().values
-                        .any { it == 2 }) {
-                    validPaths.add(path + nextCave)
-                }
+                validPaths.add(path + nextCave)
                 continue
             }
 
             if (nextCave == "start" ||
-                visitedSmallCaves.contains(nextCave) &&
-                (caveVisitsCount.getOrDefault(nextCave, 0) == 1 ||
-                        smallCaveYouCanVisitTwice == nextCave && caveVisitsCount[nextCave]!! == 2)) {
+                smallCaveYouCanVisitTwice != nextCave && caveVisitsCount.getOrDefault(nextCave, 0) >= 1 ||
+                smallCaveYouCanVisitTwice == nextCave && caveVisitsCount.getOrDefault(nextCave, 0) >= 2
+            ) {
                 continue
             }
 
             // next
             if (nextCave.matches(smallCavePattern)) {
-                visitedSmallCaves.add(nextCave)
                 caveVisitsCount.putIfAbsent(nextCave, 0)
                 caveVisitsCount[nextCave] = caveVisitsCount[nextCave]!! + 1
             }
 
             traverseCaves2(nextCave, path + nextCave, smallCaveYouCanVisitTwice)
 
-            if (visitedSmallCaves.contains(nextCave)) {
-                visitedSmallCaves.remove(nextCave)
+            if (caveVisitsCount.containsKey(nextCave)) {
                 caveVisitsCount[nextCave] = caveVisitsCount[nextCave]!! - 1
             }
         }
