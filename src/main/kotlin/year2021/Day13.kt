@@ -11,20 +11,20 @@ class Day13 : IAocTaskKt {
 
     override fun solvePartOne(lines: List<String>) {
         val splitLineIdx = lines.indexOfFirst { it.startsWith("fold") }
-        val points = lines.subList(0, splitLineIdx)
+        val points = lines.subList(0, splitLineIdx - 1)
             .map(Point::parse)
         gridHeight = points.maxOf { it.y } + 1
         gridWidth = points.maxOf { it.x } + 1
 
         println("H=$gridHeight, W=$gridWidth")
 
-        var grid = Array(gridHeight) { IntArray(gridWidth) { 0 } }
+        val grid = Array(gridHeight) { IntArray(gridWidth) { 0 } }
 
         for (point in points) {
             grid[point.y][point.x] = 1
         }
-        println("initial grid")
-        display(grid)
+//        println("initial grid")
+//        display(grid)
         println()
 
         val folds: List<Pair<String, Int>> = lines.subList(splitLineIdx, lines.size)
@@ -42,9 +42,8 @@ class Day13 : IAocTaskKt {
         for (fold in folds) {
             val newGrid = if (fold.first == "x") foldX(points, grid, fold.second)
             else foldY(points, grid, firstFold.second)
-            grid = newGrid
 
-            display(grid)
+//            display(grid)
             println()
             val sum = newGrid.toList()
                 .flatMap { it.toList() }
@@ -56,7 +55,7 @@ class Day13 : IAocTaskKt {
     }
 
     private fun foldX(points: List<Point>, grid: Array<IntArray>, lineIdx: Int): Array<IntArray> {
-        println("folding along x=$lineIdx")
+//        println("folding along x=$lineIdx")
         val newGridWidth = lineIdx
         val newGridHeight = grid.size
         val newGrid = Array(newGridHeight) { IntArray(newGridWidth) { 0 } }
@@ -74,7 +73,7 @@ class Day13 : IAocTaskKt {
     }
 
     private fun foldY(points: List<Point>, grid: Array<IntArray>, lineIdx: Int): Array<IntArray> {
-        println("folding along y=$lineIdx")
+//        println("folding along y=$lineIdx")
         val newGridWidth = grid[0].size
         val newGridHeight = lineIdx
         val newGrid = Array(newGridHeight) { IntArray(newGridWidth) { 0 } }
@@ -93,7 +92,49 @@ class Day13 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println(lines.count())
+        val splitLineIdx = lines.indexOfFirst { it.startsWith("fold") }
+        var points = lines.subList(0, splitLineIdx - 1)
+            .map(Point::parse)
+        gridHeight = points.maxOf { it.y } + 1
+        gridWidth = points.maxOf { it.x } + 1
+
+        println("H=$gridHeight, W=$gridWidth")
+
+        var grid = Array(gridHeight) { IntArray(gridWidth) { 0 } }
+
+        for (point in points) {
+            grid[point.y][point.x] = 1
+        }
+//        println("initial grid")
+//        display(grid)
+//        println()
+
+        val folds: List<Pair<String, Int>> = lines.subList(splitLineIdx, lines.size)
+            .map { line ->
+                Pair(
+                    if (line.contains("x")) "x" else "y", line
+                        .replace("fold along y=", "")
+                        .replace("fold along x=", "").toInt()
+                )
+            }
+
+        println(points)
+        for (fold in folds) {
+            val newGrid = if (fold.first == "x") foldX(points, grid, fold.second)
+            else foldY(points, grid, fold.second)
+            grid = newGrid
+            points = mutableListOf()
+
+            for (y in 0 until gridHeight) {
+                for (x in 0 until gridWidth) {
+                    if (grid[y][x] != 0) points.add(Point(x, y))
+                }
+            }
+
+//            display(grid)
+//            println()
+        }
+        display(grid)
     }
 
     @Suppress("unused")
