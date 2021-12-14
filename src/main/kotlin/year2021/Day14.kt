@@ -6,45 +6,52 @@ class Day14 : IAocTaskKt {
     override fun getFileName(): String = "aoc2021/input_14.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        var polymer = lines[0].chunked(1)
+        solve(lines, 10)
+    }
 
-        val rules = lines.subList(1, lines.size)
+    private fun solve(lines: List<String>, repeats: Int) {
+        val polymer = lines[0].windowed(2)
+            .groupingBy { it }
+            .eachCount()
+            .mapValues { it.value.toLong() }
+            .toMutableMap()
+
+        val rules = lines.subList(2, lines.size)
             .map(Rule::parse)
             .groupBy { it.from }
             .mapValues { it.value.first().to }
-            .toMutableMap()
 
-//        rules.clear()
-
-        for (step in 1..10) {
-
-//            val left = rule.key[0] + rules[rule.key]!!
-//            val right = rules[rule.key] + rule.key[1]
-            val newPolymer = mutableListOf<String>()
-
-            for (idx in 1 until polymer.size) {
-                val key = polymer[idx - 1] + polymer[idx]
-                if (rules.containsKey(key)) {
-                    newPolymer.add(polymer[idx - 1])
-                    newPolymer.add(rules[key]!!)
-                } else {
-                    newPolymer.add(polymer[idx])
+        (1..repeats).forEach { step ->
+            val newPolymer = mutableMapOf<String, Long>()
+            polymer.forEach { (pair, count) ->
+                if (rules.containsKey(pair)) {
+                    val left = pair[0] + rules[pair]!!
+                    val right = rules[pair]!! + pair[1]
+                    newPolymer.putIfAbsent(left, 0)
+                    newPolymer.putIfAbsent(right, 0)
+                    newPolymer[left] = newPolymer[left]!! + count
+                    newPolymer[right] = newPolymer[right]!! + count
                 }
             }
-            newPolymer.add(polymer.last())
-
-            polymer = newPolymer
-//            println(newPolymer)
+            polymer.clear()
+            polymer.putAll(newPolymer)
         }
-        val result = polymer
-            .groupingBy { it }
-            .eachCount()
-            .toMap()
+        val result = polymer.map { listOf(Pair(it.key[0], it.value), Pair(it.key[1], it.value)) }
+            .flatten()
+            .groupBy { it.first }
+            .mapValues { it.value.sumOf { charCount -> charCount.second } }
+            .toMutableMap()
 
-        val minCount = result.values.minOf { it }
-        val maxCount = result.values.maxOf { it }
+        val firstChar = lines[0].first()
+        val lastChar = lines[0].last()
 
-//        println(polymer)
+        result[firstChar] = result[firstChar]!! + 1
+        result[lastChar] = result[lastChar]!! + 1
+
+        val minCount = result.values.minOf { it } / 2
+        val maxCount = result.values.maxOf { it } / 2
+
+        println(polymer)
         println(rules)
         println(result)
         println("$maxCount - $minCount = ${maxCount - minCount}")
@@ -62,6 +69,6 @@ class Day14 : IAocTaskKt {
 
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        solve(lines, 40)
     }
 }
