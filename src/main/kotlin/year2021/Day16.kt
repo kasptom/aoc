@@ -1,12 +1,10 @@
 package year2021
 
 import aoc.IAocTaskKt
-import kotlin.math.min
+import java.lang.IllegalArgumentException
+import java.lang.IndexOutOfBoundsException
 
-const val LITERAL_PACKET_CODE = "100"
-const val SUB_PACKET_15_LENGTH_ID = "0"
-
-val BIN_TO_HEX = mapOf(
+val HEX_TO_BIN = mapOf(
     "0" to "0000",
     "1" to "0001",
     "2" to "0010",
@@ -25,169 +23,167 @@ val BIN_TO_HEX = mapOf(
     "F" to "1111",
 )
 
+const val LITERAL_VALUE_TYPE_ID = 4
+
 class Day16 : IAocTaskKt {
     override fun getFileName() = "aoc2021/input_16.txt"
-
     override fun solvePartOne(lines: List<String>) {
-        println(sumVersions(lines[0]))
+        val binInput = BinaryInput.fromHex(lines[0])
+        val rootPacket = PacketNode.parse(binInput)
+        val versionsCount: Int = sumVersions(rootPacket)
+        println(versionsCount)
     }
 
-    fun sumVersions(line: String): Int {
-        val input = BinaryInput.parse(line)
-        println(input.hexFormat)
-        println(input.binFormat)
-        return input.chunks()
-            .filter { it.type == BinaryInput.Chunk.Type.VERSION }
-            .sumOf { it.binary.toInt(2) }
-    }
-
-    class BinaryInput(val hexFormat: String, val binFormat: String) {
-        val chunkedBinary = binFormat.chunked(1)
-        var pointer = 0
-        var nextChunkType = Chunk.Type.VERSION
-
-        companion object {
-            fun parse(line: String): BinaryInput {
-                val binFormat = hexToBin(line)
-                return BinaryInput(hexFormat = line, binFormat)
-            }
-
-            fun hexToBin(hex: String) = hex.chunked(1).joinToString("") { BIN_TO_HEX[it]!! }
-        }
-
-        fun chunks(): MutableList<Chunk> {
-            val chunks = mutableListOf<Chunk>()
-            var nextChunk = nextChunk()
-            while (nextChunk.type != Chunk.Type.END) {
-                chunks += nextChunk
-                nextChunk = nextChunk()
-            }
-            return chunks
-        }
-
-        private fun nextChunk(): Chunk {
-            val packets = when (nextChunkType) {
-                Chunk.Type.VERSION -> {
-                    if (pointer < chunkedBinary.size - 3) {
-                        nextChunkType = Chunk.Type.PACK_TYPE
-                        Chunk(fetch(3), Chunk.Type.VERSION)
-                    } else {
-                        nextChunkType = Chunk.Type.END
-                        Chunk("", Chunk.Type.END)
-                    }
-                }
-                Chunk.Type.PACK_TYPE -> {
-                    nextChunkType = selectPacketType(peek(3))
-                    Chunk(fetch(3), Chunk.Type.PACK_TYPE)
-                }
-                Chunk.Type.LITERAL -> {
-                    nextChunkType = literalOrNextPacket(peek(1))
-                    Chunk(fetch(5), Chunk.Type.LITERAL)
-                }
-                Chunk.Type.LENGTH_15_PACKET_SIZE -> {
-                    nextChunkType = Chunk.Type.VERSION
-                    val fetched = fetch(15)
-                    Chunk(fetched, Chunk.Type.LENGTH_15_PACKET_SIZE)
-                }
-                Chunk.Type.LENGTH_11_PACKET_COUNT -> {
-                    nextChunkType = Chunk.Type.VERSION
-                    val fetched = fetch(11)
-                    Chunk(fetched, Chunk.Type.LENGTH_11_PACKET_COUNT)
-                }
-                Chunk.Type.OPERATOR -> {
-                    val operatorCode = fetch(1)
-                    nextChunkType = selectSizeOrCountFetch(operatorCode)
-                    Chunk(operatorCode, Chunk.Type.OPERATOR)
-                }
-                Chunk.Type.END -> Chunk("", Chunk.Type.END)
-            }
-
-            return packets
-        }
-
-        private fun literalOrNextPacket(firstDigitOfLiteral: String): Chunk.Type =
-            if (firstDigitOfLiteral == "1") Chunk.Type.LITERAL else Chunk.Type.VERSION
-
-        private fun selectSizeOrCountFetch(id: String): Chunk.Type {
-//            print("selecting size or count fetch ")
-//            printCurrentPosition()
-            return if (id == SUB_PACKET_15_LENGTH_ID) {
-                Chunk.Type.LENGTH_15_PACKET_SIZE
-            }
-            else {
-                Chunk.Type.LENGTH_11_PACKET_COUNT
-            }
-        }
-
-        private fun selectPacketType(peek: String): Chunk.Type =
-            if (peek == LITERAL_PACKET_CODE) Chunk.Type.LITERAL
-            else Chunk.Type.OPERATOR
-
-        private fun fetch(count: Int): String {
-            val result = peek(count)
-            val available = min(chunkedBinary.size - pointer, count)
-//            print("fetching $available/$count: ")
-//            printCurrentPosition(available)
-            pointer += available
-            if (available < count) {
-                nextChunkType = Chunk.Type.END
-            }
-            return result
-        }
-
-        private fun peek(count: Int): String {
-//            print("peeking $count: ")
-//            printCurrentPosition()
-            return chunkedBinary.subList(min(pointer, chunkedBinary.size), min(pointer + count, chunkedBinary.size)).joinToString("")
-        }
-
-        @Suppress("unused")
-        fun printCurrentPosition(available: Int = 0) {
-            for (idx in chunkedBinary.indices) {
-                if (idx == pointer) {
-                    print("\u001b[31m${chunkedBinary[idx]}\u001b[0m")
-                } else {
-                    print(chunkedBinary[idx])
-                }
-                if (pointer + available - 1 == idx) {
-                    print("|")
-                }
-            }
-            println()
-        }
-
-        data class Chunk(val binary: String, val type: Type) {
-            val value = when(type) {
-                Type.LITERAL -> binary.substring(1).toInt(2)
-                Type.END -> "end"
-                else -> if (binary.isEmpty()) "empty" else binary.toInt(2)
-            }
-
-            enum class Type {
-                VERSION,
-                PACK_TYPE,
-                LENGTH_15_PACKET_SIZE,
-                LENGTH_11_PACKET_COUNT,
-                LITERAL,
-                OPERATOR,
-                END
-            }
-
-            override fun toString(): String {
-                return "CHUNK('$binary', $type, $value)"
-            }
-
-
-        }
+    fun sumVersions(packet: PacketNode): Int {
+        if (packet.children.isEmpty()) return packet.version
+        return packet.version + packet.children.sumOf { sumVersions(it) }
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        val input = BinaryInput.parse(lines[0])
-        val chunks = input.chunks()
-        println(chunks.size)
+        val binInput = BinaryInput.fromHex(lines[0])
+        val rootPacket = PacketNode.parse(binInput)
+        val result = rootPacket.compute()
+        println(result)
     }
 
-    object Calculator {
-        fun calculateExpression(): Int = 0
+    class PacketNode(private val type: Type, val version: Int, private val opType: OpType, val value: Long? = null, val children: List<PacketNode>) {
+        companion object {
+            fun parse(binaryInput: BinaryInput): PacketNode {
+                val version = binaryInput.fetchAsString(3).toInt(2)
+                val typeId = binaryInput.fetchAsString(3).toInt(2)
+                val opType = OpType.fromId(typeId)
+                return if (opType == OpType.VALUE) createLiteralPacketNode(version, binaryInput)
+                else createOperatorPacketNode(version, opType, binaryInput)
+            }
+
+            private fun createLiteralPacketNode(version: Int, binaryInput: BinaryInput, trySkipPadding: Boolean = true): PacketNode {
+                var usedBits = 6
+                var nextFiveBits = binaryInput.fetchAsString(5)
+                var binaryNumber = nextFiveBits.substring(1, 5)
+                usedBits += 5
+                while (nextFiveBits[0] != '0') {
+                    nextFiveBits = binaryInput.fetchAsString(5)
+                    usedBits += 5
+                    binaryNumber += nextFiveBits.substring(1, 5)
+                }
+                if (trySkipPadding) {
+                    skipPadding(usedBits, binaryInput)
+                }
+                return PacketNode(Type.LITERAL, version, OpType.VALUE, binaryNumber.toLong(2), emptyList())
+            }
+
+            private fun skipPadding(usedBits: Int, binaryInput: BinaryInput) {
+                val endPaddingSize = usedBits % 4
+                if (endPaddingSize == 0) return
+                val padding = binaryInput.fetch(endPaddingSize).distinct()
+                if (padding != listOf(0)) throw IllegalStateException("padding should contain only zeros")
+            }
+
+            private fun createOperatorPacketNode(version: Int, opType: OpType, binaryInput: BinaryInput): PacketNode {
+                val operatorMode = binaryInput.fetch(1)[0]
+                return if (operatorMode == 0) {
+                    val subPacketsLength = binaryInput.fetchAsString(15).toInt(2)
+                    val subBinaryInput = BinaryInput(binaryInput.fetch(subPacketsLength))
+                    val children: List<PacketNode> = createModeZeroOperatorChildren(subBinaryInput)
+                    PacketNode(Type.OPERATOR, version, opType, value = null, children = children)
+                } else {
+                    val subPacketsCount = binaryInput.fetchAsString(11).toInt(2)
+                    val children = createModeOneOperatorChildren(subPacketsCount, binaryInput)
+                    PacketNode(Type.OPERATOR, version, opType, value = null, children = children)
+                }
+            }
+
+            private fun createModeZeroOperatorChildren(subBinaryInput: BinaryInput): List<PacketNode> {
+                val children = mutableListOf<PacketNode>()
+                while (subBinaryInput.isNotEmpty()) {
+                    createChildren(subBinaryInput, children)
+                }
+                return children
+            }
+
+            private fun createModeOneOperatorChildren(subPacketsCount: Int, binaryInput: BinaryInput): List<PacketNode> {
+                val children = mutableListOf<PacketNode>()
+                var count = 0
+                while (count != subPacketsCount) {
+                    count++
+                    createChildren(binaryInput, children)
+                }
+                return children
+            }
+
+            private fun createChildren(subBinaryInput: BinaryInput, children: MutableList<PacketNode>, ) {
+                val version = subBinaryInput.fetchAsString(3).toInt(2)
+                val typeId = subBinaryInput.fetchAsString(3).toInt(2)
+                val opType = OpType.fromId(typeId)
+                val child =
+                    if (typeId == LITERAL_VALUE_TYPE_ID) createLiteralPacketNode(version, subBinaryInput, false)
+                    else createOperatorPacketNode(version, opType, subBinaryInput)
+                children += child
+            }
+        }
+
+        enum class Type {
+            LITERAL, OPERATOR
+        }
+
+        enum class OpType(val id: Int) {
+            SUM(0), PRODUCT(1), MIN(2), MAX(3), VALUE(4), GR8R_THAN(5), LESS_THAN(6), EQUAL(7);
+
+            companion object {
+                fun fromId(id: Int): OpType {
+                    return values().first { it.id == id }
+                }
+            }
+        }
+
+        override fun toString(): String {
+            val childrenStr = if (children.isNotEmpty()) children.joinToString(", \t\n", "\n[\n", "\n]") else ""
+            return "PACKET(T=$type, v=$version, $opType, val=$value${childrenStr})"
+        }
+
+        fun compute(): Long {
+            val reducedChildrenValues = children.map { if (it.opType != OpType.VALUE) it.compute() else it.value!! }
+            return when (opType) {
+                OpType.SUM -> reducedChildrenValues.sumOf { it }
+                OpType.PRODUCT -> reducedChildrenValues.fold(1L) { a, b -> a * b}
+                OpType.MIN -> reducedChildrenValues.minOf { it }
+                OpType.MAX -> reducedChildrenValues.maxOf { it }
+                OpType.VALUE -> value!!
+                OpType.GR8R_THAN -> if (reducedChildrenValues[0] > reducedChildrenValues[1]) 1L else 0L
+                OpType.LESS_THAN -> if (reducedChildrenValues[0] < reducedChildrenValues[1]) 1L else 0L
+                OpType.EQUAL -> if (reducedChildrenValues[0] == reducedChildrenValues[1]) 1L else 0L
+            }
+        }
+    }
+}
+
+class BinaryInput(private val binDigits: List<Int>) {
+
+    private var pointer = 0
+    fun fetchAsString(count: Int) = fetch(count).joinToString("")
+
+    fun fetch(count: Int): List<Int> {
+        if (count <= 0) throw IllegalArgumentException("count $count")
+        if (pointer + count > binDigits.size) throw IndexOutOfBoundsException("$pointer + $count > ${binDigits.size}")
+        val fetched = binDigits.subList(pointer, pointer + count)
+        pointer += count
+        return fetched
+    }
+
+    fun isNotEmpty() = binDigits.size != pointer
+    override fun toString(): String {
+        return "BIN(${binDigits.size}, $pointer)"
+    }
+
+
+    companion object {
+        fun fromHex(hexInput: String): BinaryInput {
+            val binDigits = hexInput.chunked(1) // A B
+                .map { HEX_TO_BIN[it]!! } // 1010 1011
+                .map { it.chunked(1) } // [1 0 1 0] [1 0 1 1]
+                .flatten()
+                .map { it.toInt() }
+            return BinaryInput(binDigits)
+        }
     }
 }
