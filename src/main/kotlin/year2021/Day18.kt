@@ -298,6 +298,27 @@ class Day18 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
+        val snailFishesRaw = lines
+        val largest = findLargest(snailFishesRaw)
+        println(largest)
+    }
 
+    fun findLargest(snailFishesRaw: List<String>): Int {
+        var largest = 0
+        var best: Pair<SnailFish, SnailFish>? = null
+        for (snailFish in snailFishesRaw) {
+            for (other in snailFishesRaw - snailFish) {
+                val first = SnailFish.parse(snailFish)
+                val second = SnailFish.parse(other)
+                val sum = first + second
+                val magnitude = sum.getMagnitude()
+                if (magnitude > largest) {
+                    largest = magnitude
+                    best = Pair(first, second)
+                }
+            }
+        }
+        println("best pair $best")
+        return largest
     }
 }
