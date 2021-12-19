@@ -1,6 +1,7 @@
 package year2021
 
 import aoc.IAocTaskKt
+import kotlin.math.abs
 
 // Beacon Scanner
 val INITIAL_ROTATION: List<String> = listOf("x", "y", "z")
@@ -26,6 +27,9 @@ class Day19 : IAocTaskKt {
      *
      * Assemble the full map of beacons. How many beacons are there?
      */
+
+    val translations = mutableListOf<Point3d>()
+
     override fun solvePartOne(lines: List<String>) {
         val scanners = parseScanners(lines).toMutableList()
         scanners.forEach(::println)
@@ -34,13 +38,18 @@ class Day19 : IAocTaskKt {
 
         val threshold = 12
 
+        val scannersSize = scanners.size
+
         while (scanners.isNotEmpty()) {
             val (foundScanner, rotationCode) = findTranslatedScannerFor(scannerX, scanners, threshold)!!
+            translations.add(foundScanner.cubeGrid.translation)
+
             val foundWithRemovedRotations = foundScanner.withOnlyRotation(rotationCode)
             scannerX = scannerX.mergeWith(foundWithRemovedRotations)
             println(scannerX)
             println(scannerX.cubeGrid.rotations[INITIAL_ROTATION])
             scanners.removeIf { it.id == foundScanner.id }
+            println("progress: ${scannersSize - scanners.size}/$scannersSize (${100.0 * (scannersSize - scanners.size) / scannersSize}[%])")
         }
 
         val allBeacons = scannerX.cubeGrid.rotations.values.first()
@@ -59,25 +68,31 @@ class Day19 : IAocTaskKt {
     ): Pair<Scanner, List<String>>? {
 
         for (scanner in scanners.filter { it.id != scannerX.id }) {
+
+
             val scannerXPoints = scannerX.cubeGrid.rotations[INITIAL_ROTATION]!!
             val otherScannerPoints = scanner.cubeGrid.rotations.values.flatten()
-            val translations = otherScannerPoints
-                .map { point -> scannerXPoints.map { it - point } }
-                .flatten()
+//            val translations = otherScannerPoints
+//                .map { point -> scannerXPoints.map { it - point } }
+//                .flatten()
+//            for (translation in translations) {
 
-            println("possible translations count: ${translations.count()}")
-
-            for (translation in translations) {
-                val translatedScanner = scanner.translate(translation)
-                val commonPointsRotationCode = scannerX.commonPoints(translatedScanner, threshold)
-                val commonPointsCount: Int = translatedScanner.getRotationByCode(commonPointsRotationCode).count()
-                if (commonPointsCount >= threshold) {
-//                    println("for $scannerX")
-                    println("found scanner ${translatedScanner.id} ")
-                    println("with $commonPointsCount")
-                    println("with code $commonPointsRotationCode")
-                    return Pair(translatedScanner, commonPointsRotationCode)
+            println("possible translations count: ${scannerXPoints.size * otherScannerPoints.size}")
+            for (scannerXPoint in scannerXPoints) {
+                for (otherScannerPoint in otherScannerPoints) {
+                    val translation = scannerXPoint - otherScannerPoint
+                    val translatedScanner = scanner.translate(translation)
+                    val commonPointsRotationCode = scannerX.commonPoints(translatedScanner, threshold)
+                    val commonPointsCount: Int = translatedScanner.getRotationByCode(commonPointsRotationCode).count()
+                    if (commonPointsCount >= threshold) {
+    //                    println("for $scannerX")
+                        println("found scanner $translatedScanner ")
+                        println("with $commonPointsCount")
+                        println("with code $commonPointsRotationCode")
+                        return Pair(translatedScanner, commonPointsRotationCode)
                 }
+            }
+//                }
             }
         }
         return null
@@ -136,14 +151,13 @@ class Day19 : IAocTaskKt {
             fun parse(lines: List<String>): Scanner {
                 val id = lines[0].replace("--- scanner ", "").replace(" ---", "").toInt()
                 val points3d = lines.subList(1, lines.size)
+                    .filter(String::isNotBlank)
                     .map(Point3d::parse)
                     .toSet()
                 val cubeGrid = CubeGrid(points3d, Point3d(0, 0, 0))
                 return Scanner(id, cubeGrid = cubeGrid)
             }
         }
-
-
     }
 
     data class Point3d(val x: Int, val y: Int, val z: Int) {
@@ -161,6 +175,8 @@ class Day19 : IAocTaskKt {
                 return Point3d(x, y, z)
             }
         }
+
+        fun manhattan(): Int = abs(x) + abs(y) + abs(z)
     }
 
     class CubeGrid(
@@ -253,6 +269,13 @@ class Day19 : IAocTaskKt {
 
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val distance = findLargestManhattanDistance(translations)
+        println("translations: $translations")
+        println(distance)
+    }
+
+    fun findLargestManhattanDistance(translations: MutableList<Point3d>): Int {
+        return (translations)
+            .maxOf { point -> translations.maxOf { other -> (point - other).manhattan() } }
     }
 }
