@@ -103,10 +103,10 @@ class Day18 : IAocTaskKt {
             val toSplit = findToSplit()
             if (toExplode != null) {
                 toExplode.explode()
-                println("after explode:$this")
+//                println("after explode:$this")
             } else if (toSplit != null) {
                 toSplit.split()
-                println("after split:  $this")
+//                println("after split:  $this")
             }
 
             if (toExplode != null || toSplit != null) {
@@ -161,9 +161,9 @@ class Day18 : IAocTaskKt {
          * If any regular number is 10 or greater, the leftmost such regular number splits.
          */
         fun split() {
-            println("splitting: $this")
-            val leaves = getRoot().createLeaves()
-            println("leaves: $leaves")
+//            println("splitting: $this")
+//            val leaves = getRoot().createLeaves()
+//            println("leaves: $leaves")
 //            val checkToSplit = leaves.first { it.first.value!! >= 10 }
 //            if (checkToSplit != this.left && checkToSplit != this.right) throw IllegalStateException("splitting $this instead of $checkToSplit")
 
@@ -224,15 +224,15 @@ class Day18 : IAocTaskKt {
         }
 
         operator fun plus(summand: SnailFish): SnailFish {
-            println("    $this")
-            println("+   $summand")
+//            println("    $this")
+//            println("+   $summand")
             val result = SnailFish(Either(this), Either(summand))
             result.updateDepth(0, null)
-            println("=   $result (before reduce)")
+//            println("=   $result (before reduce)")
             result.reduce()
             result.updateDepth(0, null)
-            println("=   $result")
-            println()
+//            println("=   $result")
+//            println()
             return result
         }
 
