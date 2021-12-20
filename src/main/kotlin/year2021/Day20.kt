@@ -6,49 +6,48 @@ val dxs = listOf(-1, 0, 1, -1, 0, 1, -1, 0, 1)
 val dys = listOf(-1, -1, -1, 0, 0, 0, 1, 1, 1)
 
 class Day20 : IAocTaskKt {
-    override fun getFileName() = "aoc2021/input_20.txt"
+    override fun getFileName() = "aoc2021/input_20_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val enhancementAlgorithm = lines[0].chunked(1)
-        println(enhancementAlgorithm.size)
-
-        var inputImage = lines.subList(1, lines.size)
+        val inputImage = lines.subList(1, lines.size)
             .map { line -> line.chunked(1).toMutableList() }
             .toMutableList()
 
-        println(enhancementAlgorithm)
-        display(inputImage)
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
-        inputImage.grow()
+        val times = 2
+        val result = getLitPixelsCount(times, inputImage, enhancementAlgorithm)
+        println(result)
+    }
 
-        repeat(2) {
-            display(inputImage)
+    override fun solvePartTwo(lines: List<String>) {
+        val enhancementAlgorithm = lines[0].chunked(1)
+        val inputImage = lines.subList(1, lines.size)
+            .map { line -> line.chunked(1).toMutableList() }
+            .toMutableList()
 
+        val times = 50
+        val result = getLitPixelsCount(times, inputImage, enhancementAlgorithm)
+        println(result)
+    }
+
+    private fun getLitPixelsCount(
+        times: Int,
+        image: MutableList<MutableList<String>>,
+        enhancementAlgorithm: List<String>,
+    ): Int {
+        var inputImage = image
+        repeat(5 * times) { inputImage.grow() }
+
+        repeat(times) {
             val outputImage = inputImage.copy()
-
             inputImage.update(enhancementAlgorithm, outputImage)
             inputImage = outputImage
         }
 
-        display(inputImage)
-        inputImage.clearEdge()
-        display(inputImage)
-
-        println(inputImage.flatten().count { it == "#" })
+        //        display(inputImage)
+        inputImage.clearEdge(times)
+        return inputImage.flatten().count { it == "#" }
     }
-
-    override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
-    }
-
 
     @Suppress("unused")
     private fun display(groups: List<List<String>>) {
@@ -62,11 +61,11 @@ class Day20 : IAocTaskKt {
     }
 }
 
-private fun MutableList<MutableList<String>>.clearEdge() {
+private fun MutableList<MutableList<String>>.clearEdge(padding: Int) {
     for (y in indices) {
         for (x in this[0].indices) {
-            if (y == 1 || y == size - 2) this[y][x] = "."
-            if (x == 1 || x == size - 2) this[y][x] = "."
+            if (y <= padding || y >= size - padding) this[y][x] = "."
+            if (x <= padding || x >= size - padding) this[y][x] = "."
         }
     }
 }
@@ -110,8 +109,3 @@ private fun MutableList<MutableList<String>>.grow() {
     this.add(0, topRow)
     this.add(bottomRow)
 }
-
-private fun isInRange(x: Int, y: Int, grid: List<List<String>>) =
-    isInRange(y, grid.size) && isInRange(x, grid[0].size)
-
-private fun isInRange(pos: Int, size: Int): Boolean = pos in 0 until size

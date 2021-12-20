@@ -1,6 +1,5 @@
 import aoc.IAocTaskKt
 import utils.InputReader
-import year2021.Day19
 import year2021.Day20
 
 fun main() {
