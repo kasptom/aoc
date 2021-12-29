@@ -1,67 +1,9 @@
 package year2021
 
 import aoc.IAocTaskKt
-import year2021.Day23.*
-import year2021.Day23Constants.AMPHIPOD_TO_ENERGY_STEP
-import year2021.Day23Constants.HALLWAY_ENTRANCES
-import year2021.Day23Constants.HEIGHT
-import year2021.Day23Constants.INSIDE_SYMBOLS
-import year2021.Day23Constants.MAX_COST
-import year2021.Day23Constants.MAX_DEPTH
-import year2021.Day23Constants.MOVES
-import year2021.Day23Constants.TYPE_TO_GOOD_TO_STAY_LOWER
-import year2021.Day23Constants.TYPE_TO_GOOD_TO_STAY_UPPER
-import year2021.Day23Constants.WIDTH
-import year2021.Day23Constants.childToParent
-import year2021.Day23Constants.endVertex
-import year2021.Day23Constants.grid
-import year2021.Day23Constants.vertexToMinEnergy
 import java.util.*
-
-
-object Day23Constants {
-    const val WIDTH = 13
-    const val HEIGHT = 5
-    val INSIDE_SYMBOLS = listOf('.', 'A', 'B', 'C', 'D')
-    val AMPHIPOD_TO_ENERGY_STEP = mapOf(
-        'A' to 1,
-        'B' to 10,
-        'C' to 100,
-        'D' to 1000
-    )
-
-    val HALLWAY_ENTRANCES = listOf(
-        Position(3, 1),
-        Position(5, 1),
-        Position(7, 1),
-        Position(9, 1),
-    )
-
-    val TYPE_TO_GOOD_TO_STAY_LOWER =
-        mapOf('A' to Position(3, 3), 'B' to Position(5, 3), 'C' to Position(7, 3), 'D' to Position(9, 3))
-    val TYPE_TO_GOOD_TO_STAY_UPPER =
-        mapOf('A' to Position(3, 2), 'B' to Position(5, 2), 'C' to Position(7, 2), 'D' to Position(9, 2))
-
-    val grid = Array(5) { CharArray(13) }
-
-    val MOVES = listOf(Position(0, 1), Position(1, 0), Position(0, -1), Position(-1, 0))
-    const val MAX_COST = 15556
-    const val MAX_DEPTH = 50
-
-    val vertexToMinEnergy: MutableMap<Set<Amphipod>, Int> = mutableMapOf()
-    val childToParent = mutableMapOf<Set<Amphipod>, Set<Amphipod>>()
-
-    val endVertex = listOf(
-        Amphipod(Position(3, 3), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(3, 2), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(5, 3), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(5, 2), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(7, 3), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(7, 2), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(9, 3), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-        Amphipod(Position(9, 2), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
-    ).toSet()
-}
+import kotlin.math.max
+import kotlin.math.min
 
 class Day23 : IAocTaskKt {
     override fun getFileName(): String = "aoc2021/input_23.txt"
@@ -101,12 +43,9 @@ class Day23 : IAocTaskKt {
     }
 
     private fun createInitialState(): Set<Amphipod> {
-        val amphipodPositions = listOf(
-            Position(3, 2), Position(3, 3),
-            Position(5, 2), Position(5, 3),
-            Position(7, 2), Position(7, 3),
-            Position(9, 2), Position(9, 3),
-        )
+        val amphipodPositions = (2..HEIGHT - 2).map { y ->
+            listOf(Position(3, y), Position(5, y), Position(7, y), Position(9, y))
+        }.flatten()
 
         val initialState = mutableSetOf<Amphipod>()
 
@@ -145,7 +84,9 @@ class Day23 : IAocTaskKt {
                 for (move in nextPossibleMoves) {
                     amphipod = toVisitList[amphipodIdx]
 
-                    if (amphipod.shouldNotMove()) continue
+                    if (amphipod.isBlockedInOtherRoom()) continue
+                    if (amphipod.shouldStayInTheBottomOfTheRoom()) continue
+                    if (amphipod.cheaperLetterHasOpenWay(toVisitList)) continue
 
                     val movedAmphipod = amphipod.move(move)
 
@@ -166,6 +107,7 @@ class Day23 : IAocTaskKt {
                 }
 
                 if (child == endVertex) {
+                    MAX_COST = child.energy()
                     println("END VERTEX REACHED: $child, ${child.energy()}")
                 }
 
@@ -183,7 +125,7 @@ class Day23 : IAocTaskKt {
         }
     }
 
-    val emptyGridPattern = listOf(
+    var emptyGridPattern = listOf(
         "#############",
         "#...........#",
         "###.#.#.#.###",
@@ -198,10 +140,110 @@ class Day23 : IAocTaskKt {
         }
     }
 
-    data class Position(val x: Int, val y: Int) {
-        operator fun plus(move: Position): Position = Position(x + move.x, y + move.y)
-        fun manhattan(other: Position) = kotlin.math.abs(x - other.x) + kotlin.math.abs(y - other.y)
-        override fun toString(): String = "($x, $y)"
+    fun loadGrid(lines: List<String>): Array<CharArray> {
+        for (lineIdx in lines.indices) {
+            val line = lines[lineIdx]
+            for (cellIdx in line.indices) {
+                val cell = line[cellIdx]
+                grid[lineIdx][cellIdx] = cell
+            }
+        }
+        return grid
+    }
+
+    private fun fillPadding(grid: Array<CharArray>) {
+        for (y in 0 until HEIGHT) {
+            for (x in 0 until WIDTH) {
+                val cell = grid[y][x]
+                if (!INSIDE_SYMBOLS.contains(cell)) {
+                    grid[y][x] = '#'
+                }
+            }
+        }
+    }
+
+    private fun displayGrid(grid: Array<CharArray>) {
+        for (y in 0 until HEIGHT) {
+            for (x in 0 until WIDTH) {
+                print(grid[y][x])
+            }
+            println()
+        }
+        println()
+    }
+
+    private fun Set<Amphipod>.energy(): Int {
+        val sum = this.sumOf { it.usedEnergy }
+        if (sum < 0) throw IllegalStateException("Energy $sum < 0")
+        return sum
+    }
+
+    private fun Set<Amphipod>.depth(): Int {
+        return first().stepsFromParent
+    }
+
+    override fun solvePartTwo(lines: List<String>) {
+        val modifiedLines = lines.subList(0, 3) +
+                listOf("###D#C#B#A###", "###D#B#A#C###") +
+                lines.subList(3, 5)
+
+        HEIGHT = 7
+        MAX_DEPTH = 200
+        MAX_COST = Int.MAX_VALUE / 2
+
+        emptyGridPattern = emptyGridPattern.subList(0, 4) +
+                emptyGridPattern.subList(2, 3) +
+                emptyGridPattern.subList(2, 3) +
+                emptyGridPattern.subList(4, 5)
+
+        grid = Array(7) { CharArray(13) }
+
+        endVertex = listOf(
+            Amphipod(Position(3, 5), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(3, 4), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(3, 3), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(3, 2), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(5, 5), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(5, 4), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(5, 3), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(5, 2), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(7, 5), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(7, 4), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(7, 3), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(7, 2), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(9, 5), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(9, 4), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(9, 3), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(9, 2), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+        ).toSet()
+
+
+        loadGrid(modifiedLines)
+        fillPadding(grid)
+        displayGrid(grid)
+
+        val startVertex = createInitialState()
+
+        findMinEnergy(startVertex)
+
+        var vertex: Set<Amphipod> =
+            if (childToParent.isEmpty()) endVertex else childToParent.keys.first { it == endVertex }
+        val fromParentToChild = mutableListOf<Set<Amphipod>>()
+        while (vertex != startVertex) {
+            fromParentToChild.add(vertex)
+            vertex = childToParent[vertex]!!
+        }
+        fromParentToChild.add(startVertex)
+        fromParentToChild.reverse()
+
+        for (edge in fromParentToChild.windowed(2)) {
+            setGrid(edge[1])
+            println(edge[0])
+            println("cost delta ${edge[1].energy() - edge[0].energy()}")
+            displayGrid(grid)
+        }
+
+        println("Smallest cost found: ${vertexToMinEnergy.getOrDefault(endVertex, -1)}")
     }
 
     data class Amphipod(val position: Position, val type: Char, val usedEnergy: Int, val stepsFromParent: Int) {
@@ -248,25 +290,32 @@ class Day23 : IAocTaskKt {
                     else emptyList()
                 }
                 .flatten()
-                .filter { pos -> !isForbidden(pos) }
-                .filter { pos -> !isRoomOccupiedByIntruder(pos) }
+                .filter { pos -> !isForbiddenMoveIntoOtherRoom(pos) }
+                .filter { pos -> !isRoomOccupiedByIntruderMove(pos) }
 
             return nextPositions
         }
 
-        private fun isRoomOccupiedByIntruder(pos: Position): Boolean {
-            val upperRoomPos = TYPE_TO_GOOD_TO_STAY_UPPER[type]!!
-            val lowerRoomPos = TYPE_TO_GOOD_TO_STAY_LOWER[type]!!
-            return (position.y == 2) &&
-                    (pos == upperRoomPos && (grid[upperRoomPos.y][upperRoomPos.x] != '.' && grid[upperRoomPos.y][upperRoomPos.x] != type)
-                    || pos == lowerRoomPos && (grid[lowerRoomPos.y][lowerRoomPos.x] != '.' && grid[lowerRoomPos.y][lowerRoomPos.x] != type))
+        private fun isRoomOccupiedByIntruderMove(pos: Position): Boolean {
+            val roomIdx = LETTER_TO_ROOM[type]!!
+            if (pos.x != roomIdx || pos.y == 1) return false
+            for (y in 2..HEIGHT - 2) {
+                if (grid[y][roomIdx] != '.' && grid[y][roomIdx] != type) return true
+            }
+            return false
         }
 
-        private fun isForbidden(pos: Position): Boolean {
+        private fun isRoomOccupiedByIntruder(): Boolean {
+            val roomIdx = LETTER_TO_ROOM[type]!!
+            for (y in 2..HEIGHT - 2) {
+                if (grid[y][roomIdx] != '.' && grid[y][roomIdx] != type) return true
+            }
+            return false
+        }
+
+        private fun isForbiddenMoveIntoOtherRoom(pos: Position): Boolean {
             if (position.y >= 2) return false // already in a room - good or bad
-            val upperRoomPos = TYPE_TO_GOOD_TO_STAY_UPPER[type]
-            val lowerRoomPos = TYPE_TO_GOOD_TO_STAY_LOWER[type]
-            if (pos.y >= 2 && pos != upperRoomPos && pos != lowerRoomPos) return true
+            if (pos.y >= 2 && pos.x != LETTER_TO_ROOM[type]!!) return true
             return false
         }
 
@@ -278,63 +327,93 @@ class Day23 : IAocTaskKt {
             return "($position, $type, NRG=$usedEnergy, DPTH=$stepsFromParent)"
         }
 
-        fun shouldNotMove(): Boolean {
-            val goodToConsider = TYPE_TO_GOOD_TO_STAY_UPPER[type]!!
-            val mustStay = TYPE_TO_GOOD_TO_STAY_LOWER[type]!!
-            if (mustStay == position) return true
-            if (goodToConsider == position && grid[mustStay.y][mustStay.x] == type) return true
+        fun shouldStayInTheBottomOfTheRoom(): Boolean {
+            val roomIdx = LETTER_TO_ROOM[type]
+            if (position.x != roomIdx) return false
+            if (position.y == 1) return false // hall position
+
+            for (y in position.y + 1..HEIGHT - 2) {
+                if (grid[y][roomIdx] != type) return false
+            }
+            return true
+        }
+
+        fun cheaperLetterHasOpenWay(toVisitList: List<Amphipod>): Boolean {
+            for (letter in 'A'..type) {
+                val toCheck = toVisitList.filter { it.type == letter && it.position.y == 1 && it.position != position }
+                if (toCheck.any { !it.isRoomOccupiedByIntruder() && it.hasFreeWayToRoom() }) return true
+            }
+            return false
+        }
+
+        private fun hasFreeWayToRoom(): Boolean {
+            val fromPosition = min(position.x, LETTER_TO_ROOM[type]!!)
+            val targetPosition = max(position.x, LETTER_TO_ROOM[type]!!)
+            for (x in fromPosition..targetPosition) {
+                if (x == position.x) continue
+                if (grid[1][x] == '.') continue
+                return false
+            }
+            return true
+        }
+
+        fun isBlockedInOtherRoom(): Boolean {
+            if (position.y == 1 || position.y == 2) return false
+            if (position.x == LETTER_TO_ROOM[type]!!) return false
+            for (y in position.y - 1 downTo 2) {
+                if (grid[y][position.x] != '.') return true
+            }
             return false
         }
     }
 
-    fun loadGrid(lines: List<String>): Array<CharArray> {
-        for (lineIdx in lines.indices) {
-            val line = lines[lineIdx]
-            for (cellIdx in line.indices) {
-                val cell = line[cellIdx]
-                grid[lineIdx][cellIdx] = cell
-            }
-        }
-        return grid
+    companion object {
+        var HEIGHT = 5
+        val INSIDE_SYMBOLS = listOf('.', 'A', 'B', 'C', 'D')
+        val LETTER_TO_ROOM = mapOf('A' to 3, 'B' to 5, 'C' to 7, 'D' to 9)
+
+        var grid = Array(5) { CharArray(13) }
+
+        var MAX_COST = 15556
+        var MAX_DEPTH = 50
+
+        val vertexToMinEnergy: MutableMap<Set<Amphipod>, Int> = mutableMapOf()
+        val childToParent = mutableMapOf<Set<Amphipod>, Set<Amphipod>>()
+
+        var endVertex = listOf(
+            Amphipod(Position(3, 3), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(3, 2), 'A', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(5, 3), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(5, 2), 'B', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(7, 3), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(7, 2), 'C', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(9, 3), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+            Amphipod(Position(9, 2), 'D', Int.MAX_VALUE / 8, Int.MAX_VALUE),
+        ).toSet()
+
+        val AMPHIPOD_TO_ENERGY_STEP = mapOf(
+            'A' to 1,
+            'B' to 10,
+            'C' to 100,
+            'D' to 1000
+        )
+
+        val HALLWAY_ENTRANCES = listOf(
+            Position(3, 1),
+            Position(5, 1),
+            Position(7, 1),
+            Position(9, 1),
+        )
+
+        const val WIDTH = 13
+
+        val MOVES = listOf(Position(0, 1), Position(1, 0), Position(0, -1), Position(-1, 0))
     }
 
-    private fun fillPadding(grid: Array<CharArray>) {
-        for (y in 0 until HEIGHT) {
-            for (x in 0 until WIDTH) {
-                val cell = grid[y][x]
-                if (!INSIDE_SYMBOLS.contains(cell)) {
-                    grid[y][x] = '#'
-                }
-            }
-        }
-    }
 
-    private fun displayGrid(grid: Array<CharArray>) {
-        for (y in 0 until HEIGHT) {
-            for (x in 0 until WIDTH) {
-                print(grid[y][x])
-            }
-            println()
-        }
-        println()
-    }
-
-    private fun Set<Amphipod>.energy(): Int {
-        if (this.count { it.type == 'A' } != 2) throw IllegalStateException("A count != 2: $this")
-        if (this.count { it.type == 'B' } != 2) throw IllegalStateException("B count != 2: $this")
-        if (this.count { it.type == 'C' } != 2) throw IllegalStateException("C count != 2: $this")
-        if (this.count { it.type == 'D' } != 2) throw IllegalStateException("D count != 2: $this")
-        if (size != 8) throw IllegalStateException("size $size != 8 $this")
-        val sum = this.sumOf { it.usedEnergy }
-        if (sum < 0) throw IllegalStateException("Energy $sum < 0")
-        return sum
-    }
-
-    private fun Set<Amphipod>.depth(): Int {
-        return first().stepsFromParent
-    }
-
-    override fun solvePartTwo(lines: List<String>) {
-        println("")
+    data class Position(val x: Int, val y: Int) {
+        operator fun plus(move: Position): Position = Position(x + move.x, y + move.y)
+        fun manhattan(other: Position) = kotlin.math.abs(x - other.x) + kotlin.math.abs(y - other.y)
+        override fun toString(): String = "($x, $y)"
     }
 }
