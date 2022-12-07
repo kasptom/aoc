@@ -3,7 +3,7 @@ package year2022
 import aoc.IAocTaskKt
 
 class Day07 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2022/input_07_test.txt"
+    override fun getFileName(): String = "aoc2022/input_07.txt"
     val fileSystem = mutableMapOf<String, Directory>()
 
     override fun solvePartOne(lines: List<String>) {
@@ -90,8 +90,13 @@ class Day07 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
+        val totalDiskSpace = 70000000
         val requiredUnusedSpace = 30000000
+        val usedSpace = fileSystem.get("/")!!.size
+        val unused = totalDiskSpace - usedSpace
+        val toFree = requiredUnusedSpace - unused
 
+        println(fileSystem.values.filter { it.size > toFree }.minOf { it.size })
     }
 
     sealed interface AdvFile {
