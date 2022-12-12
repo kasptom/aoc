@@ -1,8 +1,8 @@
 package year2022
 
 import aoc.IAocTaskKt
-import java.lang.IllegalStateException
 import java.util.*
+import kotlin.IllegalStateException
 
 const val START = "S"
 const val END = "E"
@@ -29,7 +29,7 @@ class Day12 : IAocTaskKt {
 
         val start = trackMap.flatten().first { it.value == START }
 
-        println(trackMap.print())
+//        println(trackMap.print())
 
         val result = findShortestPaths(start.position, trackMap).size
 
@@ -73,17 +73,17 @@ class Day12 : IAocTaskKt {
 
             currentPosition = getUnvisitedNodeWithLowestCost(unvisitedCost)
         }
-        return mapToPath(childToParent, trackMap)
+        return mapToPath(childToParent, trackMap, start)
     }
 
-    private fun mapToPath(childToParent: HashMap<Point, Point>, trackMap: GridMap): List<Point> {
+    private fun mapToPath(childToParent: HashMap<Point, Point>, trackMap: GridMap, start: Point): List<Point> {
         val endCell = trackMap.flatten().first { it.value == END }
         val path = mutableListOf<Point>()
 
         path.add(endCell.position)
         var currentCell = endCell
 
-        while (currentCell.value != START) {
+        while (currentCell.position != start) {
             val currentCellPosition: Point = childToParent[currentCell.position]!!
             currentCell = trackMap[currentCellPosition.y][currentCellPosition.x]
             path.add(currentCellPosition)
@@ -109,21 +109,6 @@ class Day12 : IAocTaskKt {
         else -> cell[0].code
     }
 
-    private fun getPossibleMovesFrom(
-        here: MapCell,
-        trackMap: List<List<MapCell>>,
-    ): List<Point> {
-        val options = mutableListOf<Point>()
-        for (optionIdx in dys.indices) {
-            val move = Point(dxs[optionIdx], dys[optionIdx])
-            val nextPosition = here.position + move
-            if (nextPosition.isLegal(here, trackMap)) {
-                options.add(nextPosition)
-            }
-        }
-        return options
-    }
-
     override fun solvePartTwo(lines: List<String>) {
         val trackMap: GridMap = lines
             .mapIndexed { yIdx, row ->
@@ -138,9 +123,13 @@ class Day12 : IAocTaskKt {
 
         var lowest = Int.MAX_VALUE
         for (start in starts) {
-            val result = findShortestPaths(start.position, trackMap).size
-            if (lowest > result) {
-                lowest = result
+            try {
+                val result = findShortestPaths(start.position, trackMap).size
+                if (lowest > result) {
+                    lowest = result
+                }
+            } catch (ise: IllegalStateException){
+//                println("no path")
             }
         }
 
@@ -162,6 +151,7 @@ class Day12 : IAocTaskKt {
     data class MapCell(val position: Point, val value: String, val height: Int)
 }
 
+@Suppress("unused")
 private fun GridMap.print(): String {
     var result = ""
     for (row in this) {
