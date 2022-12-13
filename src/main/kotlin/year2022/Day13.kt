@@ -11,7 +11,7 @@ class Day13 : IAocTaskKt {
 //            .onEach { println("chunk: $it") }
             .mapIndexed { idx, pair -> PacketPair.parse(idx + 1, pair) }
 
-        packetPairs.onEach { println(it) }
+//        packetPairs.onEach { println(it) }
         val result = packetPairs
             .map { (id, left, right) -> if (left <= right) id else 0 }
             .sumOf { it }
@@ -20,7 +20,22 @@ class Day13 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("todo")
+        val dividerPackets = listOf(
+            ListPacketValue(value = listOf(ListPacketValue(value = listOf(IntPacketValue(value = 2))))),
+            ListPacketValue(value = listOf(ListPacketValue(value = listOf(IntPacketValue(value = 6))))),
+        )
+        val packets: List<PacketValue> = (lines.filter { it.isNotEmpty() }
+            .map { PacketValue.parse(it) } + dividerPackets)
+            .filterIsInstance<ParsedPacketValue>()
+            .sorted()
+
+//        packets.onEach { println(it) }
+
+        val firstIdx = packets.indexOf(dividerPackets[0]) + 1
+        val secondIdx = packets.indexOf(dividerPackets[1]) + 1
+        val result = firstIdx * secondIdx
+        println(result)
+
     }
 
     data class PacketPair(val id: Int, val left: ParsedPacketValue, val right: ParsedPacketValue) {
@@ -37,9 +52,6 @@ class Day13 : IAocTaskKt {
 
     sealed interface PacketValue {
         companion object {
-            const val ANSI_RESET = "\u001B[0m"
-            const val ANSI_GREEN = "\u001B[32m"
-            const val ANSI_YELLOW = "\u001B[33m"
             fun parse(line: String): PacketValue {
 //                println("parsing value: $line")
                 var packetValue: ListPacketValue = line.replace("[", "[,")
@@ -49,7 +61,6 @@ class Day13 : IAocTaskKt {
                     .let { ListPacketValue(it) }
 
                 while (packetValue.value.any { it is NotParsedPacketValue }) {
-//                    println("\t$packetValue")
                     val oldValue = packetValue.value
                     val lastNotParsedLeftBraceIdx = oldValue
                         .indexOfLast { it is NotParsedPacketValue && it.isLeftBrace() }
@@ -73,14 +84,14 @@ class Day13 : IAocTaskKt {
                     packetValue = packetValue.copy(value = newValue)
                 }
 
-                return packetValue
+                return packetValue.value[0]
             }
             // [1,[2,[3,[4,[5,6,7]]]],8,9]
         }
     }
 
-    sealed interface ParsedPacketValue : PacketValue {
-        operator fun compareTo(other: ParsedPacketValue): Int =
+    sealed interface ParsedPacketValue : PacketValue, Comparable<ParsedPacketValue> {
+        override operator fun compareTo(other: ParsedPacketValue): Int =
             if (this is IntPacketValue && other is IntPacketValue) this.value.compareTo(other.value)
             else if (this is IntPacketValue && other is ListPacketValue) this.compareIntToList(other)
             else if (this is ListPacketValue && other is ListPacketValue) this.compareLists(other)
@@ -120,10 +131,10 @@ class Day13 : IAocTaskKt {
     }
 
     data class NotParsedPacketValue(val value: String) : ParsedPacketValue {
-        fun isBlank() = value.isBlank()
+        private fun isBlank() = value.isBlank()
         fun isLeftBrace() = value == "["
         fun isRightBrace() = value == "]"
-        fun toIntPacketValue() = IntPacketValue(value.toInt())
+        private fun toIntPacketValue() = IntPacketValue(value.toInt())
         fun toSimpleParsedPacketValue(): PacketValue {
             return if (isBlank()) {
                 ListPacketValue(emptyList())
