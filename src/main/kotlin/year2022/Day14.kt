@@ -18,10 +18,10 @@ class Day14 : IAocTaskKt {
         val parsedLines = lines
             .map { Line.parse(it) }
             .flatten()
-        println(parsedLines)
+//        println(parsedLines)
         val grid = Grid.create(parsedLines)
         grid.drawLines(parsedLines)
-        println(grid.print())
+//        println(grid.print())
 
         var fallingSandPosition = SAND_SOURCE_POINT
         while (grid.sandDidNotFallOut(fallingSandPosition)) {
@@ -31,7 +31,29 @@ class Day14 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val parsedLines = lines
+            .map { Line.parse(it) }
+            .flatten()
+//        println(parsedLines)
+        val oldGrid = Grid.create(parsedLines)
+
+        val bottomLine = Line(
+            from = Point(oldGrid.minCell.x - 1000, oldGrid.maxCell.y + 1),
+            to = Point(oldGrid.maxCell.x + 1000, oldGrid.maxCell.y + 1)
+        )
+
+        val newLines = parsedLines + listOf(bottomLine)
+        val grid = Grid.create(newLines)
+        grid.drawLines(newLines)
+//        println(grid.print())
+
+        var fallingSandPosition = SAND_SOURCE_POINT
+
+        while (grid.getCellAt(SAND_SOURCE_POINT).value != SAND) {
+            fallingSandPosition = grid.step(fallingSandPosition)
+        }
+//        println(grid.print())
+        println(grid.countSandUnits())
     }
 
     data class Line(val from: Point, val to: Point) {
@@ -46,7 +68,7 @@ class Day14 : IAocTaskKt {
             }
 
             private fun parseSingleLine(fromToPairs: List<String>): Line {
-                println(fromToPairs)
+//                println(fromToPairs)
                 val (fromPoint, toPoint) = fromToPairs.map { fromToPair ->
 //                    println("fromToPair: $fromToPair")
                     val (from, to) = fromToPair.split(",")
@@ -77,7 +99,7 @@ class Day14 : IAocTaskKt {
 
     data class Grid(val grid: List<List<GridCell>>, val minCell: Point, val maxCell: Point) {
         fun print(): Any {
-            println("min cell: $minCell, max cell: $maxCell")
+//            println("min cell: $minCell, max cell: $maxCell")
             return grid.joinToString("") {
                 it.joinToString("") { cell ->
                     if (cell.position == SAND_SOURCE_POINT) SAND_SOURCE.code
@@ -104,7 +126,7 @@ class Day14 : IAocTaskKt {
             }
         }
 
-        private fun getCellAt(point: Point): GridCell = grid[point.y - minCell.y][point.x - minCell.x]
+        fun getCellAt(point: Point): GridCell = grid[point.y - minCell.y][point.x - minCell.x]
 
         private fun drawVerticalLine(line: Line) {
             val x = line.from.x
@@ -166,7 +188,7 @@ class Day14 : IAocTaskKt {
         data class GridCell(val position: Point, var value: GridCellValue)
 
         enum class GridCellValue(val code: String) {
-            ROCK("#"), AIR("."), SAND("o"), FALLING_SAND("x"), SAND_SOURCE("+")
+            ROCK("#"), AIR("."), SAND("o"), SAND_SOURCE("+")
         }
     }
 }
