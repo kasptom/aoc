@@ -1,15 +1,14 @@
 package year2022
 
 import aoc.IAocTaskKt
+import kotlin.math.min
 
 const val VERTICAL_CHAMBER_WIDTH: Int = 7
-
 const val LEFT_ROCK_EDGE_OFFSET = 2
-const val BOTTOM_EDGE_OFFSET = 3 // highest rock or the floor, if there isn't one
-
+const val BOTTOM_EDGE_OFFSET = 3
 
 class Day17 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2022/input_17_test.txt"
+    override fun getFileName(): String = "aoc2022/input_17.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val moves = lines.first().chunked(1)
@@ -24,6 +23,7 @@ class Day17 : IAocTaskKt {
         repeat(2022) {
             game.processNextRock()
         }
+//        board.printBoard()
         println(game.towerHeight())
     }
 
@@ -37,24 +37,49 @@ class Day17 : IAocTaskKt {
 
         val game = TetrisGame(moves, rocksGenerator, board)
 
-//        repeat(2022) {
-        while(game.patternRepeats()) {
+        while (!game.patternRepeats()) {
             game.processNextRock()
         }
-        println(game.towerHeight())
-        val rocksCount = 1000000000000
-        val remaining = rocksCount % game.usedRocksCounter
-        val newMoves = lines.first().chunked(1).let { TetrisMove(it, game.usedRocksCounter % it.size) }
-        val newRocksGenerator = TetrisRockGenerator(startFrom = game.usedRocksCounter % newMoves.getMovesCount())
-        val newBoard = TetrisBoard(VERTICAL_CHAMBER_WIDTH)
-        val remainingGame = TetrisGame(newMoves, newRocksGenerator, newBoard)
+//        board.printBoard()
+//        println(game.towerHeight())
+//        println("non-repeating bottom part: ")
+//        println(game.display(game.nonRepeatingBottomPart!!))
+
+        var rocksLeftToProcess = 1000000000000
+
+        val introMoves = lines.first().chunked(1).let(::TetrisMove)
+        val introGenerator = TetrisRockGenerator()
+        val introBoard = TetrisBoard(VERTICAL_CHAMBER_WIDTH)
+        val introGame = TetrisGame(introMoves, introGenerator, introBoard)
+
+        while (introBoard.allRowsWithBlocks() != game.nonRepeatingBottomPart) {
+            rocksLeftToProcess--
+            introGame.processNextRock()
+        }
+        val startTowerHeight = introGame.towerHeight()
+
+        var rocksPerPattern = 0
+        while (introBoard.allRowsWithBlocks() != (game.pattern!! + game.nonRepeatingBottomPart!!)) {
+            rocksLeftToProcess--
+            rocksPerPattern++
+            introGame.processNextRock()
+        }
+        val singlePatternTowerHeight = introGame.towerHeight() - startTowerHeight
+
+        println("intro game ended, left: $rocksLeftToProcess")
+
+        val remaining = rocksLeftToProcess % rocksPerPattern
 
         println("remaining game size: $remaining")
         repeat(remaining.toInt()) {
-            game.processNextRock()
+            introGame.processNextRock()
         }
+        val endTowerHeight = introGame.towerHeight() - startTowerHeight - singlePatternTowerHeight
 
-        val ultraTowerHeight = (rocksCount / game.usedRocksCounter) * game.towerHeight() + remainingGame.towerHeight()
+        val ultraTowerHeight = startTowerHeight +
+                ((rocksLeftToProcess / rocksPerPattern) * singlePatternTowerHeight) +
+                endTowerHeight + singlePatternTowerHeight
+
         println(ultraTowerHeight)
     }
 
@@ -63,7 +88,6 @@ class Day17 : IAocTaskKt {
         private var movesSize = moves.size
 
         fun getNextMove(): String = moves[currentIdx++ % movesSize]
-        fun getMovesCount() = currentIdx
     }
 
     data class TetrisRockGenerator(val startFrom: Int = 0) {
@@ -89,14 +113,17 @@ class Day17 : IAocTaskKt {
     }
 
     data class TetrisGame(val moves: TetrisMove, val generator: TetrisRockGenerator, val board: TetrisBoard) {
-        var usedRocksCounter = 0
+        private var usedRocksCounter = 0
+        var pattern: List<List<String>>? = null
+        var nonRepeatingBottomPart: List<List<String>>? = null
+
         fun processNextRock() {
             usedRocksCounter++
             val nextRock = generator.getNextRock()
             board.placeNewRock(nextRock)
 //            board.printBoard()
 //            board.clearBoard()
-            while(true) {
+            while (true) {
                 board.moveFallingRock(moves.getNextMove())
                 if (!board.isMovingRockStuck(0, 1, "if")) {
                     board.moveFallingRockDown()
@@ -109,19 +136,58 @@ class Day17 : IAocTaskKt {
 
         fun towerHeight(): Int = board.getTowerHeight()
         fun patternRepeats(): Boolean {
-            return usedRocksCounter != 1324
-//            return false // TODO detect when the pattern repeats
+            val rowsWithBlocks = board.allRowsWithBlocks()
+
+            if (rowsWithBlocks.size < 100) return false
+
+            val topRowGroup = rowsWithBlocks.subList(0, 10)
+            val firstTopRowRepeatIdx = List(rowsWithBlocks.size) { idx -> idx }
+                .indexOfFirst { idx ->
+                    idx > 0 &&
+                            rowsWithBlocks.subList(idx, min(rowsWithBlocks.size, idx + topRowGroup.size)) == topRowGroup
+                }
+
+            if (firstTopRowRepeatIdx == -1) return false
+
+            if (firstTopRowRepeatIdx < 10) return false
+
+            val rowsDivided = rowsWithBlocks.windowed(
+                firstTopRowRepeatIdx,
+                step = firstTopRowRepeatIdx,
+                partialWindows = true
+            )
+
+            if (rowsDivided.size < 4) return false
+
+            return if (rowsDivided[0] == rowsDivided[1] && rowsDivided[1] == rowsDivided[2]) {
+//                println("found the pattern")
+//                println(display(rowsDivided[0]))
+//                println("------")
+//                println("all rows size: ${rowsWithBlocks.size}")
+//                val rowsDividedSumSize = rowsDivided.sumOf { it.size }
+//                println("rows divided sum size: $rowsDividedSumSize")
+//                println("non-repeating bottom part size: ${rowsWithBlocks.size - rowsDividedSumSize}")
+//                println(display(rowsWithBlocks.subList(rowsDividedSumSize, rowsWithBlocks.size)))
+//                println("----------")
+                pattern = rowsDivided[0].toList()
+                nonRepeatingBottomPart = rowsDivided.last().toList()
+                true
+            } else false
         }
+
+        @Suppress("unused")
+        fun display(rows: List<List<String>>) =
+            rows.joinToString("\n") { it.joinToString("") }
     }
 
     data class TetrisBoard(val width: Int, val initialHeight: Int = 8) {
-        private val BOTTOM_ROW: List<String> = listOf("+") + (1..width).map { "-" } + "+"
-        private val EMPTY_ROW: List<String> = listOf("|") + (1..width).map { "." } + "|"
+        private val bottomRow: List<String> = listOf("+") + (1..width).map { "-" } + "+"
+        private val emptyRow: List<String> = listOf("|") + (1..width).map { "." } + "|"
         private val topToBottomRows: MutableList<MutableList<String>> = initializeTopToBottomRows()
 
         private fun initializeTopToBottomRows() = (initialHeight downTo 1)
             .map { lvl ->
-                if (lvl != 1) EMPTY_ROW.toMutableList() else BOTTOM_ROW.toMutableList()
+                if (lvl != 1) emptyRow.toMutableList() else bottomRow.toMutableList()
             }
             .toMutableList()
 
@@ -131,24 +197,19 @@ class Day17 : IAocTaskKt {
             println()
         }
 
-        fun display(): String {
-            return topToBottomRows.joinToString("\n") { it.joinToString("") }
-        }
+        private fun display(): String = topToBottomRows.joinToString("\n") { it.joinToString("") }
 
-        fun getTopmostRowWithRockIdx(): Int {
-            return topToBottomRows.indexOfFirst { it.contains("#") || it.contains("-") }
-        }
+        private fun getTopmostRowWithRockIdx(): Int =
+            topToBottomRows.indexOfFirst { it.contains("#") || it.contains("-") }
 
-        fun getEmptySpaceAvailable(): Int {
-            return topToBottomRows.indexOfLast { it == EMPTY_ROW } + 1
-        }
+        private fun getEmptySpaceAvailable(): Int = topToBottomRows.indexOfLast { it == emptyRow } + 1
 
         fun placeNewRock(nextRock: TetrisRock) {
             val emptySpaceAvailable = getEmptySpaceAvailable()
             if (emptySpaceAvailable < 8) {
                 topToBottomRows.addAll(
                     0,
-                    (1..(8 - emptySpaceAvailable)).map { EMPTY_ROW.toMutableList() }.toMutableList()
+                    (1..(8 - emptySpaceAvailable)).map { emptyRow.toMutableList() }.toMutableList()
                 )
             }
             val drawStartIdx = getTopmostRowWithRockIdx() - BOTTOM_EDGE_OFFSET - nextRock.height
@@ -231,6 +292,11 @@ class Day17 : IAocTaskKt {
 
         fun getTowerHeight(): Int {
             return topToBottomRows.count { it.contains("#") }
+        }
+
+        fun allRowsWithBlocks(): List<List<String>> {
+            val firstNotEmptyIdx = getTopmostRowWithRockIdx()
+            return topToBottomRows.subList(firstNotEmptyIdx, topToBottomRows.size - 1).toList()
         }
     }
 }
