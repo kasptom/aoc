@@ -17,7 +17,7 @@ class Day19Test {
         val maxTime = 24
 
         // when
-        val blueprints = input.map { Day19.Blueprint.parse(it) }
+        val blueprints = input.map { Day19.Blueprint.parse(it, maxTime) }
         val result = Day19().getBlueprintToMaxGeods(blueprints, maxTime)
         val sum = result.sumOf { (id, maxGeods) -> id * maxGeods }
 
@@ -36,7 +36,7 @@ class Day19Test {
         val maxTime = 32
 
         // when
-        val blueprints = input.map { Day19.Blueprint.parse(it) }
+        val blueprints = input.map { Day19.Blueprint.parse(it, maxTime) }
         val result = Day19().getBlueprintToMaxGeods(blueprints, maxTime)
 //        val sum = result.sumOf { (id, maxGeods) -> id * maxGeods }
 
@@ -84,7 +84,7 @@ class Day19Test {
         val firstPartAnswer = InputReader("aoc2022/answer_19.txt").readLines().first().toInt()
 
         // when
-        val blueprints = input.map { Day19.Blueprint.parse(it) }
+        val blueprints = input.map { Day19.Blueprint.parse(it, maxTime) }
         val result = Day19().getBlueprintToMaxGeods(blueprints, maxTime)
             .sumOf { (id, maxGeods) -> id * maxGeods }
 

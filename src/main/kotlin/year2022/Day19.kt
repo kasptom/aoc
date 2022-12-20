@@ -1,37 +1,25 @@
 package year2022
 
 import aoc.IAocTaskKt
+import year2022.Day19.Blueprint.Companion.zeroRobotsMap
 import year2022.Day19.Money.Mineral
 import year2022.Day19.Money.Mineral.*
 import java.util.*
 import kotlin.math.min
 
-const val MAX_STATES_STORED = 1000
-
+const val MAX_STATES_STORED = 2000
 val MOST_TO_LEAST_VALUABLE = listOf(GEODE, OBSIDIAN, CLAY, ORE)
 
-
-val MINERAL_TO_WEIGHT = mapOf(
- /*   ORE to 1,
-    CLAY to 100,
-    OBSIDIAN to 10000,
-    GEODE to 100000000*/
-       ORE to MAX_STATES_STORED / 10,
-    CLAY to MAX_STATES_STORED,
-    OBSIDIAN to MAX_STATES_STORED * MAX_STATES_STORED,
-    GEODE to 100 * MAX_STATES_STORED * MAX_STATES_STORED
-)
-
 class Day19 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2022/input_19_test.txt"
+    override fun getFileName(): String = "aoc2022/input_19.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        val blueprints = lines.map { Blueprint.parse(it) }
+        val maxTime = 24
+        val blueprints = lines.map { Blueprint.parse(it, maxTime) }
 //        blueprints.onEach { blueprint ->
 //            println(blueprint.id)
 //            blueprint.robotTypeToCost.onEach { println("\t$it") }
 //        }
-        val maxTime = 24
         val qualityLevels = getBlueprintToMaxGeods(blueprints, maxTime)
         val qualityLevelsSum = qualityLevels
             .sumOf { (id, maxGeodeMined) -> id * maxGeodeMined }
@@ -45,21 +33,17 @@ class Day19 : IAocTaskKt {
         .map { blueprint ->
             val productionState = ProductionState(
                 blueprint = blueprint,
-                moneyAvailable = MOST_TO_LEAST_VALUABLE.groupBy { it }
+                earnedMinerals = MOST_TO_LEAST_VALUABLE.groupBy { it }
                     .mapValues { (k, _) -> Money(0, k) }
                     .toMutableMap(),
                 robotsAvailable = ProductionState.createInitialRobotsAvailability(),
-                notReadyRobots = MOST_TO_LEAST_VALUABLE.groupBy { it }
-                    .mapValues { (k, _) -> Robot(k, 0) }
-                    .toMutableMap(),
+                notReadyRobots = zeroRobotsMap(),
                 timeElapsed = 0,
                 maxTime = maxTime,
                 history = emptyList(),
             )
 
-//            val costToShortestTime: MutableMap<Resources, Int> = mutableMapOf() // TODO
             val productionStates = mutableListOf(productionState)
-
             val bestToWorst: TreeSet<ProductionState> = TreeSet<ProductionState>(ProductionState::compareTo)
 
             while (productionStates.all { it.timeElapsed < maxTime }) {
@@ -67,35 +51,13 @@ class Day19 : IAocTaskKt {
                 for (state in productionStates) {
                     val nextStates = state.generateNextStates().flatMap { it.produce() }
                     for (nextState in nextStates) {
-//                        val time = nextState.timeElapsed
-//                        val cost = nextState.getResources() // TODO
-                     /*   if (!costToShortestTime.containsKey(cost)) {
-                            costToShortestTime[cost] = time*/
-                            bestToWorst.add(nextState)
-//                            selectedNextStates.add(nextState)
-//                        } else if (costToShortestTime[cost]!! > time) {
-//                            costToShortestTime[cost] = time
-//                            bestToWorst[cost.value(blueprint)] = nextState
-//                            selectedNextStates.add(nextState)
-//                        }
+                        bestToWorst.add(nextState)
                     }
                 }
-                productionStates.clear() // MAGIC
-                productionStates.addAll(
-                    bestToWorst.toList().subList(0, min(bestToWorst.size, MAX_STATES_STORED))
-                )
-//                productionStates.sort()
-//
-//                val distinct = productionStates.distinct()
-//                val limited =
-//                    if (distinct.size > MAX_STATES_STORED) distinct.subList(0, MAX_STATES_STORED) else distinct
-//
-//                productionStates.clear()
-//                productionStates.addAll(limited)
-
-//                println(productionStates)
-//                println(costToShortestTime.size)
-//                println("-------------------------------------")
+                productionStates.clear()
+                productionStates.addAll(bestToWorst.toList().subList(0, min(bestToWorst.size, MAX_STATES_STORED)))
+//                println(productionStates.size)
+//                println("best: ${productionStates.first()}")
             }
             productionStates.sortByDescending { it.getCollectedMineralCount(GEODE) }
 
@@ -105,23 +67,26 @@ class Day19 : IAocTaskKt {
 //            bestState.history.onEach {
 //                println("$it")
 //            }
-            println("best state found")
-            println(bestState)
-            println("mined:$maxGeodeMined * id:${blueprint.id} = ${maxGeodeMined * blueprint.id}")
+//            println("best state found")
+//            println(bestState)
+//            println("mined:$maxGeodeMined * id:${blueprint.id} = ${maxGeodeMined * blueprint.id}")
             Pair(blueprint.id, maxGeodeMined)
         }
 
     override fun solvePartTwo(lines: List<String>) {
-        val notEatenBlueprints = lines.map { Blueprint.parse(it) }.subList(0, min(3, lines.size))
         val maxTime = 32
+        val notEatenBlueprints = lines.map { Blueprint.parse(it, maxTime) }.subList(0, min(3, lines.size))
         val qualityLevels = getBlueprintToMaxGeods(notEatenBlueprints, maxTime)
         val qualityLevelsSum = qualityLevels
             .onEach { println(it) }
-            .sumOf { (_, maxGeodeMined) -> maxGeodeMined }
+            .map { (_, maxGeod) -> maxGeod }
+            .fold(1) { a, b -> a * b }
         println(qualityLevelsSum)
     }
 
-    data class Blueprint(val id: Int, val robotTypeToCost: Map<Mineral, Cost>) {
+    data class Blueprint(val id: Int, val robotTypeToCost: Map<Mineral, Cost>, val maxTime: Int) {
+        val oreCalculator = ScoreCalculator(robotTypeToCost, maxTime)
+
         fun buy(
             howManyPerTypeCanBuy: Map<Mineral, Int>,
             moneyAvailable: Map<Mineral, Money>,
@@ -143,9 +108,7 @@ class Day19 : IAocTaskKt {
                                 val newMoneyAvailable = mutableMapOf<Mineral, Money>()
                                 moneyAvailable.forEach { (currency, money) -> newMoneyAvailable[currency] = money }
 
-                                val producedRobots = MOST_TO_LEAST_VALUABLE.groupBy { it }
-                                    .mapValues { (k, _) -> Robot(k, 0) }
-                                    .toMutableMap()
+                                val producedRobots = zeroRobotsMap()
 
                                 robotToBuyCount.filter { (_, buyCount) -> buyCount > 0 }.forEach { (type, buyCount) ->
                                     val robotCost = robotTypeToCost[type]!!
@@ -172,7 +135,7 @@ class Day19 : IAocTaskKt {
         }
 
         companion object {
-            fun parse(line: String): Blueprint {
+            fun parse(line: String, maxTime: Int): Blueprint {
                 val (blueprintStr, eachRobotsStrings) = line.split(": ")
                 val id = blueprintStr.replace("Blueprint ", "").toInt()
                 val robotTypeToCost = eachRobotsStrings.split(". ")
@@ -197,8 +160,12 @@ class Day19 : IAocTaskKt {
                     }.groupBy { (robotType, _) -> Mineral.valueOf(robotType.uppercase()) }
                     .mapValues { entry -> entry.value.map { (_, costs) -> costs }.first() }
 
-                return Blueprint(id, robotTypeToCost)
+                return Blueprint(id, robotTypeToCost, maxTime)
             }
+
+            fun zeroRobotsMap() = MOST_TO_LEAST_VALUABLE.groupBy { it }
+                .mapValues { (k, _) -> Robot(k, 0) }
+                .toMutableMap()
         }
     }
 
@@ -254,48 +221,71 @@ class Day19 : IAocTaskKt {
         override fun toString(): String = "🤖($resourcePerMinute $type/min)"
     }
 
-    data class Resources(
-        val cost: Map<Mineral, Int>,
-        val activeRobots: Map<Mineral, Int>,
-        val idleRobots: Map<Mineral, Int>,
+    data class ScoreCalculator(
+        val robotTypeToCost: Map<Mineral, Cost>,
+        val maxTime: Int,
     ) {
+        private val mineralToOreAmount: Map<Mineral, Int> = convert(robotTypeToCost)
 
-        fun value(blueprint: Blueprint, timeLeft: Int): Int {
-            // TODO
-            return (cost.map { (k, v) -> v * MINERAL_TO_WEIGHT[k]!!}.sum()) +
-                    (activeRobots.map { (k, v) -> v * MINERAL_TO_WEIGHT[k]!! }.sum()) * timeLeft +
-                    idleRobots.map { (k, v) -> v * MINERAL_TO_WEIGHT[k]!!}.sum()
+        private fun convert(robotTypeToCost: Map<Mineral, Cost>): Map<Mineral, Int> {
+            val mineralToOre = mutableMapOf<Mineral, Int>()
+            mineralToOre[ORE] = 1
+            for (mineral in MOST_TO_LEAST_VALUABLE.reversed()) {
+                mineralToOre[mineral] =
+                    robotTypeToCost[mineral]!!.cost.values.sumOf { money -> toOreAmount(mineralToOre, money) }
+            }
+            return mineralToOre
+        }
+
+        private fun toOreAmount(mineralToOre: MutableMap<Mineral, Int>, money: Money): Int {
+            if (money.currency == ORE) return money.amount
+            val mineralIdx = MOST_TO_LEAST_VALUABLE.indexOf(money.currency)
+            return money.amount * toOreAmount(mineralToOre, Money(1, MOST_TO_LEAST_VALUABLE[mineralIdx + 1]))
+        }
+
+        fun estimateInOre(
+            estimatedMineral: Mineral,
+            timeElapsed: Int,
+            earnedMinerals: Map<Mineral, Money>,
+            activeRobots: Map<Mineral, Robot>,
+            idleRobots: Map<Mineral, Robot>,
+        ): Money {
+            val remainingTime = maxTime - timeElapsed
+            val earnedMineral =
+                earnedMinerals[estimatedMineral]!!.let { (amount, mineral) -> mineralToOreAmount[mineral]!! * amount }
+            val activeMineralRobots =
+                activeRobots[estimatedMineral]!!.let { (mineral, rpm) -> mineralToOreAmount[mineral]!! * rpm } * remainingTime
+            val idleRobotsValue =
+                idleRobots[estimatedMineral]!!.let { (mineral, rpm) -> mineralToOreAmount[mineral]!! * rpm }
+            return Money(earnedMineral + activeMineralRobots + idleRobotsValue, ORE)
         }
     }
 
     data class ProductionState(
         val blueprint: Blueprint,
-        val moneyAvailable: Map<Mineral, Money>,
+        val earnedMinerals: Map<Mineral, Money>,
         val robotsAvailable: Map<Mineral, Robot>,
         val notReadyRobots: Map<Mineral, Robot>,
         val timeElapsed: Int, val maxTime: Int,
         val history: List<ProductionState>,
     ) : Comparable<ProductionState> {
         init {
-            if (moneyAvailable.size != MOST_TO_LEAST_VALUABLE.size) throw IllegalStateException("invalid size")
+            if (earnedMinerals.size != MOST_TO_LEAST_VALUABLE.size) throw IllegalStateException("invalid size")
         }
 
         fun getCollectedMineralCount(type: Mineral): Int {
-            return moneyAvailable.getOrDefault(type, Money(0, type)).amount
+            return earnedMinerals.getOrDefault(type, Money(0, type)).amount
         }
 
         fun generateNextStates(): List<ProductionState> {
             val bestToWorst: TreeSet<ProductionState> = TreeSet<ProductionState>(ProductionState::compareTo)
-//            val nextStates = mutableListOf<ProductionState>()
-//            nextStates.add(this.copy())
             bestToWorst.add(this.copy())
-
             val howManyPerTypeCanBuy = blueprint.robotTypeToCost.mapValues { (_, cost) ->
-                cost.howManyCanBuy(moneyAvailable)
+                cost.howManyCanBuy(earnedMinerals)
             }
             val possibleBuys = blueprint.buy(
                 howManyPerTypeCanBuy,
-                moneyAvailable,
+                earnedMinerals,
                 blueprint.robotTypeToCost,
             )
             possibleBuys.forEach { (notReadyRobots, newMoneyAvailable) ->
@@ -325,21 +315,26 @@ class Day19 : IAocTaskKt {
         }
 
         override fun compareTo(other: ProductionState): Int {
-//            if (timeElapsed != other.timeElapsed) throw IllegalStateException("cannot compare different times")
-            val resources = getResources().value(blueprint, maxTime - timeElapsed)
-            val otherResources = other.getResources().value(blueprint, maxTime - other.timeElapsed)
-            return otherResources.compareTo(resources)
+            if (this == other) return 0
+            for (mineral in MOST_TO_LEAST_VALUABLE) {
+                val oreValue = blueprint.oreCalculator.estimateInOre(
+                    mineral,
+                    timeElapsed,
+                    earnedMinerals,
+                    robotsAvailable,
+                    notReadyRobots
+                )
+                val otherOreValue = blueprint.oreCalculator.estimateInOre(
+                    mineral,
+                    other.timeElapsed,
+                    other.earnedMinerals,
+                    other.robotsAvailable,
+                    other.notReadyRobots
+                )
+                if (oreValue != otherOreValue) return otherOreValue.compareTo(oreValue)
+            }
+            return timeElapsed.compareTo(other.timeElapsed)
         }
-
-        private fun countAllMinerals(mineralType: Mineral): Int {
-            val produced = 20 * moneyAvailable.getOrDefault(mineralType, Money(0, mineralType)).amount
-            val createdPerMinute =
-                10 * robotsAvailable.getOrDefault(mineralType, Robot(mineralType, 0)).resourcePerMinute
-            val createdPerMinuteInNotReady =
-                notReadyRobots[mineralType]!!.resourcePerMinute
-            return produced + createdPerMinute + createdPerMinuteInNotReady
-        }
-
 
         fun produce(): List<ProductionState> {
             if (timeElapsed == maxTime) return listOf(this)
@@ -349,12 +344,11 @@ class Day19 : IAocTaskKt {
                 val newRobotChoices = notReadyRobots
                     .values
                     .filter { it.resourcePerMinute > 0 }
-                    .sortedBy { MOST_TO_LEAST_VALUABLE.indexOf(it.type) } // todo test
+                    .sortedBy { MOST_TO_LEAST_VALUABLE.indexOf(it.type) }
                     .map { Robot(it.type, resourcePerMinute = 1) }
 
                 val newStates = mutableListOf<ProductionState>()
 
-//                for (robotToBuild in newRobotChoices.subList(0, 1)) { // TODO (Tets)
                 for (robotToBuild in newRobotChoices) {
                     newStates.add(
                         ProductionState(
@@ -387,7 +381,7 @@ class Day19 : IAocTaskKt {
         private fun newMoneyAvailable(): MutableMap<Mineral, Money> {
             val newMoneyAvailable = mutableMapOf<Mineral, Money>()
             for ((type, robot) in robotsAvailable) {
-                val oldMoneyAvailable = moneyAvailable.getOrDefault(type, Money(0, type))
+                val oldMoneyAvailable = earnedMinerals.getOrDefault(type, Money(0, type))
                 newMoneyAvailable.putIfAbsent(type, oldMoneyAvailable)
                 newMoneyAvailable[type] = newMoneyAvailable[type]!! + Money(robot.resourcePerMinute, type)
             }
@@ -395,18 +389,7 @@ class Day19 : IAocTaskKt {
         }
 
         override fun toString(): String {
-            return "State(⌚=$timeElapsed/$maxTime, ${blueprint.id}, 🏦: ${moneyAvailable.values}, 🏭: =${robotsAvailable.values})"
-        }
-
-        private fun getResources(): Resources {
-            val cost = moneyAvailable.mapValues { it.value.amount }
-            val activeRobots = robotsAvailable.mapValues { it.value.resourcePerMinute }
-            val idleRobots = notReadyRobots.mapValues { it.value.resourcePerMinute }
-            return Resources(
-                cost = cost,
-                activeRobots = activeRobots,
-                idleRobots = idleRobots
-            )
+            return "State(⌚=$timeElapsed/$maxTime, ${blueprint.id}, 🏦: ${earnedMinerals.values}, 🏭: =${robotsAvailable.values})"
         }
     }
 }
