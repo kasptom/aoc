@@ -20,9 +20,9 @@ class Day23 : IAocTaskKt {
 
         val roundsLimit = 10
 
-        println("== Initial State ==")
-        println(grid.elfMap.display())
-        println()
+//        println("== Initial State ==")
+//        println(grid.elfMap.display())
+//        println()
 
         for (round in 1 .. roundsLimit) {
             val roundDirections =
@@ -45,7 +45,7 @@ class Day23 : IAocTaskKt {
             for (yIdx in newElfMap.indices) {
                 for (xIdx in newElfMap[yIdx].indices) {
                     val cell = grid[Point(xIdx, yIdx)]
-                    print(cell)
+//                    print(cell)
                     if (cell.state == ".") continue
                     if (grid.noElvesAround(cell)) {
                         newElfMap[cell.pos.y][cell.pos.x] = cell.copy()
@@ -66,20 +66,75 @@ class Day23 : IAocTaskKt {
                         newElfMap[cell.pos.y][cell.pos.x] = cell.copy()
                     }
                 }
-                println()
+//                println()
             }
 
             grid.updateCells(newElfMap)
-            println("== End of Round $round ==")
-            println(grid.elfMap.display())
-            println()
+//            println("== End of Round $round ==")
+//            println(grid.elfMap.display())
+//            println()
         }
         val emptyTilesWithinRegion: Int = grid.countEmptyTilesInElvesRectangle()
         println(emptyTilesWithinRegion)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val grid: ElfGrid = lines.mapIndexed { yIdx, line ->
+            line
+                .chunked(1)
+                .mapIndexed { xIdx, cell -> GridCell(Point(xIdx, yIdx), cell) }
+                .toMutableList()
+        }.toMutableList()
+            .let { ElfGrid(it) }
+
+        var roundsCounter = 1
+
+//        println("== Initial State ==")
+//        println(grid.elfMap.display())
+//        println()
+
+        var previousStateChanged = true
+        while (previousStateChanged) {
+            val roundDirections =
+                Direction.values().toList().subList((roundsCounter - 1) % 4, 4) + Direction.values().toList().subList(0, (roundsCounter - 1) % 4)
+            if (grid.edgeIsOccupied()) {
+                grid.grow()
+            }
+            val newElfMap = grid.elfMap
+                .copy()
+                .reset()
+
+            for (yIdx in newElfMap.indices) {
+                for (xIdx in newElfMap[yIdx].indices) {
+                    val cell = grid[Point(xIdx, yIdx)]
+//                    print(cell)
+                    if (cell.state == ".") continue
+                    if (grid.noElvesAround(cell)) {
+                        newElfMap[cell.pos.y][cell.pos.x] = cell.copy()
+                        continue
+                    }
+                    var canMove = false
+                    for (direction in roundDirections) {
+                        if (grid.noElvesInDirection(cell, direction)) {
+//                            println("$cell proposes $direction")
+                            val proposedPosition = cell.pos + DIRECTION_TO_DIFF[direction]!!
+                            // grid[proposedPosition].state = cell.state
+                            grid.addToInterested(cell, proposedPosition)
+                            canMove = true
+                            break
+                        }
+                    }
+                    if (!canMove) {
+                        newElfMap[cell.pos.y][cell.pos.x] = cell.copy()
+                    }
+                }
+//                println()
+            }
+
+            previousStateChanged = grid.updateCells(newElfMap)
+            roundsCounter++
+        }
+        println(roundsCounter - 1)
     }
 
     data class GridCell(val pos: Point, var state: String) {
@@ -147,10 +202,14 @@ class Day23 : IAocTaskKt {
             pointToInterestedElves[proposedPosition] = pointToInterestedElves[proposedPosition]!! + cell.pos
         }
 
-        fun updateCells(newElfMap: ElfMap) {
+        fun updateCells(newElfMap: ElfMap): Boolean {
+            var atLeastOneMoved = false
             this.elfMap = newElfMap
             for ((point, interestedElves) in pointToInterestedElves) {
-                if (interestedElves.size == 1) this[point].state = "#"
+                if (interestedElves.size == 1) {
+                    this[point].state = "#"
+                    atLeastOneMoved = true
+                }
                 else {
                     for (elf in interestedElves) {
                         this[elf].state = "#"
@@ -158,6 +217,7 @@ class Day23 : IAocTaskKt {
                 }
             }
             this.pointToInterestedElves.clear()
+            return atLeastOneMoved
         }
 
         fun countEmptyTilesInElvesRectangle(): Int {
@@ -168,7 +228,7 @@ class Day23 : IAocTaskKt {
             val minRowIdx = elfPoints.minOf { it.y }
             val maxRowIdx = elfPoints.maxOf { it.y }
 
-            println("counting in range limited by:\nx: $minColIdx to $maxColIdx\ny: $minRowIdx to $maxRowIdx")
+//            println("counting in range limited by:\nx: $minColIdx to $maxColIdx\ny: $minRowIdx to $maxRowIdx")
             return elfMap.flatten()
                 .count { it.pos.x in minColIdx..maxColIdx && it.pos.y in minRowIdx..maxRowIdx && it.state == "."}
         }
@@ -200,6 +260,7 @@ class Day23 : IAocTaskKt {
     }
 }
 
+@Suppress("unused")
 private fun ElfMap.display(): String {
     return this.joinToString("\n") { row -> row.joinToString("") { it.state } }
 }
