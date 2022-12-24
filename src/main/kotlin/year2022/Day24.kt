@@ -16,65 +16,38 @@ import kotlin.math.min
 typealias ValleyGrid = List<List<ValleyCell>>
 
 class Day24 : IAocTaskKt {
-    private val maxStatesStored = 1000
-    private val timeLimit = 273
-
-    override fun getFileName(): String = "aoc2022/input_24.txt" // 282, 273 too high
+    override fun getFileName(): String = "aoc2022/input_24.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        val valleyMap = ValleyMap.parse(lines)
-        println("Initial state")
-        println(valleyMap.display())
-        val start = valleyMap.entrance
-        val end = valleyMap.exit
-
-        val shortestPath = findShortestPaths(start, end, valleyMap)
-
-//        val timeToValley = timeToValleyWeather(valleyMap,shortestPath.size + 10)
-//
-//        println("found path: ")
-//        for ((idx, point) in shortestPath.withIndex()) {
-////        for (idx in 0..18) {
-//            val map = timeToValley[idx]!!.deepCopy(idx, point)
-//            println(map.display())
-//        }
+        val (timeToValley, start, end) = ValleyMap.parse(lines)
+        val shortestPath = findShortestPath(0, start, end, timeToValley)
         println(shortestPath.size - 1)
     }
 
-    private fun findShortestPaths(start: Point, end: Point, valleyMap: ValleyMap): List<Point> {
-        val unvisitedCost = TreeSet<ValleyMap>()
-        val maxPathCost = 1000
-
-        val timeToValleyWoExpedition = timeToValleyWeather(valleyMap, maxPathCost)
-
-//        valleyMap.map.flatten().forEach { vertex: ValleyCell ->
-//            for (time in 0..maxPathCost) {
-//                unvisitedCost[TimePoint(vertex.pos, time)] = Int.MAX_VALUE
-//            }
-//        }
-
+    fun findShortestPath(initialTime: Int, start: Point, end: Point, timeToValley: Map<Int, ValleyMap>): List<Point> {
+        val unvisitedCost = TreeSet(MapsComparator(end))
         val childToParent = HashMap<TimePoint, TimePoint>()
 //        var currentPosition: Point = start
-        var expeditionMap = timeToValleyWoExpedition[0]!!.deepCopy(0, start)
+        var expeditionMap = timeToValley[initialTime]!!.deepCopy(time = 0, expedition = start)
         unvisitedCost.add(expeditionMap)
         var pathCost: Int
 
-        println(expeditionMap.display())
+//        println(expeditionMap.display())
 
 
         while (unvisitedCost.isNotEmpty() && expeditionMap.expedition != end) {
-            println("unvisited size: ${unvisitedCost.size}")
+//            println("unvisited size: ${unvisitedCost.size}")
             val prevMap = unvisitedCost.first()
             pathCost = prevMap.minute + 1
             unvisitedCost.remove(prevMap)
 
-            val nextValleyMap = timeToValleyWoExpedition[pathCost]!!
+            val nextValleyMap = timeToValley[initialTime + pathCost]!!
 
             for (move in ValleyMove.values()) {
                 //  val currentCell = expeditionMap[expeditionMap.expedition!!]
 
                 val nextExpeditionPosition = expeditionMap.expedition!! + move.diff
-                if (!nextExpeditionPosition.isSaveForExpedition(start, end, nextValleyMap)) {
+                if (!nextExpeditionPosition.isSaveForExpedition(nextValleyMap, start, end)) {
                     continue
                 }
 //                println("found save position: $nextPosition")
@@ -83,12 +56,12 @@ class Day24 : IAocTaskKt {
                 childToParent[TimePoint(pathCost, nextExpeditionPosition)] =
                     TimePoint(pathCost - 1, expeditionMap.expedition!!)
 
-                if (pathCost < timeLimit) {
+                if (pathCost < TIME_LIMIT_MINUTES) {
                     unvisitedCost.add(nextExpeditionMap)
                 }
 
 
-                val limited = unvisitedCost.toList().subList(0, min(unvisitedCost.size, maxStatesStored))
+                val limited = unvisitedCost.toList().subList(0, min(unvisitedCost.size, MAX_STATES_STORED))
                 unvisitedCost.clear()
                 unvisitedCost.addAll(limited)
             }
@@ -96,35 +69,16 @@ class Day24 : IAocTaskKt {
             expeditionMap = unvisitedCost.first()
 //            println(expeditionMap.display())
         }
-        return mapToPath(childToParent, start, end, unvisitedCost)
-    }
-
-    private fun timeToValleyWeather(
-        valleyMap: ValleyMap,
-        maxPathCost: Int,
-    ): MutableMap<Int, ValleyMap> {
-        val timeToValleyWoExpedition = mutableMapOf<Int, ValleyMap>()
-        timeToValleyWoExpedition[0] = valleyMap
-        for (pathCost in 1..maxPathCost) {
-            if (timeToValleyWoExpedition.containsKey(pathCost)) timeToValleyWoExpedition[pathCost]!! else {
-                timeToValleyWoExpedition[pathCost] =
-                    timeToValleyWoExpedition[pathCost - 1]!!.deepCopy(pathCost - 1, null).moveBlizzards()
-                timeToValleyWoExpedition[pathCost]!!
-            }
-        }
-        return timeToValleyWoExpedition
+        return mapToPath(childToParent, unvisitedCost, start)
     }
 
     private fun mapToPath(
         childToParent: HashMap<TimePoint, TimePoint>,
-        start: Point,
-        endPoint: Point,
         unvisitedCost: TreeSet<ValleyMap>,
+        start: Point,
     ): List<Point> {
         val path = mutableListOf<Point>()
-        val endCell = unvisitedCost.filter { it.expedition == endPoint }
-            .sortedBy { it.minute }
-            .first { it.expedition == endPoint }
+        val endCell = unvisitedCost.first()
 
         path.add(endCell.expedition!!)
         val startCell = TimePoint(0, start)
@@ -142,24 +96,29 @@ class Day24 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val (timeToValley, start, end) = ValleyMap.parse(lines)
+
+        val  firstTripLength = findShortestPath(0, start, end, timeToValley).size - 1
+        println("I trip length: $firstTripLength")
+
+        val secondTripLength = findShortestPath(firstTripLength, end, start, timeToValley).size - 1
+        println("II trip length: $secondTripLength")
+
+        val thirdTripLength = findShortestPath(firstTripLength + secondTripLength, start, end, timeToValley).size - 1
+        println("I + II + II: $firstTripLength + $secondTripLength + $thirdTripLength")
+
+        val result = firstTripLength + secondTripLength + thirdTripLength
+        println(result)
     }
 
     data class ValleyMap(
         val minute: Int,
-        val entrance: Point,
-        val exit: Point,
         val expedition: Point?,
         val map: ValleyGrid,
         val blizzardToPosition: MutableMap<Blizzard, Point>,
-    ) : Comparable<ValleyMap> {
-        val width: Int
-        val height: Int
-
-        init {
-            width = map[0].size
-            height = map.size
-        }
+    ) {
+        val width: Int = map[0].size
+        val height: Int = map.size
 
         fun display(color: Boolean = true): String {
             return map.map { row ->
@@ -179,7 +138,7 @@ class Day24 : IAocTaskKt {
         }
 
         companion object {
-            fun parse(lines: List<String>): ValleyMap {
+            fun parse(lines: List<String>): Triple<Map<Int, ValleyMap>, Point, Point> {
                 var movableId = 2
                 val blizzardToPosition = mutableMapOf<Blizzard, Point>()
                 val map = lines.mapIndexed { yIdx, row ->
@@ -198,23 +157,37 @@ class Day24 : IAocTaskKt {
                         ValleyCell(position, state, movables)
                     }
                 }
-                val entrance = map[0].first { it.type == CLEAR }.pos
-                val exit = map.last().first { it.type == CLEAR }.pos
 
-                return ValleyMap(
+                val valleyMap = ValleyMap(
                     minute = 0,
-                    entrance = entrance,
-                    exit = exit,
                     expedition = null,
                     map = map,
                     blizzardToPosition = blizzardToPosition
                 )
+                val start = map.first().first { it.type == CLEAR }.pos
+                val end = map.last().first { it.type == CLEAR }.pos
+
+                val timeToValley: MutableMap<Int, ValleyMap> = timeToValleyWeather(valleyMap)
+
+                return Triple(timeToValley, start, end)
             }
 
             const val ANSI_RESET = "\u001B[0m"
             const val ANSI_GREEN = "\u001B[32m"
             const val ANSI_RED = "\u001B[31m"
-            const val ANSI_PURPLE = "\u001B[35m"
+
+            private fun timeToValleyWeather(valleyMap: ValleyMap): MutableMap<Int, ValleyMap> {
+                val timeToValleyWoExpedition = mutableMapOf<Int, ValleyMap>()
+                timeToValleyWoExpedition[0] = valleyMap
+                for (pathCost in 1..MAX_STATES_STORED) {
+                    if (timeToValleyWoExpedition.containsKey(pathCost)) timeToValleyWoExpedition[pathCost]!! else {
+                        timeToValleyWoExpedition[pathCost] =
+                            timeToValleyWoExpedition[pathCost - 1]!!.deepCopy(pathCost - 1, null).moveBlizzards()
+                        timeToValleyWoExpedition[pathCost]!!
+                    }
+                }
+                return timeToValleyWoExpedition
+            }
         }
 
         operator fun get(pos: Point): ValleyCell {
@@ -242,8 +215,6 @@ class Day24 : IAocTaskKt {
         }
 
         fun deepCopy(time: Int, expedition: Point?): ValleyMap {
-            val entranceCopy: Point = entrance.copy()
-            val exitCopy: Point = exit.copy()
             val mapCopy: ValleyGrid = map.map { row ->
                 row.map { cell: ValleyCell ->
                     val movablesCopy = cell.movables.map { mov -> mov.clone() }.toMutableSet()
@@ -258,37 +229,11 @@ class Day24 : IAocTaskKt {
                 .toMutableMap()
 
             return ValleyMap(
-                minute = time, entrance = entranceCopy,
-                exit = exitCopy,
+                minute = time,
                 expedition = expedition,
                 map = mapCopy,
                 blizzardToPosition = blizzardToPositionCopy
             )
-        }
-
-        override fun compareTo(other: ValleyMap): Int {
-            if (minute != other.minute) return minute.compareTo(other.minute)
-
-            val distanceToEnd: Int = expedition?.manhattan(exit) ?: Integer.MAX_VALUE
-            val otherDistanceToEnd = other.expedition?.manhattan(exit) ?: Integer.MAX_VALUE
-
-            if (distanceToEnd != otherDistanceToEnd) return distanceToEnd.compareTo(otherDistanceToEnd)
-
-            if (expedition != null && other.expedition != null && expedition != other.expedition) {
-                return other.expedition.compareTo(expedition)
-            }
-            if (expedition == null && other.expedition != null) return -1
-            if (other.expedition == null && expedition != null) return 1
-
-            val blizzards = blizzardToPosition.values.sorted()
-            val otherBlizzards = other.blizzardToPosition.values.sorted()
-            for (bIdx in blizzards.indices) {
-                val blizzard = blizzards[bIdx]
-                val otherBlizzard = otherBlizzards[bIdx]
-                if (blizzard != otherBlizzard) return blizzard.compareTo(otherBlizzard)
-            }
-
-            return 0
         }
 
         override fun toString(): String {
@@ -298,8 +243,6 @@ class Day24 : IAocTaskKt {
                 }
             } \n${display(false)}"
         }
-
-
     }
 
     data class ValleyCell(val pos: Point, val type: CellType, val movables: MutableSet<Movable>) {
@@ -370,7 +313,7 @@ class Day24 : IAocTaskKt {
         WAIT(Point(0, 0));
 
         companion object {
-            val BLIZZARD_STATE_TO_DIRECTION = mapOf(
+            private val BLIZZARD_STATE_TO_DIRECTION = mapOf(
                 BLIZZ_UP to UP,
                 BLIZZ_DOWN to DOWN,
                 BLIZZ_LEFT to LEFT,
@@ -402,7 +345,7 @@ class Day24 : IAocTaskKt {
             else throw IllegalStateException("$this")
         }
 
-        fun isSaveForExpedition(start: Point, end: Point, valleyMap: ValleyMap): Boolean {
+        fun isSaveForExpedition(valleyMap: ValleyMap, start: Point, end: Point): Boolean {
             if (this == start || this == end) return true
             if (y <= 0 || y >= valleyMap.height - 1) return false
             if (x <= 0 || x >= valleyMap.width - 1) return false
@@ -427,5 +370,38 @@ class Day24 : IAocTaskKt {
     }
 
     data class TimePoint(val time: Int, val pos: Point)
+
+    class MapsComparator(val end: Point): Comparator<ValleyMap> {
+
+        override fun compare(one: ValleyMap, other: ValleyMap): Int {
+            if (one.minute != other.minute) return one.minute.compareTo(other.minute)
+
+            val distanceToEnd: Int = one.expedition?.manhattan(end) ?: Integer.MAX_VALUE
+            val otherDistanceToEnd = other.expedition?.manhattan(end) ?: Integer.MAX_VALUE
+
+            if (distanceToEnd != otherDistanceToEnd) return distanceToEnd.compareTo(otherDistanceToEnd)
+
+            if (one.expedition != null && other.expedition != null && one.expedition != other.expedition) {
+                return other.expedition.compareTo(one.expedition)
+            }
+            if (one.expedition == null && other.expedition != null) return -1
+            if (other.expedition == null && one.expedition != null) return 1
+
+            val blizzards = one.blizzardToPosition
+            val otherBlizzards = other.blizzardToPosition
+            for (blizzardKey in blizzards.keys) {
+                val blizzard = blizzards[blizzardKey]!!
+                val otherBlizzard = otherBlizzards[blizzardKey]!!
+                if (blizzard != otherBlizzard) return blizzard.compareTo(otherBlizzard)
+            }
+
+            return 0
+        }
+    }
+
+    companion object {
+        const val MAX_STATES_STORED = 1000
+        const val TIME_LIMIT_MINUTES = 300
+    }
 }
 
