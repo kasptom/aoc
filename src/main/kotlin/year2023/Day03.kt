@@ -15,23 +15,29 @@ class Day03 : IAocTaskKt {
         val partNumbers = numbers
             .filter { it.isPartNumber(schematic) }
 
-        println(numbers.size)
-        println(numbers)
-
-        val notPartNumbers = numbers.filter { it.isPartNumber(schematic).not() }
-        println(notPartNumbers.size)
-        println(notPartNumbers)
-
-        println(partNumbers.size)
-        println(partNumbers)
         println(partNumbers.sumOf { it.value })
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val schematic: Array<Array<String>> = lines.map { it.trim().split("")
+            .filter { x -> x != "" }
+            .toTypedArray() }
+            .toTypedArray()
+
+        val numbers: List<SchematicNumber> = schematic.findNumbers()
+        val ratioNumbersSum = numbers
+            .filter { it.isPartNumber(schematic) }
+            .filter { it.ratioNeigh != null }
+            .groupBy { it.ratioNeigh }
+            .filterValues { it.size == 2 }
+            .mapValues { (gearPos, numbers) -> numbers[0].value * numbers[1].value }
+            .values
+            .sumOf { it }
+
+        println(ratioNumbersSum)
     }
 
-    data class SchematicNumber(val value: Int, val minX: Int, val maxX: Int, val y: Int) {
+    data class SchematicNumber(val value: Int, val minX: Int, val maxX: Int, val y: Int, var ratioNeigh: Pair<Int, Int>? = null) {
         fun isPartNumber(schematic: Array<Array<String>>): Boolean {
             for (x in minX..maxX) {
                 for (idx in DX.indices) {
@@ -44,6 +50,7 @@ class Day03 : IAocTaskKt {
                     }
                     val neighbour = schematic[yPos][xPos]
                     if (neighbour.matches(Regex("\\d")).not() && neighbour != ".") {
+                        ratioNeigh = if (neighbour == "*") Pair(xPos, yPos) else null
                         return true
                     }
                 }
