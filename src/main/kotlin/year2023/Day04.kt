@@ -10,25 +10,44 @@ class Day04 : IAocTaskKt {
         val cards = lines.map(Card::parse)
 
         println(cards
-            .onEach { println(it.getPoints()) }
+//            .onEach { println(it.getPoints()) }
             .sumOf { it.getPoints() })
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val initialCards = lines.map(Card::parse)
+            .sortedBy { it.id }
+
+        val cardIdToCount = initialCards.groupBy { it.id }
+            .mapValues { 1 }.toMutableMap()
+
+        for (card in initialCards) {
+            val winCount = card.countWins()
+            val step = cardIdToCount[card.id] ?: 1
+
+            val idsToIncrement = ((card.id + 1)..(card.id + winCount)).toList()
+            for (idToIncrement in idsToIncrement) {
+                cardIdToCount[idToIncrement] = cardIdToCount[idToIncrement]!! + step
+            }
+        }
+        val sum = cardIdToCount.values.sum()
+
+        println(sum)
     }
 
     data class Card(val id: Int, val winning: List<Int>, val yours: List<Int>) {
 
         fun getPoints(): Long {
-            val winCount = yours.count { it in winning }
+            val winCount = countWins()
             return 2.0.pow(winCount.toDouble() - 1).toLong()
         }
+
+        fun countWins(): Int = yours.count { it in winning }
 
         companion object {
             fun parse(line: String): Card {
                 val (id, numbers) = line.replace("Card ", "")
-                    .split( Regex(":\\s"))
+                    .split(Regex(":\\s"))
 
                 val (winningRaw, yoursRaw) = numbers.split(" | ")
 
