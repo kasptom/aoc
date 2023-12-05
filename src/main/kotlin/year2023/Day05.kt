@@ -50,7 +50,7 @@ class Day05 : IAocTaskKt {
             .windowed(2, 2)
             .map {
                 val (start, rangeLength) = it
-                Range(start, start + rangeLength)
+                Range(start, start + rangeLength - 1)
             }
 
         println(lowestLocationNumber(lines, seeds))
@@ -70,13 +70,9 @@ class Day05 : IAocTaskKt {
         private val minDest = destination
         private val maxDest = destination + rangeSize - 1
 
-        fun intersectsWith(range: Range): Boolean {
-            return minSource <= range.from && maxSource >= range.to
-        }
+        fun intersectsWith(range: Range): Boolean = minSource <= range.to && range.from <= maxSource
 
-        override fun toString(): String {
-            return "(src=$minSource..$maxSource, dst=$minDest..$maxDest)"
-        }
+        override fun toString(): String = "(src=$minSource..$maxSource, dst=$minDest..$maxDest)"
 
         fun mapToNewRange(range: Range): Range {
             val (from, to) = range
@@ -96,5 +92,4 @@ class Day05 : IAocTaskKt {
 
     private fun List<Conversion>.findBySourceRange(ranges: List<Range>): List<Conversion> =
         ranges.flatMap { range -> this.filter { it.intersectsWith(range) } }
-
 }
