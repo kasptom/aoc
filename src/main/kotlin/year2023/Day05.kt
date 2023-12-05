@@ -31,21 +31,13 @@ class Day05 : IAocTaskKt {
         val humidityToLocation = lines.createConversions(humidityToLocationIdx, lines.size + 1)
 
         val seedToLocation = seeds.map { seed ->
-            val soilIdx = seedToSoil.findAffectingConversions(listOf(seed)).mapToNewRange(listOf(seed)).distinct()
-//            println("soil size: ${soilIdx.size}")
-            val fertilizerIdx = soilToFertilizer.findAffectingConversions(soilIdx).mapToNewRange(soilIdx).distinct()
-//            println("fertilizer size: ${soilIdx.size}")
-            val waterIdx = fertilizerToWater.findAffectingConversions(fertilizerIdx).mapToNewRange(fertilizerIdx).distinct()
-//            println("water size: ${waterIdx.size}")
-            val lightIdx = waterToLight.findAffectingConversions(waterIdx).mapToNewRange(waterIdx).distinct()
-//            println("light size: ${lightIdx.size}")
-            val temperatureIdx = lightToTemperature.findAffectingConversions(lightIdx).mapToNewRange(lightIdx).distinct()
-//            println("temperature size: ${temperatureIdx.size}")
-            val humidityIdx =
-                temperatureToHumidity.findAffectingConversions(temperatureIdx).mapToNewRange(temperatureIdx).distinct()
-//            println("humidity size: ${humidityIdx.size}")
-            val location = humidityToLocation.findAffectingConversions(humidityIdx).mapToNewRange(humidityIdx).distinct()
-//            println("location size: ${location.size}")
+            val soil = seedToSoil.findAffectingConversions(listOf(seed)).mapToNewRange(listOf(seed))
+            val fertilizer = soilToFertilizer.findAffectingConversions(soil).mapToNewRange(soil)
+            val waterIdx = fertilizerToWater.findAffectingConversions(fertilizer).mapToNewRange(fertilizer)
+            val light = waterToLight.findAffectingConversions(waterIdx).mapToNewRange(waterIdx)
+            val temperature = lightToTemperature.findAffectingConversions(light).mapToNewRange(light)
+            val humidity = temperatureToHumidity.findAffectingConversions(temperature).mapToNewRange(temperature)
+            val location = humidityToLocation.findAffectingConversions(humidity).mapToNewRange(humidity)
             location
         }
         return seedToLocation.minOf { it.minOf(Range::from) }
@@ -65,41 +57,54 @@ class Day05 : IAocTaskKt {
     }
 
     data class Range(val from: Long, val to: Long) {
+        init {
+            if (from > to) throw IllegalStateException("from > to: $from > $to")
+            if (from < 0) throw IllegalStateException("from < 0: $from < 0")
+        }
+
         fun divideBy(conv: Conversion): List<Range> {
             val min = conv.minSource
             val max = conv.maxSource
-            // from, min = to, max
-            if (to == min) {
+            // from <= to < min <= max
+            if (to < min) {
+                return listOf(this)
+            }
+            if (to == min && from < to) {
                 return listOf(Range(from, to - 1), conv.mapToNewRange(Range(to, to)))
             }
-            // from < min < to < max
-            if (from < min && to < max) {
+            // from < min < to <= max
+            if (from < min && to <= max) {
                 return listOf(Range(from, min - 1), conv.mapToNewRange(Range(min, to)))
             }
+
+            // from < min < max < to
+            if (from < min) {
+                return listOf(
+                    Range(from, min - 1),
+                    conv.mapToNewRange(Range(min, max)),
+                    Range(max + 1, to)
+                )
+            }
+
             // min <= from < to <= max
-            if (min <= from && to < max) {
+            if (to < max) {
                 return listOf(conv.mapToNewRange(this))
             }
             // min <= from <= max < to
-            if (min <= from && max < to) {
+            if (max < to) {
                 return listOf(conv.mapToNewRange(Range(from, max)), Range(max + 1, to))
             }
 
             // max == from == to
-            if (from == max && from == to) {
-                return listOf(conv.mapToNewRange(Range(from, from)))
-            }
-
-            // max == from < to
             if (from == max) {
-                return listOf(conv.mapToNewRange(this))
+                return listOf(conv.mapToNewRange(Range(from, from)))
             }
 
             if (max < from) {
                 return listOf(this)
             }
 
-            return listOf(conv.mapToNewRange(Range(from, max)), Range(max + 1, to))
+            return listOf(conv.mapToNewRange(Range(from, to)))
         }
     }
 
@@ -115,7 +120,7 @@ class Day05 : IAocTaskKt {
                     dividedRange
                 }
             }
-        }
+        }.distinct()
     }
 
     data class Conversion(val source: Long, val destination: Long, val rangeSize: Long) {
