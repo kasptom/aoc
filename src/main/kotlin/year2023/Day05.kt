@@ -13,12 +13,6 @@ class Day05 : IAocTaskKt {
         println(lowestLocationNumber(lines, seeds))
     }
 
-    override fun solvePartTwo(lines: List<String>) {
-        val seeds = lines.first().replace("seeds: ", "")
-            .split(" ")
-            .map { it.toLong() }
-    }
-
     private fun lowestLocationNumber(lines: List<String>, seeds: List<Long>): Long {
         val seedToSoilIdx = lines.indexOfFirst { it.startsWith("seed-to-soil") }
         val soilToFertilizerIdx = lines.indexOfFirst { it.startsWith("soil-to-fertilizer") }
@@ -56,6 +50,19 @@ class Day05 : IAocTaskKt {
         return seedToLocation.minOf { it }
     }
 
+    override fun solvePartTwo(lines: List<String>) {
+        val seeds = lines.first().replace("seeds: ", "")
+            .split(" ")
+            .map { it.toLong() }
+            .windowed(2, 2)
+            .map {
+                val (start, rangeLength) = it
+                start until (start + rangeLength)
+            }.flatMap { range -> range.map { it } }
+
+        println(seeds.size)
+        println(lowestLocationNumber(lines, seeds))
+    }
 
     data class Conversion(val source: Long, val destination: Long, val rangeSize: Long) {
         private val minSource = source
@@ -63,12 +70,14 @@ class Day05 : IAocTaskKt {
         private val minDest = destination
         private val maxDest = destination + rangeSize - 1
 
+        fun getOffset(): Long = destination - source
+
         fun isInSourceRange(resourceIdx: Long): Boolean {
             return resourceIdx in minSource..maxSource
         }
 
         fun overlaps(prevConversion: Conversion): Boolean {
-            return (minSource <= prevConversion.maxDest) && (prevConversion.minDest <= maxSource)
+            return minSource <= prevConversion.maxDest && prevConversion.minDest <= maxSource
         }
 
         override fun toString(): String {
@@ -77,6 +86,31 @@ class Day05 : IAocTaskKt {
 
         fun getDestinationFromSourceIdx(idx: Long): Long = minDest + (idx - minSource)
 
+        fun mergeWith(overlapping: List<Conversion>): List<Conversion> {
+            if (overlapping.isEmpty()) return overlapping
+            if (overlapping.size == 1) {
+                val last = overlapping.last()
+                val gapStart = if (this.source < last.source) minSource else last.maxSource + 1
+                val gapEnd = if (this.source < last.source) last.minSource - 1 else maxSource
+                val gap = Conversion(gapStart, gapStart, gapEnd - gapStart)
+                return listOf(last, gap).sortedBy { it.source }
+            }
+            val current = this
+            val toAdd = mutableListOf<Conversion>()
+                overlapping.windowed(2).forEach {
+                (prev, next) -> val rangeSize = prev.source - next.source
+                    if (rangeSize >= 1) {
+                    val gap = Conversion(prev.source + 1, prev.source + 1, rangeSize)
+                    // This may be buggy
+                    if (gap.overlaps(current)) {
+                        toAdd += gap
+                    }
+                }
+            }
+            return (overlapping + toAdd).sortedBy { it.source }
+        }
+
+        fun contains(other: Conversion): Boolean = minSource <= other.minSource && other.maxSource <= maxSource
 
         companion object {
             fun parse(line: String): Conversion {
@@ -94,4 +128,15 @@ class Day05 : IAocTaskKt {
 
     private fun List<Conversion>.findBySourceRange(conversion: Conversion): Conversion =
         this.first { it.overlaps(conversion) }
+
+    private fun List<Conversion>.mapFrom(previous: List<Conversion>): List<Conversion> {
+        val merged = (this + previous).sortedBy { it.source }.fold(emptyList<Conversion>()) { acc, next ->
+            if (acc.isEmpty()) acc + next
+            else {
+                val (overlapping, notOverlapping) = acc.partition { it.overlaps(next) && !it.contains(next) }
+                (notOverlapping + next.mergeWith(overlapping)).sortedBy { it.source }
+            }
+        }
+        return merged
+    }
 }
