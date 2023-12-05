@@ -31,14 +31,21 @@ class Day05 : IAocTaskKt {
         val humidityToLocation = lines.createConversions(humidityToLocationIdx, lines.size + 1)
 
         val seedToLocation = seeds.map { seed ->
-            val soilIdx = seedToSoil.findAffectingConversions(listOf(seed)).mapToNewRange(listOf(seed))
-            val fertilizerIdx = soilToFertilizer.findAffectingConversions(soilIdx).mapToNewRange(soilIdx)
-            val waterIdx = fertilizerToWater.findAffectingConversions(fertilizerIdx).mapToNewRange(fertilizerIdx)
-            val lightIdx = waterToLight.findAffectingConversions(waterIdx).mapToNewRange(waterIdx)
-            val temperatureIdx = lightToTemperature.findAffectingConversions(lightIdx).mapToNewRange(lightIdx)
+            val soilIdx = seedToSoil.findAffectingConversions(listOf(seed)).mapToNewRange(listOf(seed)).distinct()
+//            println("soil size: ${soilIdx.size}")
+            val fertilizerIdx = soilToFertilizer.findAffectingConversions(soilIdx).mapToNewRange(soilIdx).distinct()
+//            println("fertilizer size: ${soilIdx.size}")
+            val waterIdx = fertilizerToWater.findAffectingConversions(fertilizerIdx).mapToNewRange(fertilizerIdx).distinct()
+//            println("water size: ${waterIdx.size}")
+            val lightIdx = waterToLight.findAffectingConversions(waterIdx).mapToNewRange(waterIdx).distinct()
+//            println("light size: ${lightIdx.size}")
+            val temperatureIdx = lightToTemperature.findAffectingConversions(lightIdx).mapToNewRange(lightIdx).distinct()
+//            println("temperature size: ${temperatureIdx.size}")
             val humidityIdx =
-                temperatureToHumidity.findAffectingConversions(temperatureIdx).mapToNewRange(temperatureIdx)
-            val location = humidityToLocation.findAffectingConversions(humidityIdx).mapToNewRange(humidityIdx)
+                temperatureToHumidity.findAffectingConversions(temperatureIdx).mapToNewRange(temperatureIdx).distinct()
+//            println("humidity size: ${humidityIdx.size}")
+            val location = humidityToLocation.findAffectingConversions(humidityIdx).mapToNewRange(humidityIdx).distinct()
+//            println("location size: ${location.size}")
             location
         }
         return seedToLocation.minOf { it.minOf(Range::from) }
@@ -88,9 +95,11 @@ class Day05 : IAocTaskKt {
                 return listOf(conv.mapToNewRange(this))
             }
 
-            return listOf(conv.mapToNewRange(Range(from, max)), Range(max + 1, to))
+            if (max < from) {
+                return listOf(this)
+            }
 
-//            return TODO("$conv $this")
+            return listOf(conv.mapToNewRange(Range(from, max)), Range(max + 1, to))
         }
     }
 
