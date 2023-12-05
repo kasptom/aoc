@@ -9,16 +9,24 @@ class Day05 : IAocTaskKt {
         val seeds = lines.first().replace("seeds: ", "")
             .split(" ")
             .map { it.toLong() }
-        println(seeds)
 
-        val seedToSoilIdx = lines.indexOfFirst { it.startsWith("seed-to-soil") }.also { println(it) }
-        val soilToFertilizerIdx =  lines.indexOfFirst { it.startsWith("soil-to-fertilizer") }.also { println(it) }
-        val fertilizerToWaterIdx = lines.indexOfFirst { it.startsWith("fertilizer-to-water") }.also { println(it) }
-        val waterToLightIdx = lines.indexOfFirst { it.startsWith("water-to-light") }.also { println(it) }
-        val lightToTemperatureIdx = lines.indexOfFirst { it.startsWith("light-to-temperature") }.also { println(it) }
-        val temperatureToHumidityIdx =
-            lines.indexOfFirst { it.startsWith("temperature-to-humidity") }.also { println(it) }
-        val humidityToLocationIdx = lines.indexOfFirst { it.startsWith("humidity-to-location") }.also { println(it) }
+        println(lowestLocationNumber(lines, seeds))
+    }
+
+    override fun solvePartTwo(lines: List<String>) {
+        val seeds = lines.first().replace("seeds: ", "")
+            .split(" ")
+            .map { it.toLong() }
+    }
+
+    private fun lowestLocationNumber(lines: List<String>, seeds: List<Long>): Long {
+        val seedToSoilIdx = lines.indexOfFirst { it.startsWith("seed-to-soil") }
+        val soilToFertilizerIdx = lines.indexOfFirst { it.startsWith("soil-to-fertilizer") }
+        val fertilizerToWaterIdx = lines.indexOfFirst { it.startsWith("fertilizer-to-water") }
+        val waterToLightIdx = lines.indexOfFirst { it.startsWith("water-to-light") }
+        val lightToTemperatureIdx = lines.indexOfFirst { it.startsWith("light-to-temperature") }
+        val temperatureToHumidityIdx = lines.indexOfFirst { it.startsWith("temperature-to-humidity") }
+        val humidityToLocationIdx = lines.indexOfFirst { it.startsWith("humidity-to-location") }
 
         val seedToSoil = lines.createConversions(seedToSoilIdx, soilToFertilizerIdx)
         val soilToFertilizer = lines.createConversions(soilToFertilizerIdx, fertilizerToWaterIdx)
@@ -27,22 +35,27 @@ class Day05 : IAocTaskKt {
         val lightToTemperature = lines.createConversions(lightToTemperatureIdx, temperatureToHumidityIdx)
         val temperatureToHumidity = lines.createConversions(temperatureToHumidityIdx, humidityToLocationIdx)
         val humidityToLocation = lines.createConversions(humidityToLocationIdx, lines.size + 1)
+
         val seedToLocation = seeds.map { seed ->
             val soilIdx = seedToSoil.findBySourceRange(seed)?.getDestinationFromSourceIdx(seed) ?: seed
-            val fertilizerIdx = soilToFertilizer.findBySourceRange(soilIdx)?.getDestinationFromSourceIdx(soilIdx) ?: soilIdx
-            val waterIdx = fertilizerToWater.findBySourceRange(fertilizerIdx)?.getDestinationFromSourceIdx(fertilizerIdx) ?: fertilizerIdx
+            val fertilizerIdx =
+                soilToFertilizer.findBySourceRange(soilIdx)?.getDestinationFromSourceIdx(soilIdx) ?: soilIdx
+            val waterIdx =
+                fertilizerToWater.findBySourceRange(fertilizerIdx)?.getDestinationFromSourceIdx(fertilizerIdx)
+                    ?: fertilizerIdx
             val lightIdx = waterToLight.findBySourceRange(waterIdx)?.getDestinationFromSourceIdx(waterIdx) ?: waterIdx
-            val temperatureIdx = lightToTemperature.findBySourceRange(lightIdx)?.getDestinationFromSourceIdx(lightIdx) ?: lightIdx
-            val humidityIdx = temperatureToHumidity.findBySourceRange(temperatureIdx)?.getDestinationFromSourceIdx(temperatureIdx) ?: temperatureIdx
-            val location = humidityToLocation.findBySourceRange(humidityIdx)?.getDestinationFromSourceIdx(humidityIdx) ?: humidityIdx
+            val temperatureIdx =
+                lightToTemperature.findBySourceRange(lightIdx)?.getDestinationFromSourceIdx(lightIdx) ?: lightIdx
+            val humidityIdx =
+                temperatureToHumidity.findBySourceRange(temperatureIdx)?.getDestinationFromSourceIdx(temperatureIdx)
+                    ?: temperatureIdx
+            val location = humidityToLocation.findBySourceRange(humidityIdx)?.getDestinationFromSourceIdx(humidityIdx)
+                ?: humidityIdx
             location
         }
-        println(seedToLocation.minOf { it })
+        return seedToLocation.minOf { it }
     }
 
-    override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
-    }
 
     data class Conversion(val source: Long, val destination: Long, val rangeSize: Long) {
         private val minSource = source
@@ -54,9 +67,9 @@ class Day05 : IAocTaskKt {
             return resourceIdx in minSource..maxSource
         }
 
-//        fun overlaps(prevConversion: Conversion): Boolean {
-//            return (minSource <= prevConversion.maxDest) && (prevConversion.minDest <= maxSource)
-//        }
+        fun overlaps(prevConversion: Conversion): Boolean {
+            return (minSource <= prevConversion.maxDest) && (prevConversion.minDest <= maxSource)
+        }
 
         override fun toString(): String {
             return "(src=$minSource..$maxSource, dst=$minDest..$maxDest)"
@@ -76,6 +89,9 @@ class Day05 : IAocTaskKt {
     private fun List<String>.createConversions(thisIdx: Int, nextIdx: Int) = this.subList(thisIdx + 1, nextIdx - 1)
         .map(Conversion::parse)
 
-    private fun List<Conversion>.findBySourceRange(resourceIdx: Long): Conversion? = this.firstOrNull { it.isInSourceRange(resourceIdx) }
-    // private fun List<Conversion>.findBySourceRange(conversions: Conversion): Conversion = this.find { it.overlaps(conversion) }
+    private fun List<Conversion>.findBySourceRange(resourceIdx: Long): Conversion? =
+        this.firstOrNull { it.isInSourceRange(resourceIdx) }
+
+    private fun List<Conversion>.findBySourceRange(conversion: Conversion): Conversion =
+        this.first { it.overlaps(conversion) }
 }
