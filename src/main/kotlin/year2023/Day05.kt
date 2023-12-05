@@ -40,7 +40,10 @@ class Day05 : IAocTaskKt {
             val location = humidityToLocation.findAffectingConversions(humidity).mapToNewRange(humidity)
             location
         }
-        return seedToLocation.minOf { it.minOf(Range::from) }
+        return seedToLocation.minOf { it.map(Range::from)
+//            .filter { it > 0} // 17963910 is too low
+//            .filter { it > 24425756} // 24425756 is too low // 33942462 is not right
+            .minOf { it } }
     }
 
     override fun solvePartTwo(lines: List<String>) {
@@ -62,49 +65,40 @@ class Day05 : IAocTaskKt {
             if (from < 0) throw IllegalStateException("from < 0: $from < 0")
         }
 
+        private fun mapToNewRange(conv: Conversion): Range = conv.mapToNewRange(this)
+
         fun divideBy(conv: Conversion): List<Range> {
+//            println("conv: $conv, range: $this")
             val min = conv.minSource
             val max = conv.maxSource
-            // from <= to < min <= max
-            if (to < min) {
-                return listOf(this)
-            }
-            if (to == min && from < to) {
-                return listOf(Range(from, to - 1), conv.mapToNewRange(Range(to, to)))
-            }
-            // from < min < to <= max
-            if (from < min && to <= max) {
-                return listOf(Range(from, min - 1), conv.mapToNewRange(Range(min, to)))
-            }
-
-            // from < min < max < to
-            if (from < min) {
-                return listOf(
+            return when {
+                from == to && min <= from && from <= max -> listOf(
+                    mapToNewRange(conv)
+                )
+                from == to -> listOf(this)
+                min <= from && to <= max -> listOf(
+                    mapToNewRange(conv)
+                )
+                min <= from && from < max -> listOf(
+                    Range(from, max).mapToNewRange(conv),
+                    Range(max + 1, to))
+                to < min -> listOf(this)
+                to == min -> listOf(
+                    Range(from, to - 1),
+                    Range(to, to).mapToNewRange(conv)
+                )
+                from < min && to <= max -> listOf(
+                    Range(from, min - 1),
+                    Range(min, to).mapToNewRange(conv)
+                )
+                from < min -> listOf(
                     Range(from, min - 1),
                     conv.mapToNewRange(Range(min, max)),
                     Range(max + 1, to)
                 )
+                max < from -> listOf(this)
+                else -> throw IllegalStateException("not supported case min..max: $min..$max vs from..to: $from..$to ${listOf(min, max, from, to).sorted()}")
             }
-
-            // min <= from < to <= max
-            if (to < max) {
-                return listOf(conv.mapToNewRange(this))
-            }
-            // min <= from <= max < to
-            if (max < to) {
-                return listOf(conv.mapToNewRange(Range(from, max)), Range(max + 1, to))
-            }
-
-            // max == from == to
-            if (from == max) {
-                return listOf(conv.mapToNewRange(Range(from, from)))
-            }
-
-            if (max < from) {
-                return listOf(this)
-            }
-
-            return listOf(conv.mapToNewRange(Range(from, to)))
         }
     }
 
@@ -121,6 +115,7 @@ class Day05 : IAocTaskKt {
                 }
             }
         }.distinct()
+//            .also { println("range size: ${it.size}") }
     }
 
     data class Conversion(val source: Long, val destination: Long, val rangeSize: Long) {
@@ -135,7 +130,8 @@ class Day05 : IAocTaskKt {
 
         fun mapToNewRange(range: Range): Range {
             val (from, to) = range
-            return Range(minDest + (from - minSource), minDest + (to - minSource))
+            val diff = minDest - minSource
+            return Range(from + diff, to + diff)
         }
 
         companion object {
