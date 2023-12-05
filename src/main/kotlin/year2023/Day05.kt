@@ -33,17 +33,28 @@ class Day05 : IAocTaskKt {
         val seedToLocation = seeds.map { seed ->
             val soil = seedToSoil.findAffectingConversions(listOf(seed)).mapToNewRange(listOf(seed))
             val fertilizer = soilToFertilizer.findAffectingConversions(soil).mapToNewRange(soil)
-            val waterIdx = fertilizerToWater.findAffectingConversions(fertilizer).mapToNewRange(fertilizer)
-            val light = waterToLight.findAffectingConversions(waterIdx).mapToNewRange(waterIdx)
+            val water = fertilizerToWater.findAffectingConversions(fertilizer).mapToNewRange(fertilizer)
+            val light = waterToLight.findAffectingConversions(water).mapToNewRange(water)
             val temperature = lightToTemperature.findAffectingConversions(light).mapToNewRange(light)
             val humidity = temperatureToHumidity.findAffectingConversions(temperature).mapToNewRange(temperature)
             val location = humidityToLocation.findAffectingConversions(humidity).mapToNewRange(humidity)
+            println("-------")
+            println("🌱: $seed")
+            println("🟫: $soil")
+            println("💩: $fertilizer")
+            println("💧: $water")
+            println("🌞: $light")
+            println("🔥: $temperature")
+            println("💦: $humidity")
+            println("📍: $location")
             location
         }
-        return seedToLocation.minOf { it.map(Range::from)
+        return seedToLocation.minOf {
+            it.map(Range::from)
 //            .filter { it > 0} // 17963910 is too low
 //            .filter { it > 24425756} // 24425756 is too low // 33942462 is not right
-            .minOf { it } }
+                .minOf { it }
+        }
     }
 
     override fun solvePartTwo(lines: List<String>) {
@@ -65,57 +76,113 @@ class Day05 : IAocTaskKt {
             if (from < 0) throw IllegalStateException("from < 0: $from < 0")
         }
 
+        //        fun intersectsWith(range: Range): Boolean = from <= range.to && range.from <= to
+        fun size(): Long = to - from + 1
+
         private fun mapToNewRange(conv: Conversion): Range = conv.mapToNewRange(this)
 
-        fun divideBy(conv: Conversion): List<Range> {
+        fun divideBy(conv: Conversion): Pair<List<Range>, List<Range>> {
+            // mapped, leftovers
 //            println("conv: $conv, range: $this")
             val min = conv.minSource
             val max = conv.maxSource
             return when {
-                from == to && min <= from && from <= max -> listOf(
-                    mapToNewRange(conv)
+                from == to && min <= from && from <= max -> Pair(
+                    listOf(mapToNewRange(conv)),
+                    emptyList()
                 )
-                from == to -> listOf(this)
-                min <= from && to <= max -> listOf(
-                    mapToNewRange(conv)
+
+                from == to -> Pair(
+                    emptyList(),
+                    listOf(this)
                 )
-                min <= from && from < max -> listOf(
-                    Range(from, max).mapToNewRange(conv),
-                    Range(max + 1, to))
-                to < min -> listOf(this)
-                to == min -> listOf(
-                    Range(from, to - 1),
-                    Range(to, to).mapToNewRange(conv)
+
+                min <= from && to <= max -> Pair(
+                    listOf(mapToNewRange(conv)),
+                    emptyList()
                 )
-                from < min && to <= max -> listOf(
-                    Range(from, min - 1),
-                    Range(min, to).mapToNewRange(conv)
+
+                min <= from && from < max -> Pair(
+                    listOf(Range(from, max).mapToNewRange(conv)),
+                    listOf(Range(max + 1, to))
                 )
-                from < min -> listOf(
-                    Range(from, min - 1),
-                    conv.mapToNewRange(Range(min, max)),
-                    Range(max + 1, to)
+
+                to < min -> Pair(
+                    emptyList(),
+                    listOf(this)
                 )
-                max < from -> listOf(this)
-                else -> throw IllegalStateException("not supported case min..max: $min..$max vs from..to: $from..$to ${listOf(min, max, from, to).sorted()}")
+
+                to == min -> Pair(
+                    listOf(Range(to, to).mapToNewRange(conv)),
+                    listOf(Range(from, to - 1))
+                )
+
+                from < min && to <= max -> Pair(
+                    listOf(Range(min, to).mapToNewRange(conv)),
+                    listOf(Range(from, min - 1))
+                )
+
+                from < min -> Pair(
+                    listOf(conv.mapToNewRange(Range(min, max))),
+                    listOf(Range(from, min - 1), Range(max + 1, to))
+                )
+
+                max < from -> Pair(
+                    emptyList(),
+                    listOf(this)
+                )
+
+                else -> throw IllegalStateException(
+                    "not supported case min..max: $min..$max vs from..to: $from..$to ${
+                        listOf(
+                            min,
+                            max,
+                            from,
+                            to
+                        ).sorted()
+                    }"
+                )
             }
         }
+
+        override fun toString(): String {
+            return "$from..$to"
+        }
+
+
     }
 
     private fun List<Conversion>.mapToNewRange(ranges: List<Range>): List<Range> {
-        val intersectingConversions = this
-        return ranges.flatMap { range ->
-            val rangeConversions = intersectingConversions.filter { conv -> conv.intersectsWith(range) }
-            if (rangeConversions.isEmpty()) {
-                listOf(range)
-            } else { // cut the range
-                rangeConversions.flatMap { conv ->
-                    val dividedRange = range.divideBy(conv)
-                    dividedRange
-                }
-            }
-        }.distinct()
+//        println("-------------")
+//        println("mapping $ranges to new range")
+        val intersectingConversions = this.sortedBy { it.minSource }
+        val mappedRanges = mutableListOf<Range>()
+        val notMappedRanges = ranges.toMutableList()
+        while (notMappedRanges.any { range -> intersectingConversions.any { conv -> conv.intersectsWith(range) } }) {
+            val range =
+                notMappedRanges.first { rng -> intersectingConversions.any { conv -> conv.intersectsWith(rng) } }
+            notMappedRanges.remove(range)
+
+            val conv = intersectingConversions.first { cnv -> cnv.intersectsWith(range) }
+
+            val (mapped, updatedLeftovers) = range.divideBy(conv)
+            println("range division: $range (${range.size()}) -> $mapped, $updatedLeftovers (${mapped.sumOf(Range::size)})")
+            mappedRanges += mapped
+            notMappedRanges += updatedLeftovers
+        }
+        mappedRanges += notMappedRanges
+        return mappedRanges.also { checkRangeConsistency(ranges, it) }
+            .distinct()
 //            .also { println("range size: ${it.size}") }
+    }
+
+    private fun checkRangeConsistency(one: List<Range>, another: List<Range>) {
+        val oneSum = one.sumOf { it.size() }
+        val otherSum = another.sumOf { it.size() }
+        if (oneSum != otherSum) throw IllegalStateException(
+            "different sum of ranges $oneSum vs $otherSum" +
+                    "\n prev: $one, next: $another"
+        )
     }
 
     data class Conversion(val source: Long, val destination: Long, val rangeSize: Long) {
