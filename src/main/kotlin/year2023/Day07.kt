@@ -9,39 +9,42 @@ class Day07 : IAocTaskKt {
     override fun solvePartOne(lines: List<String>) {
         val cards = lines.map(Hand::parse)
         val sortedCards = cards.sorted()
-        val ranks = sortedCards.mapIndexed { idx, hand -> (idx + 1) * hand.bid }
-        println(cards.map { Triple(it.cards, it.bid, it.strength) })
-        println(sortedCards.map { Triple(it.cards, it.bid, it.strength) })
+        val totalWinnings = sortedCards
+            .mapIndexed { idx, hand -> (idx + 1) * hand.bid }
+            .sumOf { it }
 
-        println(ranks)
-        println(ranks.sumOf { it })
+        println(totalWinnings)
     }
 
     override fun solvePartTwo(lines: List<String>) {
         val cards = lines.map(Hand::parse)
         val sortedCards = cards.sortedWith(JokerComparator())
-        val ranks = sortedCards.mapIndexed { idx, hand -> (idx + 1) * hand.bid }
-        println(cards.map { Triple(it.cards, it.bid, it.jokerStrength) })
-        println(sortedCards.map { Triple(it.cards, it.bid, it.jokerStrength) })
+        val totalWinnings = sortedCards
+            .mapIndexed { idx, hand -> (idx + 1) * hand.bid }
+            .sumOf { it }
 
-        println(ranks)
-        println(ranks.sumOf { it })
+        println(totalWinnings)
     }
 
     companion object {
-        val cardValues = listOf(
-            "A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"
-        )
-        val cardValues2 = listOf(
-            "A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J",
-        )
+        val CARD_VALUES = listOf("A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2")
+        val CARD_VALUES_2 = listOf("A", "K", "Q", "T", "9", "8", "7", "6", "5", "4", "3", "2", "J")
     }
 
     data class Hand(val cards: List<String>, val bid: Int) : Comparable<Hand> {
-        val groupedCards = cards.groupBy { it }
+        private val groupedCards = cards.groupBy { it }
             .mapValues { (_, v) -> v.count() }
 
-        val jokerGroupedCards = computeJokerGrouping()
+        private val jokerGroupedCards = computeJokerGrouping()
+
+        override fun compareTo(other: Hand): Int = compare(
+            strength = strength,
+            otherStrength = other.strength,
+            otherCards = other.cards,
+            cardValues = CARD_VALUES
+        )
+
+        override fun toString(): String = "Hand(cards=$cards, bid=$bid, groupedCards=$groupedCards, strength=$strength)"
 
         private fun computeJokerGrouping(): Map<String, Int> {
             if (!cards.contains("J")) return groupedCards
@@ -68,31 +71,32 @@ class Day07 : IAocTaskKt {
             return grouped
         }
 
-        val strength: Int = computeStrength()
+        private val strength: Int = computeStrength()
         val jokerStrength: Int = computeStrengthWithJokers()
 
-        fun computeStrength(): Int {
-            return if (groupedCards.size == 1) 7 // five of a kind
-            else if (groupedCards.size == 2 && groupedCards.values.maxOf { it } == 4) 6 // four of a kind
-            else if (groupedCards.size == 2 && groupedCards.values.maxOf { it } == 3) 5 // full house
-            else if (groupedCards.size == 3 && groupedCards.values.maxOf { it } == 3) 4 // three of a kind
-            else if (groupedCards.values.maxOf { it } == 2 && groupedCards.values.count { it == 2 } == 2) 3 // two pair
-            else if (groupedCards.size == 4 && groupedCards.values.maxOf { it } == 2 && groupedCards.values.count { it == 2 } == 1) 2 // one pair
-            else if (groupedCards.size == 5) 1 // high card
+        private fun computeStrength(cardGrouping: Map<String, Int>): Int = with(cardGrouping) {
+            return if (values.maxOf { it } == 5) 7 // five of a kind
+            else if (values.maxOf { it } == 4) 6 // four of a kind
+            else if (values.maxOf { it } == 3 && values.filter { it != 3 }.maxOf { it } == 2) 5 // full house
+            else if (values.maxOf { it } == 3 && values.filter { it != 3 }.maxOf { it } == 1) 4 // three of a kind
+            else if (values.maxOf { it } == 2 && values.count { it == 2 } == 2) 3 // two pair
+            else if (values.maxOf { it } == 2 && values.count { it == 2 } == 1) 2 // one pair
+            else if (values.maxOf { it } == 1) 1 // high card
             else throw IllegalStateException("unknown state $cards")
         }
 
-        fun computeStrengthWithJokers(): Int {
-            return if (jokerGroupedCards.values.maxOf { it } == 5) 7 // five of a kind
-            else if (jokerGroupedCards.values.maxOf { it } == 4) 6 // four of a kind
-            else if (jokerGroupedCards.values.maxOf { it } == 3 && jokerGroupedCards.values.filter { it != 3 }
-                    .maxOf { it } == 2) 5 // full house
-            else if (jokerGroupedCards.values.maxOf { it } == 3 && jokerGroupedCards.values.filter { it != 3 }
-                    .maxOf { it } == 1) 4 // three of a kind
-            else if (jokerGroupedCards.values.maxOf { it } == 2 && jokerGroupedCards.values.count { it == 2 } == 2) 3 // two pair
-            else if (jokerGroupedCards.values.maxOf { it } == 2 && jokerGroupedCards.values.count { it == 2 } == 1) 2 // one pair
-            else if (jokerGroupedCards.values.maxOf { it } == 1) 1 // high card
-            else throw IllegalStateException("unknown state $cards")
+        private fun computeStrength(): Int = computeStrength(groupedCards)
+        private fun computeStrengthWithJokers(): Int = computeStrength(jokerGroupedCards)
+
+        fun compare(strength: Int, otherStrength: Int, otherCards: List<String>, cardValues: List<String>): Int {
+            if (otherStrength != strength) return strength - otherStrength
+            for (cardIdx in cards.indices) {
+                val index = cardValues.indexOf(cards[cardIdx])
+                val otherIndex = cardValues.indexOf(otherCards[cardIdx])
+                if (index != otherIndex) return otherIndex - index
+                continue
+            }
+            return 0
         }
 
         companion object {
@@ -103,39 +107,14 @@ class Day07 : IAocTaskKt {
                 return Hand(cards, bid)
             }
         }
-
-        override fun compareTo(other: Hand): Int {
-            val otherStrength = other.strength
-
-            if (otherStrength != strength) return strength - otherStrength
-            for (cardIdx in cards.indices) {
-                val index = cardValues.indexOf(cards[cardIdx])
-                val otherIndex = cardValues.indexOf(other.cards[cardIdx])
-                if (index != otherIndex) return otherIndex - index
-                continue
-            }
-            return 0
-        }
-
-        override fun toString(): String {
-            return "Hand(cards=$cards, bid=$bid, groupedCards=$groupedCards, strength=$strength)"
-        }
     }
 
     class JokerComparator : Comparator<Hand> {
-        override fun compare(o1: Hand, o2: Hand): Int {
-            val strength = o1.jokerStrength
-            val otherStrength = o2.jokerStrength
-            val cards = o1.cards
-
-            if (otherStrength != strength) return strength - otherStrength
-            for (cardIdx in cards.indices) {
-                val index = cardValues2.indexOf(cards[cardIdx])
-                val otherIndex = cardValues2.indexOf(o2.cards[cardIdx])
-                if (index != otherIndex) return otherIndex - index
-                continue
-            }
-            return 0
-        }
+        override fun compare(o1: Hand, o2: Hand): Int = o1.compare(
+            strength = o1.jokerStrength,
+            otherStrength = o2.jokerStrength,
+            otherCards = o2.cards,
+            cardValues = CARD_VALUES_2
+        )
     }
 }
