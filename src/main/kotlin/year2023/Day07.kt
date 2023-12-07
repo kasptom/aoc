@@ -1,10 +1,10 @@
 package year2023
 
 import aoc.IAocTaskKt
-import kotlin.math.max
+import kotlin.math.min
 
 class Day07 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2023/input_07_test.txt"
+    override fun getFileName(): String = "aoc2023/input_07.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val cards = lines.map(Hand::parse)
@@ -37,7 +37,7 @@ class Day07 : IAocTaskKt {
         )
     }
 
-    data class Hand(val cards: List<String>, val bid: Int): Comparable<Hand> {
+    data class Hand(val cards: List<String>, val bid: Int) : Comparable<Hand> {
         val groupedCards = cards.groupBy { it }
             .mapValues { (_, v) -> v.count() }
 
@@ -60,7 +60,7 @@ class Day07 : IAocTaskKt {
 
             while (jokersCount > 0) {
                 val maxCount = grouped.maxOf { (_, v) -> v }
-                val toAdd = max(5 - maxCount, jokersCount)
+                val toAdd = min(5 - maxCount, jokersCount)
                 jokersCount -= toAdd
                 val key = grouped.keys.first { k -> grouped[k] == maxCount }
                 grouped[key] = grouped[key]!! + toAdd
@@ -77,7 +77,7 @@ class Day07 : IAocTaskKt {
             else if (groupedCards.size == 2 && groupedCards.values.maxOf { it } == 3) 5 // full house
             else if (groupedCards.size == 3 && groupedCards.values.maxOf { it } == 3) 4 // three of a kind
             else if (groupedCards.values.maxOf { it } == 2 && groupedCards.values.count { it == 2 } == 2) 3 // two pair
-            else if (groupedCards.size == 4 && groupedCards.values.maxOf { it } == 2 && groupedCards.values.count { it == 2} == 1) 2 // one pair
+            else if (groupedCards.size == 4 && groupedCards.values.maxOf { it } == 2 && groupedCards.values.count { it == 2 } == 1) 2 // one pair
             else if (groupedCards.size == 5) 1 // high card
             else throw IllegalStateException("unknown state $cards")
         }
@@ -85,10 +85,12 @@ class Day07 : IAocTaskKt {
         fun computeStrengthWithJokers(): Int {
             return if (jokerGroupedCards.values.maxOf { it } == 5) 7 // five of a kind
             else if (jokerGroupedCards.values.maxOf { it } == 4) 6 // four of a kind
-            else if (jokerGroupedCards.values.maxOf { it } == 3) 5 // full house
-            else if (jokerGroupedCards.values.maxOf { it } == 3) 4 // three of a kind
+            else if (jokerGroupedCards.values.maxOf { it } == 3 && jokerGroupedCards.values.filter { it != 3 }
+                    .maxOf { it } == 2) 5 // full house
+            else if (jokerGroupedCards.values.maxOf { it } == 3 && jokerGroupedCards.values.filter { it != 3 }
+                    .maxOf { it } == 1) 4 // three of a kind
             else if (jokerGroupedCards.values.maxOf { it } == 2 && jokerGroupedCards.values.count { it == 2 } == 2) 3 // two pair
-            else if (jokerGroupedCards.values.maxOf { it } == 2 && jokerGroupedCards.values.count { it == 2} == 1) 2 // one pair
+            else if (jokerGroupedCards.values.maxOf { it } == 2 && jokerGroupedCards.values.count { it == 2 } == 1) 2 // one pair
             else if (jokerGroupedCards.values.maxOf { it } == 1) 1 // high card
             else throw IllegalStateException("unknown state $cards")
         }
@@ -119,7 +121,8 @@ class Day07 : IAocTaskKt {
             return "Hand(cards=$cards, bid=$bid, groupedCards=$groupedCards, strength=$strength)"
         }
     }
-    class JokerComparator: Comparator<Hand> {
+
+    class JokerComparator : Comparator<Hand> {
         override fun compare(o1: Hand, o2: Hand): Int {
             val strength = o1.jokerStrength
             val otherStrength = o2.jokerStrength
@@ -134,6 +137,5 @@ class Day07 : IAocTaskKt {
             }
             return 0
         }
-
     }
 }
