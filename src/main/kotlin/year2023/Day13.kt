@@ -2,7 +2,6 @@ package year2023
 
 import aoc.IAocTaskKt
 import kotlin.math.min
-import kotlin.streams.toList
 
 class Day13 : IAocTaskKt {
     override fun getFileName(): String = "aoc2023/input_13.txt"
@@ -51,16 +50,27 @@ class Day13 : IAocTaskKt {
 //                            println("pattern H: ${pattern.horizontalLineIx()}, V: ${pattern.verticalLineIdx()}")
 //            }
             .sumOf { (unsmug, pattern) ->
-                val vert = unsmug.verticalLineIdx()
-                val hor = unsmug.horizontalLineIx()
-                if (vert != 0 && hor == 0) vert
-                else if (vert == 0 && hor != 0) hor * 100
-                else { // both non zero
-                    val prevVert = pattern.verticalLineIdx()
-                    val prevHor = pattern.horizontalLineIx()
-                    if (prevVert != 0) hor * 100
-                    else vert
-                }
+//                val vert = unsmug.verticalLineIdx()
+//                val hor = unsmug.horizontalLineIx()
+//                if (vert != 0 && hor == 0) vert
+//                else if (vert == 0 && hor != 0) hor * 100
+//                else { // both non zero
+//                    val prevVert = pattern.verticalLineIdx()
+//                    val prevHor = pattern.horizontalLineIx()
+//                    if (prevVert != 0) hor * 100
+//                    else vert
+//                }
+                val prevHor = pattern.horizontalLineIx() - 1
+                val prevVer = pattern.verticalLineIdx() - 1
+                val newResult = Pair(unsmug.horizontalLineIx(
+                    differentThan = if (prevHor != -1) pattern.rows[prevHor] else ""
+                ),
+                    unsmug.verticalLineIdx(
+                        differentThan = if (prevVer != -1) pattern.cols[prevVer] else ""
+                    )
+                )
+                val (hor, ver) = newResult
+                ver + hor * 100
             })
     }
 
@@ -70,9 +80,10 @@ class Day13 : IAocTaskKt {
             return result
         }
 
-        fun verticalLineIdx(): Int {
+        fun verticalLineIdx(differentThan: String = ""): Int {
             val lineIndices = (cols.windowed(2).mapIndexed { idx, (left, right) -> Triple(idx, left, right) })
                 .filter { (_, left, right) -> left == right }
+                .filter { (idx, left, _) -> left != differentThan }
                 .map { (idx, _, _) -> idx }
 
             return lineIndices.maxOfOrNull { checkVerticalLine(it) } ?: 0
@@ -94,9 +105,10 @@ class Day13 : IAocTaskKt {
             return 0
         }
 
-        fun horizontalLineIx(): Int {
+        fun horizontalLineIx(differentThan: String = ""): Int {
             val lineIndices = (rows.windowed(2).mapIndexed { idx, (up, down) -> Triple(idx, up, down) })
                 .filter { (_, up, down) -> up == down }
+                .filter { (idx, up, _) -> up != differentThan }
                 .map { (idx, _, _) -> idx }
 
             return lineIndices.maxOfOrNull { checkHorizontalLine(it) } ?: 0
@@ -135,19 +147,36 @@ class Day13 : IAocTaskKt {
             for (y in rows.indices) {
                 for (x in rows[0].indices) {
                     val unSmudged = withSwitchedValueAt(x, y)
-                    val newResult = Pair(unSmudged.horizontalLineIx(), unSmudged.verticalLineIdx())
-                    if (newResult != Pair(0, 0) && newResult != original) {
-                        println("unsmugged $x, $y --> $newResult" )
-                        println("before")
-                        println(printByRows())
-                        println("after")
-                        println(unSmudged.printByRows())
+                    val prevHor = horizontalLineIx() - 1
+                    val prevVer = verticalLineIdx() - 1
+                    val newResult = Pair(unSmudged.horizontalLineIx(
+                        differentThan = if (prevHor != -1) rows[prevHor] else ""
+                    ),
+                        unSmudged.verticalLineIdx(
+                            differentThan = if (prevVer != -1) cols[prevVer] else ""
+                        )
+                    )
+                    if (newResult != Pair(0, 0)
+//                        && newResult != original || newResult == original && hasDifferentLine(unSmudged)
+                        ) {
+//                        println("unsmugged $x, $y --> $newResult" )
+//                        println("before")
+//                        println(printByRows())
+//                        println("after")
+//                        println(unSmudged.printByRows())
                         return unSmudged
                     }
                 }
             }
 //            return this
             throw IllegalStateException("could not find unsmudged mirror \n${printByRows()}")
+        }
+
+        private fun hasDifferentLine(pattern: Pattern): Boolean {
+            val hor = horizontalLineIx() - 1
+            val ver = verticalLineIdx() - 1
+            return if (hor != -1) pattern.rows[hor] != rows[hor]
+            else pattern.cols[ver] != cols[ver]
         }
 
         companion object {
