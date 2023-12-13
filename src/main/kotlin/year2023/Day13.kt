@@ -2,34 +2,66 @@ package year2023
 
 import aoc.IAocTaskKt
 import kotlin.math.min
+import kotlin.streams.toList
 
 class Day13 : IAocTaskKt {
     override fun getFileName(): String = "aoc2023/input_13.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        val patterns = lines.fold(emptyList<List<String>>()) {
-            acc, next -> if (acc.isEmpty()) acc + listOf(listOf(next))
+        val patterns = lines.fold(emptyList<List<String>>()) { acc, next ->
+            if (acc.isEmpty()) acc + listOf(listOf(next))
             else if (next.isBlank()) acc + listOf(emptyList())
             else {
                 val result = acc.subList(0, acc.size - 1)
                 val updatedLastList = acc.last() + next
                 result + listOf(updatedLastList)
             }
-        }.onEach { println(it) }
+        }
+//            .onEach { println(it) }
             .map(Pattern::create)
             .onEach { println(it) }
 
-        patterns.onEachIndexed { idx, it ->
-            println("pattern: $idx")
-            println(it.printByRows())
-            println("H: ${it.horizontalLineIx()}, V: ${it.verticalLineIdx()}")
-            println()
-        }
-        println(patterns.sumOf { it.verticalLineIdx() +  100 * it.horizontalLineIx()})
+//        patterns.onEachIndexed { idx, it ->
+//            println("pattern: $idx")
+//            println(it.printByRows())
+//            println("H: ${it.horizontalLineIx()}, V: ${it.verticalLineIdx()}")
+//            println()
+//        }
+        println(patterns.sumOf { it.verticalLineIdx() + 100 * it.horizontalLineIx() })
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("Not yet implemented")
+        val patterns = lines.fold(emptyList<List<String>>()) { acc, next ->
+            if (acc.isEmpty()) acc + listOf(listOf(next))
+            else if (next.isBlank()) acc + listOf(emptyList())
+            else {
+                val result = acc.subList(0, acc.size - 1)
+                val updatedLastList = acc.last() + next
+                result + listOf(updatedLastList)
+            }
+        }
+            .map(Pattern::create)
+
+        val unsmudged = patterns.map(Pattern::unSmudged)
+
+        println(unsmudged.zip(patterns)
+//            .onEach {
+//                (unsmug, pattern) ->
+//                            println("unsmug H: ${unsmug.horizontalLineIx()}, V: ${unsmug.verticalLineIdx()}")
+//                            println("pattern H: ${pattern.horizontalLineIx()}, V: ${pattern.verticalLineIdx()}")
+//            }
+            .sumOf { (unsmug, pattern) ->
+                val vert = unsmug.verticalLineIdx()
+                val hor = unsmug.horizontalLineIx()
+                if (vert != 0 && hor == 0) vert
+                else if (vert == 0 && hor != 0) hor * 100
+                else { // both non zero
+                    val prevVert = pattern.verticalLineIdx()
+                    val prevHor = pattern.horizontalLineIx()
+                    if (prevVert != 0) hor * 100
+                    else vert
+                }
+            })
     }
 
     data class Pattern(val rows: List<String>, val cols: List<String>) {
@@ -39,7 +71,7 @@ class Day13 : IAocTaskKt {
         }
 
         fun verticalLineIdx(): Int {
-            val lineIndices = (cols.windowed(2).mapIndexed {idx, (left, right) -> Triple(idx, left, right)})
+            val lineIndices = (cols.windowed(2).mapIndexed { idx, (left, right) -> Triple(idx, left, right) })
                 .filter { (_, left, right) -> left == right }
                 .map { (idx, _, _) -> idx }
 
@@ -56,14 +88,14 @@ class Day13 : IAocTaskKt {
             left = left.reversed().subList(0, size)
             right = right.subList(0, size)
             if (left == right) {
-        //                println(cols.subList(0, origLeftSize))
+                //                println(cols.subList(0, origLeftSize))
                 return origLeftSize
             }
             return 0
         }
 
         fun horizontalLineIx(): Int {
-            val lineIndices = (rows.windowed(2).mapIndexed {idx, (up, down) -> Triple(idx, up, down)})
+            val lineIndices = (rows.windowed(2).mapIndexed { idx, (up, down) -> Triple(idx, up, down) })
                 .filter { (_, up, down) -> up == down }
                 .map { (idx, _, _) -> idx }
 
@@ -79,10 +111,43 @@ class Day13 : IAocTaskKt {
             up = up.reversed().subList(0, size)
             down = down.subList(0, size)
             if (up == down) {
-        //                println(rows.subList(0, origUpSize))
+                //                println(rows.subList(0, origUpSize))
                 return origUpSize
             }
             return 0
+        }
+
+        private fun withSwitchedValueAt(x: Int, y: Int): Pattern {
+            val newRows = rows.mapIndexed { idx, row ->
+                if (idx == y) {
+                    val replacement = if (row[x] == '.') "#" else "."
+                    val newRow = row.split("").filter(String::isNotEmpty)
+                        .toMutableList()
+                    newRow[x] = replacement
+                    newRow.joinToString("")
+                } else row
+            }
+            return create(newRows)
+        }
+
+        fun unSmudged(): Pattern {
+            val original = Pair(horizontalLineIx(), verticalLineIdx())
+            for (y in rows.indices) {
+                for (x in rows[0].indices) {
+                    val unSmudged = withSwitchedValueAt(x, y)
+                    val newResult = Pair(unSmudged.horizontalLineIx(), unSmudged.verticalLineIdx())
+                    if (newResult != Pair(0, 0) && newResult != original) {
+                        println("unsmugged $x, $y --> $newResult" )
+                        println("before")
+                        println(printByRows())
+                        println("after")
+                        println(unSmudged.printByRows())
+                        return unSmudged
+                    }
+                }
+            }
+//            return this
+            throw IllegalStateException("could not find unsmudged mirror \n${printByRows()}")
         }
 
         companion object {
