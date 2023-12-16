@@ -6,11 +6,13 @@ import year2023.Day16.Direction.LEFT
 import year2023.Day16.Direction.RIGHT
 import year2023.Day16.Direction.UP
 
-class Day16 : IAocTaskKt{
-    override fun getFileName(): String  = "aoc2023/input_16.txt"
+class Day16 : IAocTaskKt {
+    override fun getFileName(): String = "aoc2023/input_16.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val grid = Grid.parse(lines)
+            .copy(beams = mutableSetOf(Beam(Point(0, 0), RIGHT)))
+
         println(grid.print())
         grid.energizeUntilPossible()
         println()
@@ -19,8 +21,29 @@ class Day16 : IAocTaskKt{
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("Not yet implemented")
+        val grid = Grid.parse(lines)
+
+        val gridEdge: List<Point> = grid.getEdge()
+
+        var bestSize = 0
+
+        for (idx in gridEdge.indices) {
+            val point = gridEdge[idx]
+            for (dir in Direction.values()) {
+                val initialBeam = Beam(point, dir)
+                val newGrid = grid.copy(beams = mutableSetOf(initialBeam))
+                newGrid.energizeUntilPossible()
+                val size = newGrid.beams.distinctBy { it.pos }.count()
+                if (bestSize < size) {
+                    bestSize = size
+                    println("best size improved: $bestSize")
+                }
+            }
+            println("progress ${idx + 1 } / ${gridEdge.size}")
+        }
+        println(bestSize)
     }
+
     /*
     If the beam encounters empty space (.), it continues in the same direction.
     If the beam encounters a mirror (/ or \), the beam is reflected 90 degrees depending
@@ -39,11 +62,12 @@ class Day16 : IAocTaskKt{
      Beams do not interact with other beams; a tile can have many beams passing through it at the same time.
      A tile is energized if that tile has at least one beam pass through it, reflect in it, or split in it.
      */
-    data class Grid(val grid: List<List<String>>, val beams: MutableSet<Beam> = mutableSetOf(Beam(Point(0,0), RIGHT))) {
+    data class Grid(val grid: List<List<String>>, val beams: MutableSet<Beam>) {
         fun print(): String = grid.joinToString("\n") { it.joinToString("") }
         fun printWithBeams() = grid
-            .mapIndexed { yIdx, row -> row
-                .mapIndexed { xIdx, col -> if (beams.any { beam -> beam.pos == Point(xIdx, yIdx) }) "#" else col }
+            .mapIndexed { yIdx, row ->
+                row
+                    .mapIndexed { xIdx, col -> if (beams.any { beam -> beam.pos == Point(xIdx, yIdx) }) "#" else col }
             }
             .joinToString("\n") { it.joinToString("") }
 
@@ -65,7 +89,7 @@ class Day16 : IAocTaskKt{
         companion object {
             fun parse(lines: List<String>): Grid {
                 val grid = lines.map { it.split("").filter(String::isNotEmpty) }
-                return Grid(grid)
+                return Grid(grid, mutableSetOf())
             }
         }
 
@@ -76,6 +100,9 @@ class Day16 : IAocTaskKt{
                 energized = energize()
             }
         }
+
+        fun getEdge(): List<Point> = grid.indices.flatMap { listOf(Point(0, it), Point(grid[0].size - 1, it)) } +
+                (0 until grid[0].size).flatMap { listOf(Point(it, grid.size - 1), Point(it, 0)) }
     }
 
     data class Beam(val pos: Point, val dir: Direction) {
@@ -89,6 +116,7 @@ class Day16 : IAocTaskKt{
                         Beam(pos + RIGHT, RIGHT),
                     )
                 }
+
                 TileType.VER_SPLIT -> if (dir.isVertical()) {
                     setOf(Beam(pos + dir, dir))
                 } else {
@@ -97,6 +125,7 @@ class Day16 : IAocTaskKt{
                         Beam(pos + DOWN, DOWN),
                     )
                 }
+
                 TileType.EMPTY -> setOf(Beam(pos + dir, dir))
                 TileType.SLASH_MIR -> when (dir) {
                     UP -> setOf(Beam(pos + RIGHT, RIGHT))
@@ -104,7 +133,8 @@ class Day16 : IAocTaskKt{
                     LEFT -> setOf(Beam(pos + DOWN, DOWN))
                     RIGHT -> setOf(Beam(pos + UP, UP))
                 }
-                TileType.BACK_SL_MIR -> when(dir) {
+
+                TileType.BACK_SL_MIR -> when (dir) {
                     UP -> setOf(Beam(pos + LEFT, LEFT))
                     DOWN -> setOf(Beam(pos + RIGHT, RIGHT))
                     LEFT -> setOf(Beam(pos + UP, UP))
