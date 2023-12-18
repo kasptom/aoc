@@ -1,25 +1,40 @@
 package year2023
 
 import aoc.IAocTaskKt
-import year2023.Day18.Direction.*
+import year2023.Day18.Direction.DOWN
+import year2023.Day18.Direction.LEFT
+import year2023.Day18.Direction.RIGHT
+import year2023.Day18.Direction.UP
+import kotlin.math.abs
 
 class Day18 : IAocTaskKt {
     override fun getFileName() = "aoc2023/input_18.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val moves = lines.map(Move::parse)
-        val width = 2 * (moves.filter { it.dir == RIGHT }.sumOf { it.steps } + moves.filter { it.dir == LEFT }.sumOf { it.steps })
-        val height = 2 * (moves.filter { it.dir == DOWN }.sumOf { it.steps } + moves.filter { it.dir == UP }.sumOf { it.steps })
+        val width = 2 * (moves.filter { it.dir == RIGHT }.sumOf { it.steps } +
+                moves.filter { it.dir == LEFT }.sumOf { it.steps })
+        val height = 2 * (moves.filter { it.dir == DOWN }.sumOf { it.steps } +
+                moves.filter { it.dir == UP }.sumOf { it.steps })
         val grid = Grid((0..height).map { (0..width).map { "." }.toMutableList() }.toList(), width, height)
         for (move in moves) {
             grid.move(move)
         }
-        println(grid.print())
+        // println(grid.print())
         println(grid.countSpace())
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("Not yet implemented")
+        val moves = lines.map(Move::parse2)
+//        moves.onEach(::println)
+        val result = moves
+            .fold(listOf(Point(0, 0))) { acc, next -> acc + (acc.last() + next) }
+            .zipWithNext { (x1, y1), (x2, _) -> (x2 - x1) * y1.toLong() }
+            .sum()
+            .let { abs(it) } + moves.sumOf { it.steps } / 2 + 1
+//        val expectedTest = 952408144115
+//        println("$expectedTest == $result --> ${expectedTest == result}")
+        println(result)
     }
 
     data class Point(val x: Int, val y: Int) {
@@ -41,6 +56,18 @@ class Day18 : IAocTaskKt {
 
         operator fun times(k: Int): Point {
             return Point(x * k, y * k)
+        }
+
+        operator fun times(other: Point): Long {
+            return (x + other.x).toLong() * (y + other.y).toLong()
+        }
+
+        operator fun minus(move: Move): Point {
+            return this - ((Point(0, 0) + move.dir) * move.steps)
+        }
+
+        operator fun minus(other: Point): Point {
+            return Point(x - other.x, y - other.y)
         }
     }
 
@@ -73,8 +100,9 @@ class Day18 : IAocTaskKt {
                 for (cell in toExpand) {
                     map[cell.y][cell.x] = "#"
                 }
-                val newToExpand = toExpand.flatMap { toExp -> MOVES.map { toExp + it }.filter { it.isInRange(map) }
-                    .filter { map.valueAt(it) == "." }
+                val newToExpand = toExpand.flatMap { toExp ->
+                    MOVES.map { toExp + it }.filter { it.isInRange(map) }
+                        .filter { map.valueAt(it) == "." }
                 }
                 toExpand.clear()
                 toExpand.addAll(newToExpand.distinct())
@@ -93,15 +121,38 @@ class Day18 : IAocTaskKt {
             LEFT -> RIGHT
             RIGHT -> LEFT
         }
+
+        operator fun times(steps: Int): Long {
+            return when (this) {
+                UP, LEFT -> -steps.toLong()
+                DOWN, RIGHT -> +steps.toLong()
+            }
+        }
     }
 
     data class Move(val dir: Direction, val steps: Int, val rest: String) {
+
         companion object {
             fun parse(line: String): Move {
                 val (dirRaw, stepRaw, restRaw) = line.split(" ").filter(String::isNotEmpty)
                 val dir = Direction.values().first { it.dir == dirRaw }
                 return Move(dir, stepRaw.toInt(), restRaw)
             }
+
+            fun parse2(line: String): Move {
+                val oldMove = parse(line)
+                val hexRaw = oldMove.rest.replace("(#", "")
+                    .replace(")", "")
+                val stepsRaw = hexRaw.substring(0, 5)
+                val steps = stepsRaw.toInt(16)
+                val dir = hexRaw.last().toString().toInt()
+                    .let { codeToDir[it]!! }
+                return Move(dir, steps, oldMove.rest)
+            }
+        }
+
+        override fun toString(): String {
+            return "(${dir.dir} $steps $rest)"
         }
     }
 
@@ -109,8 +160,10 @@ class Day18 : IAocTaskKt {
         val DX: List<Int> = listOf(1, 0, -1, 0)
         val DY: List<Int> = listOf(0, 1, 0, -1)
         val MOVES: List<Point> = DX.zip(DY).map { (x, y) -> Point(x, y) }
+        val codeToDir = mapOf(
+            0 to RIGHT, 1 to DOWN, 2 to LEFT, 3 to UP
+        )
     }
 }
 
 fun List<List<String>>.valueAt(pos: Day18.Point): String = this[pos.y][pos.x]
-
