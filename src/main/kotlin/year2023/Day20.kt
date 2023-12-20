@@ -10,6 +10,11 @@ class Day20 : IAocTaskKt {
     override fun getFileName(): String = "aoc2023/input_20.txt"
 
     override fun solvePartOne(lines: List<String>) {
+        val repeats = 1000
+        solve(lines, repeats)
+    }
+
+    private fun solve(lines: List<String>, repeats: Int) {
         val modules: List<Module> = lines.map(Module::parse)
         nameToModule.clear()
         val conjunctions = mutableSetOf<Module>()
@@ -19,21 +24,23 @@ class Day20 : IAocTaskKt {
                 conjunctions += it
             }
         }
-        nameToModule.onEach {
-            println(it)
+        conjunctions.forEach { conn ->
+            conn
+                .initializeInputs(modules.filter { it.destinations.contains(conn.id) }.map { m -> m.id })
         }
-        conjunctions.forEach { conn -> conn
-            .initializeInputs(modules.filter { it.destinations.contains(conn.id) }.map { m -> m.id }) }
-        println("map")
-        println(nameToModule)
 
-        modules.onEach { println(it) }
+        //        nameToModule.onEach {
+        //            println(it)
+        //        }
+        //        println("map")
+        //        println(nameToModule)
+        //        modules.onEach { println(it) }
+
         var lowPulsesCount = 0
         var highPulsesCount = 0
-        val repeats = 1000
         for (repeat in 1..repeats) {
-            println("--- button press #$repeat ---")
-            println("button -low-> broadcaster")
+    //            println("--- button press #$repeat ---")
+    //            println("button -low-> broadcaster")
             val srcDestSignals = mutableListOf<Triple<String, String, Module.Signal>>()
             lowPulsesCount += 1
             srcDestSignals += Triple("button", "broadcaster", LOW)
@@ -42,42 +49,53 @@ class Day20 : IAocTaskKt {
                 val newDestinationSignals = mutableListOf<Triple<String, String, Module.Signal>>()
                 for (entry in srcDestSignals) {
                     val (src, dest, signal) = entry
-//                    println("module name: $moduleName")
+    //                    println("module name: $moduleName")
                     val module = nameToModule.getOrElse(dest) {
-                        println("could not find: $dest")
+    //                        println("could not find: $dest for $src and signal: $signal")
+                        if (signal == LOW) {
+                            throw IllegalStateException("repeats: $repeat")
+                        }
                         null
                     }
                     if (module == null) {
                         continue
                     }
 
-                    if (signal == IDLE) {
-                        continue
-                    }
 
-                    val newSignal = module.process(src, signal)
+    //                    if (signal == IDLE) {
+    //                        continue
+    //                    }
+
+                    val newSignal = module.process(repeat, src, signal)
                     if (newSignal == LOW) lowPulsesCount += module.destinations.count()
                     else if (newSignal == HIGH) highPulsesCount += module.destinations.count()
                     else if (newSignal == IDLE) continue
 
                     for (newDest in module.destinations) {
                         newDestinationSignals += Triple(dest, newDest, newSignal)
-                        println("$dest -${newSignal.name.lowercase()}-> $newDest")
+    //                        println("$dest -${newSignal.name.lowercase()}-> $newDest")
                     }
                 }
                 srcDestSignals.clear()
                 srcDestSignals.addAll(newDestinationSignals)
             }
-//            fipFlops.forEach {
-//                it.state = LOW
-//            }
+    //            fipFlops.forEach {
+    //                it.state = LOW
+    //            }
+
+    //            println("repeat: $repeat, ${modules.map { if (it.state == LOW) 0 else 1 }.joinToString("")}")
+    //            println("----")
         }
         println("low: $lowPulsesCount, high: $highPulsesCount")
         println(lowPulsesCount * highPulsesCount)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("Not yet implemented")
+        val repeats = 10000
+        runCatching { solve(lines, repeats) }
+            .onFailure {
+                println(it)
+            }
     }
 
     data class Module(
@@ -87,7 +105,7 @@ class Day20 : IAocTaskKt {
         val destinations: List<String>,
         val inputToSignal: MutableMap<String, Signal> = mutableMapOf(),
     ) {
-        fun process(src: String, signal: Signal): Signal {
+        fun process(repeat: Int, src: String, signal: Signal): Signal {
             return when (type) {
                 Type.BUTTON -> signal
                 Type.FLIP_FLOP -> {
@@ -98,11 +116,20 @@ class Day20 : IAocTaskKt {
                         }
 
                         HIGH -> IDLE
-                        IDLE -> throw IllegalStateException()
+                        IDLE -> IDLE
                     }
                 }
 
                 Type.CONJUNCTION -> {
+                    if (signal != LOW && id == "gf") {
+                        println("NOT LOW for: $src $repeat")
+                        gfInputs[src] = repeat.toLong()
+                        if (gfInputs.size == 4) {
+                            throw IllegalStateException(
+                                "this is hacking: ${gfInputs.values.reduce { acc, next -> acc * next }}"
+                            )
+                        }
+                    }
                     inputToSignal[src] = signal
                     if (inputToSignal.values.all { it == HIGH }) LOW else HIGH
                 }
@@ -110,6 +137,7 @@ class Day20 : IAocTaskKt {
         }
 
         companion object {
+            val gfInputs = mutableMapOf<String, Long>()
             fun parse(line: String): Module {
                 return if (line.startsWith(Type.BUTTON.value)) {
                     val (name, destsRaw) = line.split(" -> ").filter(String::isNotEmpty)
@@ -152,7 +180,7 @@ class Day20 : IAocTaskKt {
         }
 
         override fun toString(): String {
-            return "{$id(${type}) -> $destinations}"
+            return "{$id(${type}) -> $destinations ${if (type == Type.CONJUNCTION) inputToSignal.toString() else ""}}"
         }
 
         fun initializeInputs(inputs: List<String>) {
