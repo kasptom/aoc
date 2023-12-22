@@ -15,6 +15,7 @@ class Day22 : IAocTaskKt {
                 brick.label = "$label"
             }
         }
+        bricks.indices.onEach { idx -> bricks[idx].id = idx }
 
         val tower = Tower(bricks.toMutableList())
         println("bricks count: " + tower.bricks.size)
@@ -34,7 +35,11 @@ class Day22 : IAocTaskKt {
                 throw IllegalStateException()
             }
         }
+        if (bricks.count() != bricks.map { it.id }.distinct().count()) {
+            throw IllegalStateException()
+        }
 
+        var fallingSum = 0
         for (brickIdx in tower.bricks.indices) {
             println("checking brick $brickIdx")
             val brick = tower.bricks[brickIdx]
@@ -43,9 +48,17 @@ class Day22 : IAocTaskKt {
 
             if (!newTower.moveBricks()) {
                 removable += brick
+            } else {
+                newTower.moveBricksToBottom()
+                val fallCount = tower.bricks
+                    .filter { it != brick }
+                    .count { oldBrick -> newTower.bricks.first { it.id == oldBrick.id } != oldBrick }
+                println("removing it $fallCount would fall")
+                fallingSum += fallCount
             }
         }
         println(removable.size)
+        println(fallingSum)
     }
 
     override fun solvePartTwo(lines: List<String>) {
@@ -61,7 +74,7 @@ class Day22 : IAocTaskKt {
         }
     }
 
-    data class Brick(val min: Point, val max: Point, var label: String = "X") {
+    data class Brick(val min: Point, val max: Point, var label: String = "X", var id: Int = -1) {
 
 
 
@@ -94,13 +107,13 @@ class Day22 : IAocTaskKt {
         fun moveDown(): Brick {
             val newMin = min + Point(0, 0, -1)
             val newMax = max + Point(0, 0, -1)
-            return Brick(newMin, newMax, label)
+            return Brick(newMin, newMax, label, id)
         }
 
         fun moveUp(): Brick {
             val newMin = min + Point(0, 0, 1)
             val newMax = max + Point(0, 0, 1)
-            return Brick(newMin, newMax, label)
+            return Brick(newMin, newMax, label, id)
         }
 
         companion object {
