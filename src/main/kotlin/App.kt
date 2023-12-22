@@ -1,9 +1,9 @@
 import aoc.IAocTaskKt
 import utils.InputReader
-import year2023.Day21
+import year2023.Day22
 
 fun main() {
-    val task: IAocTaskKt = Day21()
+    val task: IAocTaskKt = Day22()
     val lines: List<String> = InputReader(task.getFileName())
         .readLines()
 
