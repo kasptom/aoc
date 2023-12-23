@@ -9,22 +9,32 @@ class Day23 : IAocTaskKt {
         val grid = Grid.parse(lines)
         println(grid.print())
         println()
-        var prevShortest = grid.shortestPath()
-        var nextShortest = grid.shortestPath(prevShortest.size)
-        while (prevShortest != nextShortest) {
-            prevShortest = nextShortest
-            nextShortest = grid.shortestPath(prevShortest.size)
-        }
-        println(grid.print(prevShortest.toSet()))
-        println(nextShortest.size)
+        grid.setupSections()
+
+        grid.findLongestPath()
+        println(grid.bestPath)
+        println(grid.maxSize)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("Not yet implemented")
+        val grid = Grid.parse(lines)
+        println(grid.print())
+        println()
+
+        grid.slopesEnabled = false
+        grid.setupSections()
+
+        grid.findLongestPath()
+        println(grid.bestPath)
+        println(grid.maxSize)
     }
 
-    data class Grid(val grid: List<List<String>>, val start: Point, val end: Point) {
-        var currentShortestPath: List<Point> = emptyList()
+    data class Grid(val grid: List<List<String>>, val start: Point, val end: Point, var slopesEnabled: Boolean = true) {
+        val pointToJump: MutableMap<Point, Jump> = mutableMapOf()
+        var bestPath: List<Jump> = emptyList()
+
+        var crossroadsPoints: List<Point> = emptyList()
+        var maxSize = 0
         fun print(): String = grid.joinToString("\n") { it.joinToString("") }
         fun print(points: Set<Point>): String {
             var result = ""
@@ -51,59 +61,122 @@ class Day23 : IAocTaskKt {
                 val end = Point(grid[0].size - 2, grid.size - 1)
                 return Grid(grid, start, end)
             }
-
-//            fun findStart(grid: List<List<String>>): Point {
-//                for (yIdx in grid.indices) {
-//                    for (xIdx in grid[0].indices) {
-//                        val point = Point(xIdx, yIdx)
-//                        if (grid.valueAt(point) == "S") {
-//                            return point
-//                        }
-//                    }
-//                }
-//                return Point(-1, -1)
-//            }
         }
 
-        fun shortestPath(minLength: Int = 0): List<Point> {
-            val pos = start
-            val path = mutableListOf(pos)
-
-            val possibleMoves = Direction.values()
-                .map { pos + it }
-                .filter { it.isInRange(grid) && it.isAvailable(grid) && pos.hasRequiredDirection(grid, it) }
-                .toSet()
-
-            for (move in possibleMoves) {
-                visit(path, move, minLength)
-            }
-            return currentShortestPath
+        fun findLongestPath(): Int {
+            val startJump = pointToJump[start]!!
+            visit(listOf(startJump), startJump.length)
+            return maxSize
         }
 
-        private fun visit(path: List<Point>, step: Point, minLength: Int) {
-//            println("step: $step")
+        private fun visit(jumps: List<Jump>, size: Int) {
+//            println("current path size: ${path.size}")
 //            println(print(possibleMoves))
 //            visited.addAll(possibleMoves)
-            if (step == end) {
-                val currentMax = currentShortestPath.size
-                println("reached end with path.size: ${path.size} current longest: $currentMax, min required: $minLength")
-                if (path.size > currentShortestPath.size && path.size > minLength) {
-                    currentShortestPath = path
+            val lastJump = jumps.last()
+
+            if (lastJump.end == end) {
+//                println("reached end in ${jumps.size} jumps (${size})")
+                if (maxSize < size - 1) {
+                    maxSize = size - 1
+                    bestPath = jumps
+                    if (bestPath.distinct().size != bestPath.size) throw IllegalStateException("wrong path size")
+//                    println("current longest: ${maxSize}")
+                }
+                return
+            }
+
+            val nextJumps = getNextJumps(lastJump, jumps)
+            for (jump in nextJumps) {
+                visit(jumps + jump, size + jump.length)
+            }
+        }
+
+        private fun getNextJumps(jump: Jump, jumps: List<Jump>): List<Jump> {
+            val neighs = getNeighbours(jump.end, emptyList())
+            return neighs.filter {
+                pointToJump.containsKey(it)
+            }.map {
+                pointToJump[it]!!
+            }.filter {
+                it !in jumps
+            }
+        }
+
+        fun getNeighbours(
+            step: Point,
+            path: List<Point>,
+        ) = Direction.values()
+            .map { step + it }
+            .filter {
+                it.isInRange(grid) &&
+                        it.isAvailable(grid) &&
+                        (!slopesEnabled || step.hasRequiredDirection(grid, it))
+            }
+            .filter { it !in path }
+
+        fun setupSections() {
+            if (slopesEnabled) {
+                getAllPoints()
+                    .forEach {
+                        pointToJump[it] = Jump(it, it, 1)
+                    }
+                return
+            }
+
+            crossroadsPoints = getAllPoints()
+                .filter { getNeighbours(it, emptyList()).size > 2 }
+                .sorted()
+                .toList()
+            println("crossroad points: $crossroadsPoints")
+
+            for (point in crossroadsPoints) {
+                val jumpStarts = getNeighbours(point, emptyList())
+                pointToJump[point] = Jump(point, point, 1)
+                for (jumpStart in jumpStarts) {
+                    if (jumpStart in crossroadsPoints) throw IllegalStateException("jump start in crossroad points")
+                    var visited = mutableListOf(jumpStart, point)
+                    var jumpEnd = getNeighbours(jumpStart, visited).first()
+                    while (true) {
+                        visited += jumpEnd
+                        if (getNeighbours(jumpEnd, visited).size == 1 && getNeighbours(
+                                jumpEnd,
+                                visited
+                            ).first() !in crossroadsPoints
+                        ) {
+                            jumpEnd = getNeighbours(jumpEnd, visited).first()
+                        } else {
+                            break
+                        }
+                    }
+//                    visited = visited.distinct().toMutableList()
+                    val sec1 = Jump(start = jumpStart, end = jumpEnd, visited.size - 1)
+                    pointToJump[jumpStart] = sec1
+                    val sec2 = Jump(start = jumpEnd, end = jumpStart, visited.size - 1)
+                    pointToJump[jumpEnd] = sec2
+//                    println("creating sections from point $jumpStart: $sec1, $sec2")
                 }
             }
+            pointToJump
+                .entries
+                .sortedBy { (k, _) -> k }
+                .onEach {
+                    println(it)
+                }
+        }
 
-            val nextSteps = Direction.values()
-                    .map { step + it }
-                    .filter { it.isInRange(grid) && it.isAvailable(grid) && step.hasRequiredDirection(grid, it) }
-                    .filter { it !in path }
+        private fun getAllPoints() = grid.flatMapIndexed { yIdx, _ ->
+            grid[yIdx].mapIndexed { xIdx, _ -> Point(xIdx, yIdx) }
+        }.filter { grid.valueAt(it) != "#" }
+    }
 
-            for (next in nextSteps) {
-                visit(path + next, next, minLength)
-            }
+    data class Jump(val start: Point, val end: Point, val length: Int) {
+        override fun toString(): String {
+            return "$start -> $end ($length)"
         }
     }
 
-    data class Point(val x: Int, val y: Int) {
+    data class Point(val x: Int, val y: Int) : Comparable<Point> {
         operator fun plus(dir: Direction): Point {
             return when (dir) {
                 Direction.UP -> this + Point(0, -1)
@@ -121,6 +194,10 @@ class Day23 : IAocTaskKt {
         }
 
         fun isInRange(grid: List<List<String>>): Boolean = x >= 0 && y >= 0 && x < grid[0].size && y < grid.size
+        override fun compareTo(other: Point): Int {
+            if (x - other.x != 0) return x - other.x
+            return y - other.y
+        }
 
         override fun toString(): String {
             return "($x, $y)"
