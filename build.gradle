@@ -14,9 +14,9 @@ repositories {
 
 dependencies {
     implementation group: 'org.magicwerk', name: 'brownies-collections', version: '0.9.13'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.7.2'
     implementation group: 'org.thymeleaf', name: 'thymeleaf', version: '3.0.11.RELEASE'
-    implementation group: 'org.thymeleaf', name: 'thymeleaf-spring4', version: '3.0.11.RELEASE'
+    implementation group: 'org.thymeleaf', name: 'thymeleaf-spring4', version: '3.0.13.RELEASE'
     implementation 'org.slf4j:slf4j-nop:1.7.32'
     implementation 'org.mapstruct:mapstruct:1.4.2.Final'
 
@@ -27,7 +27,7 @@ dependencies {
     testCompileOnly 'org.projectlombok:lombok:1.18.22'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.22'
 
-    testCompile 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
     testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.8.2'
