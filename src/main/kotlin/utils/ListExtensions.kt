@@ -29,3 +29,6 @@ fun <T> List<T>.permutations(): List<List<T>> {
 
     return allPermutations(this)
 }
+
+fun <T> List<T>.except(vararg elem: T): List<T> = filter { it !in elem }
+fun <T> List<T>.except(elems: Set<T>): List<T> = filter { it !in elems }
