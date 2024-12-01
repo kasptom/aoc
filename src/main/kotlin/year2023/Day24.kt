@@ -38,21 +38,21 @@ class Day24 : IAocTaskKt {
         val delta = -500L..500L
         while (true) {
             val hail = hailstones.shuffled().take(4)
-            delta.forEach { deltaX ->
-                delta.forEach { deltaY ->
-                    val hail0 = hail[0].plusVelocity(deltaX, deltaY)
+            delta.forEach { dx ->
+                delta.forEach { dy ->
+                    val hail0 = hail[0].plusVelocity(dx, dy)
                     val crossings = hail.drop(1).mapNotNull {
-                        it.plusVelocity(deltaX, deltaY).crossing(hail0)
+                        it.plusVelocity(dx, dy).crossing(hail0)
                     }
                     if (crossings.size == 3 &&
                         crossings.all { it.point.x == crossings.first().point.x } &&
                         crossings.all { it.point.y == crossings.first().point.y }
                     ) {
                         val (cross1, cross2, cross3) = crossings
-                        delta.forEach { deltaZ ->
-                            val z1 = hail[1].zPositionAtTime(cross1.time, deltaZ)
-                            val z2 = hail[2].zPositionAtTime(cross2.time, deltaZ)
-                            val z3 = hail[3].zPositionAtTime(cross3.time, deltaZ)
+                        delta.forEach { dz ->
+                            val z1 = hail[1].zPositionAtTime(cross1.time, dz)
+                            val z2 = hail[2].zPositionAtTime(cross2.time, dz)
+                            val z3 = hail[3].zPositionAtTime(cross3.time, dz)
                             if (z1 == z2 && z2 == z3) {
                                 println((crossings.first().point.x + crossings.first().point.y + z1).toLong())
                                 return
