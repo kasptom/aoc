@@ -9,54 +9,44 @@ class Day03 : IAocTaskKt {
 
     override fun solvePartOne(lines: List<String>) {
         val pattern = Pattern.compile("mul\\(\\d{1,3},\\d{1,3}\\)")
+        val mulls = extract(lines, pattern).flatten()
 
-//        val testInput = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"
-        val mullsLines = lines.map { input -> pattern.matcher(input)
-            .results()
-            .map { it.group() }
-            .collect(Collectors.toList())
-        }
-
-        val pairs = mullsLines.map { mull -> mull.map { it.replace("mul(", "") }
-            .map { it.replace(")", "") }
-            .map { it.split(",") }
-            .map { (x, y) -> Pair(x.toLong(), y.toLong()) }}
-            .flatten()
-
+        val pairs = mulls.map { it.mullToXy() }
         println(pairs.sumOf { (x, y) -> x * y })
     }
 
     override fun solvePartTwo(lines: List<String>) {
         val pattern = Pattern.compile("mul\\(\\d{1,3},\\d{1,3}\\)|do\\(\\)|don't\\(\\)")
+        val mulls = extract(lines, pattern).flatten()
 
-//        val testInput = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"
-        val mulls = lines.map { input -> pattern.matcher(input)
-            .results()
-            .map { it.group() }
-            .collect(Collectors.toList())
-        }.flatten()
+        val enabled = mutableListOf<Pair<Long, Long>>()
 
-
-        var result = 0L
-        var compute: Boolean? = null
+        var isEnabled: Boolean? = null
         for (op in mulls) {
             if (op == "do()") {
-                compute = true
-                continue
-            }
-            if (compute != null && op == "don't()") {
-                compute = false
-                continue
-            }
-            if (compute == null || compute == true) {
-                val pair = op.replace("mul(", "")
-                    .replace(")", "")
-                    .split(",")
-                    .let { (x, y) -> Pair(x.toLong(), y.toLong()) }
-                result += pair.let { (x, y) -> x * y }
+                isEnabled = true
+            } else if (op == "don't()" && isEnabled != null && isEnabled == true) {
+                isEnabled = false
+            } else if (isEnabled == null || isEnabled == true){
+                enabled += op.mullToXy()
             }
         }
 
-        println(result)
+        println(enabled.sumOf { (x, y) -> x * y })
+    }
+
+    private fun extract(
+        lines: List<String>,
+        pattern: Pattern,
+    ) = lines.map { input ->
+        pattern.matcher(input)
+            .results()
+            .map { it.group() }
+            .collect(Collectors.toList())
     }
 }
+
+fun String.mullToXy() = replace("mul(", "")
+    .replace(")", "")
+    .split(",")
+    .let { (x, y) -> Pair(x.toLong(), y.toLong()) }
