@@ -11,16 +11,17 @@ class Day03 : IAocTaskKt {
         val pattern = Pattern.compile("mul\\(\\d{1,3},\\d{1,3}\\)")
 
 //        val testInput = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"
-        val input = lines[0];
-        val mulls = pattern.matcher(input)
+        val mullsLines = lines.map { input -> pattern.matcher(input)
             .results()
             .map { it.group() }
             .collect(Collectors.toList())
+        }
 
-        val pairs = mulls.map { it.replace("mul(", "") }
+        val pairs = mullsLines.map { mull -> mull.map { it.replace("mul(", "") }
             .map { it.replace(")", "") }
             .map { it.split(",") }
-            .map { (x, y) -> Pair(x.toLong(), y.toLong()) }
+            .map { (x, y) -> Pair(x.toLong(), y.toLong()) }}
+            .flatten()
 
         println(pairs.sumOf { (x, y) -> x * y })
     }
