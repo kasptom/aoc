@@ -27,6 +27,36 @@ class Day03 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val pattern = Pattern.compile("mul\\(\\d{1,3},\\d{1,3}\\)|do\\(\\)|don't\\(\\)")
+
+//        val testInput = "xmul(2,4)%&mul[3,7]!@^do_not_mul(5,5)+mul(32,64]then(mul(11,8)mul(8,5))"
+        val mulls = lines.map { input -> pattern.matcher(input)
+            .results()
+            .map { it.group() }
+            .collect(Collectors.toList())
+        }.flatten()
+
+
+        var result = 0L
+        var compute: Boolean? = null
+        for (op in mulls) {
+            if (op == "do()") {
+                compute = true
+                continue
+            }
+            if (compute != null && op == "don't()") {
+                compute = false
+                continue
+            }
+            if (compute == null || compute == true) {
+                val pair = op.replace("mul(", "")
+                    .replace(")", "")
+                    .split(",")
+                    .let { (x, y) -> Pair(x.toLong(), y.toLong()) }
+                result += pair.let { (x, y) -> x * y }
+            }
+        }
+
+        println(result)
     }
 }
