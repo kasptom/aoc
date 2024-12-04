@@ -3,7 +3,7 @@ package year2024
 import aoc.IAocTaskKt
 
 class Day04 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2024/input_04_test.txt"
+    override fun getFileName(): String = "aoc2024/input_04.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
@@ -51,22 +51,20 @@ class Day04 : IAocTaskKt {
         }
         val width = grid[0].size
         val height = grid.size
-        var mCount = 0
-        var sCount = 0
-        for (idx in DX2.indices) {
-            val dx = DX2[idx]
-            val dy = DY2[idx]
-            val newX = x + dx
-            val newY = y + dy
-            if (newX in 0 until width && newY in 0 until height) {
-                mCount += if (grid[newY][newX] == 'M') 1 else 0
-                sCount += if (grid[newY][newX] == 'S') 1 else 0
-            }
+        if (x == 0 || x == width -1 || y == 0 || y == height - 1) {
+            return false
         }
-        return mCount == 2 && sCount == 2
+        val ne = grid[y + DY2[0]][x + DX2[0]]
+        val nw = grid[y + DY2[1]][x + DX2[1]]
+        val se = grid[y + DY2[2]][x + DX2[2]]
+        val sw = grid[y + DY2[3]][x + DX2[3]]
+        val diag1 = ne + "A" + sw
+        val diag2 = nw + "A" + se
+        return diag1 in words && diag2 in words
     }
 
     companion object {
+        val words = setOf("MAS", "SAM")
         val DX = arrayOf(-1, 0, 1, -1, 1, -1, 0, 1)
         val DY = arrayOf(-1, -1, -1, 0, 0, 1, 1, 1)
         val DX2 = arrayOf(-1, 1, -1, 1)
