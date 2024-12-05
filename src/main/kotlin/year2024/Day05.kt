@@ -6,6 +6,24 @@ class Day05 : IAocTaskKt {
     override fun getFileName(): String = "aoc2024/input_05.txt"
 
     override fun solvePartOne(lines: List<String>) {
+        val (graph: Map<Int, Set<Int>>, updates) = parse(lines)
+
+        updates.filter { it.isCorrectlyOrdered(graph) }
+            .sumOf { update -> update[update.size / 2] }
+            .let { println(it) }
+    }
+
+    override fun solvePartTwo(lines: List<String>) {
+        val (graph: Map<Int, Set<Int>>, updates) = parse(lines)
+
+        updates.filter { it.isCorrectlyOrdered(graph).not() }
+            .map { update -> update.correct(graph) }
+            .sumOf { update -> update[update.size / 2] }
+            .let { println(it) }
+
+    }
+
+    private fun parse(lines: List<String>): Pair<Map<Int, Set<Int>>, List<List<Int>>> {
         val orderingRulesEnd = lines.indexOfFirst { it.trim().isEmpty() }
         val orderingRules = lines.subList(0, orderingRulesEnd)
             .map { rule ->
@@ -17,12 +35,7 @@ class Day05 : IAocTaskKt {
 
         val updates = lines.subList(orderingRulesEnd + 1, lines.size)
             .map { update -> update.split(",").map { it.toInt() } }
-
-        updates.filter { it.isCorrectlyOrdered(graph) }
-            .map { update -> update.get(update.size / 2) }
-            .onEach { println(it) }
-            .sum()
-            .let { println(it) }
+        return Pair(graph, updates)
     }
 
     private fun toGraph(orderingRules: List<Pair<Int, Int>>): Map<Int, Set<Int>> {
@@ -33,30 +46,6 @@ class Day05 : IAocTaskKt {
             result[prev]?.add(next)
         }
         return result
-    }
-
-    override fun solvePartTwo(lines: List<String>) {
-        println("---")
-        val orderingRulesEnd = lines.indexOfFirst { it.trim().isEmpty() }
-        val orderingRules = lines.subList(0, orderingRulesEnd)
-            .map { rule ->
-                rule.split("|").map { it.toInt() }
-                    .let { xy -> Pair(xy[0], xy[1]) }
-            }
-
-        val graph: Map<Int, Set<Int>> = toGraph(orderingRules)
-
-        val updates = lines.subList(orderingRulesEnd + 1, lines.size)
-            .map { update -> update.split(",").map { it.toInt() } }
-
-        updates.filter { it.isCorrectlyOrdered(graph).not() }
-            .onEach { println(it) }
-            .map { update -> update.correct(graph) }
-            .also { println("--") }
-            .onEach { println(it) }
-            .sumOf { update -> update.get(update.size / 2) }
-            .let { println(it) }
-
     }
 }
 
