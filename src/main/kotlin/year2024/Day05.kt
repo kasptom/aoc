@@ -8,14 +8,15 @@ class Day05 : IAocTaskKt {
     override fun solvePartOne(lines: List<String>) {
         val orderingRulesEnd = lines.indexOfFirst { it.trim().isEmpty() }
         val orderingRules = lines.subList(0, orderingRulesEnd)
-            .map { rule -> rule.split("|").map { it.toInt() }
-                .let { xy -> Pair(xy[0], xy[1]) }
+            .map { rule ->
+                rule.split("|").map { it.toInt() }
+                    .let { xy -> Pair(xy[0], xy[1]) }
             }
 
         val graph: Map<Int, Set<Int>> = toGraph(orderingRules)
 
         val updates = lines.subList(orderingRulesEnd + 1, lines.size)
-            .map { update -> update.split(",").map { it.toInt()} }
+            .map { update -> update.split(",").map { it.toInt() } }
 
         updates.filter { it.isCorrectlyOrdered(graph) }
             .map { update -> update.get(update.size / 2) }
@@ -35,7 +36,27 @@ class Day05 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        println("---")
+        val orderingRulesEnd = lines.indexOfFirst { it.trim().isEmpty() }
+        val orderingRules = lines.subList(0, orderingRulesEnd)
+            .map { rule ->
+                rule.split("|").map { it.toInt() }
+                    .let { xy -> Pair(xy[0], xy[1]) }
+            }
+
+        val graph: Map<Int, Set<Int>> = toGraph(orderingRules)
+
+        val updates = lines.subList(orderingRulesEnd + 1, lines.size)
+            .map { update -> update.split(",").map { it.toInt() } }
+
+        updates.filter { it.isCorrectlyOrdered(graph).not() }
+            .onEach { println(it) }
+            .map { update -> update.correct(graph) }
+            .also { println("--") }
+            .onEach { println(it) }
+            .sumOf { update -> update.get(update.size / 2) }
+            .let { println(it) }
+
     }
 }
 
@@ -53,4 +74,66 @@ fun findPath(idx: Int, nodes: List<Int>, graph: Map<Int, Set<Int>>): Boolean {
         return findPath(idx + 1, nodes, graph)
     }
     return false
+}
+
+private fun List<Int>.correct(graph: Map<Int, Set<Int>>): List<Int> {
+    val toVisit = this.toSet()
+    val correctedGraph = correctGraph(graph, toVisit)
+    val reversedGraph = reverseGraph(correctedGraph)
+
+    val roots = this.filter { node -> reversedGraph[node] == null }
+
+    if (roots.size != 1) {
+        throw IllegalArgumentException("No path found")
+    }
+    val root = roots.first()
+
+    val paths = mutableListOf<List<Int>>()
+
+    dfs(root, correctedGraph, listOf(root), paths, setOf(root))
+    return paths.first { it.size == this.size }
+}
+
+fun dfs(
+    node: Int,
+    graph: Map<Int, Set<Int>>,
+    path: List<Int>,
+    paths: MutableList<List<Int>>,
+    visited: Set<Int>
+) {
+    val children = graph[node]?.filter { visited.contains(it).not() } ?: emptyList()
+    if (children.isEmpty()) {
+        paths.add(path)
+        return
+    }
+
+    for (child in children) {
+        dfs(child, graph, path + child, paths, visited)
+    }
+}
+
+fun reverseGraph(correctedGraph: Map<Int, Set<Int>>): Map<Int, Set<Int>> {
+    val childToParents = mutableMapOf<Int, MutableSet<Int>>()
+    for (parent in correctedGraph.keys) {
+        val children = correctedGraph[parent] ?: emptySet()
+        for (child in children) {
+            childToParents.putIfAbsent(child, mutableSetOf())
+            childToParents[child]?.add(parent)
+        }
+    }
+    return childToParents
+}
+
+fun correctGraph(graph: Map<Int, Set<Int>>, toVisit: Set<Int>): Map<Int, Set<Int>> {
+    val newGraph = mutableMapOf<Int, Set<Int>>()
+    for (node in graph.keys) {
+        if (!toVisit.contains(node)) {
+            continue
+        }
+        val children = graph[node]?.filter { it in toVisit }?.toSet() ?: emptySet()
+        if (children.isNotEmpty()) {
+            newGraph[node] = children
+        }
+    }
+    return newGraph
 }
