@@ -31,15 +31,35 @@ class Day08 : IAocTaskKt {
                 }
             }
         }
-        val antinodes = freqToLocations.values.flatten().toSet()
-
-        grid.print(antinodes)
-
-        println(antinodes.size)
+        println(freqToLocations.values.flatten().distinct().size)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
+        val freqToPositions: MutableMap<Char, MutableSet<Point>> = mutableMapOf()
+        for (y in grid.indices) {
+            for (x in grid[0].indices) {
+                if (grid[y][x] != '.') {
+                    freqToPositions.putIfAbsent(grid[y][x], mutableSetOf())
+                    freqToPositions[grid[y][x]]!!.add(Point(x, y))
+                }
+            }
+        }
+
+        val freqToLocations: MutableMap<Char, MutableSet<Point>> = mutableMapOf()
+        for (freq in freqToPositions.keys) {
+            freqToLocations.putIfAbsent(freq, mutableSetOf())
+            val points = freqToPositions[freq]!!
+            val points2 = freqToPositions[freq]!!
+            for (a in points) {
+                for (b in points2) {
+                    if (a != b) {
+                        freqToLocations[freq]!!.addAll(a.generateAntinodes2(b, grid))
+                    }
+                }
+            }
+        }
+        println(freqToLocations.values.flatten().distinct().size)
     }
 
     data class Point(val x: Int, val y: Int) {
@@ -76,6 +96,41 @@ class Day08 : IAocTaskKt {
                 point += diff
             }
             return antinodes - setOf(this, other)
+        }
+
+        fun generateAntinodes2(other: Point, grid: Array<CharArray>): Set<Point> {
+            val minX = 0
+            val maxX = grid[0].size - 1
+            val minY = 0
+            val maxY = grid.size - 1
+            val min = Point(minX, minY)
+            val max = Point(maxX, maxY)
+
+
+            val diff = this - other
+            val antinodes = mutableSetOf<Point>()
+
+            var point = this - diff
+            while (point.isInRange(min, max)) {
+                antinodes.add(point)
+                point -= diff
+            }
+            point = this + diff
+            while (point.isInRange(min, max)) {
+                antinodes.add(point)
+                point += diff
+            }
+            point = other - diff
+            while (point.isInRange(min, max)) {
+                antinodes.add(point)
+                point -= diff
+            }
+            point = other + diff
+            while (point.isInRange(min, max)) {
+                antinodes.add(point)
+                point += diff
+            }
+            return antinodes // - setOf(this, other)
         }
 
         private fun isInRange(min: Point, max: Point): Boolean = x in min.x..max.x && y in min.y..max.y
