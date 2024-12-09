@@ -72,7 +72,7 @@ class Day09 : IAocTaskKt {
                 val availableSpace = result[availableSpaceIdx]
                 if (availableSpace.length == file.length) {
                     result[fileIdx] = file.copy(value = -1)
-                    result[availableSpaceIdx] = file
+                    result[availableSpaceIdx] = availableSpace.copy(value = file.value)
                 } else {
                     val (alignedFile, alignedSpace) = file.alignWith(availableSpace)
                     result[fileIdx] = file.copy(value = -1)
@@ -86,17 +86,7 @@ class Day09 : IAocTaskKt {
 
         //
 
-        val str = result.joinToString("") { it.toCode() }
-        var idx = 0
-        var sum = 0L
-        for (i in str.indices) {
-            val value = str.substring(i, i + 1)
-            if (value == ".") {
-                continue
-            }
-            sum += value.toInt() * i
-        }
-        println(sum)
+        println(result.sumOf { it.checksum() })
     }
 
     private fun getBlocks(lines: List<String>): IntArray {
@@ -166,7 +156,8 @@ data class Block(val value: Int, val fromIndex: Int, val toIndex: Int) {
         if (value == -1 || value == 0) {
             return 0
         }
-        return (fromIndex..toIndex).sumOf { (fromIndex + it) * value.toLong() }
+        val result = (fromIndex..toIndex).map { it * value.toLong() }
+        return result.sum()
     }
 
     fun alignWith(availableSpace: Block): Pair<Block, Block> {
