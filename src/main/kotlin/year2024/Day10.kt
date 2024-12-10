@@ -34,15 +34,31 @@ class Day10 : IAocTaskKt {
         }
         var score = 0
         for (neigh in point.neighbours(grid)) {
-            if (neigh !in visited) {
+//            if (neigh !in visited) {
                 score += getTrailheadScore(grid, neigh, visited)
-            }
+//            }
         }
         return score
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+//        val grid: Array<Array<Int>> = lines.map { row ->
+//            row.chunked(1).map { it.toInt() }.toTypedArray()
+//        }.toTypedArray()
+//
+//
+//        val scores = mutableListOf<Int>()
+//        for (y in grid.indices) {
+//            for (x in grid[y].indices) {
+//                val point = Point(x, y)
+//                if (grid.valueAt(point) == 0) {
+//                    val visited = mutableSetOf<Point>()
+//                    val score = getTrailheadRating(grid, point, visited)
+//                    scores.add(score)
+//                }
+//            }
+//        }
+//        scores.sum().let { println(it) }
     }
 
     data class Point(val x: Int, val y: Int) {
