@@ -8,57 +8,51 @@ class Day10 : IAocTaskKt {
 //    override fun getFileName(): String = "aoc2024/input_10_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
+        val visited = mutableSetOf<Point>()
+        val score = getScore(lines, visited)
+        println(score)
+    }
+
+    override fun solvePartTwo(lines: List<String>) {
+        val score = getScore(lines, null)
+        println(score)
+    }
+
+    private fun getScore(
+        lines: List<String>,
+        visited: MutableSet<Point>?,
+    ): Int {
         val grid: Array<Array<Int>> = lines.map { row ->
             row.chunked(1).map { it.toInt() }.toTypedArray()
         }.toTypedArray()
-
 
         val scores = mutableListOf<Int>()
         for (y in grid.indices) {
             for (x in grid[y].indices) {
                 val point = Point(x, y)
                 if (grid.valueAt(point) == 0) {
-                    val visited = mutableSetOf<Point>()
+                    visited?.clear()
                     val score = getTrailheadScore(grid, point, visited)
                     scores.add(score)
                 }
             }
         }
-        scores.sum().let { println(it) }
+        val score = scores.sum()
+        return score
     }
 
-    private fun getTrailheadScore(grid: Array<Array<Int>>, point: Point, visited: MutableSet<Point>): Int {
-        visited.add(point)
+    private fun getTrailheadScore(grid: Array<Array<Int>>, point: Point, visited: MutableSet<Point>?): Int {
+        visited?.add(point)
         if (grid.valueAt(point) == 9) {
             return 1
         }
         var score = 0
         for (neigh in point.neighbours(grid)) {
-//            if (neigh !in visited) {
+            if (visited == null || neigh !in visited) {
                 score += getTrailheadScore(grid, neigh, visited)
-//            }
+            }
         }
         return score
-    }
-
-    override fun solvePartTwo(lines: List<String>) {
-//        val grid: Array<Array<Int>> = lines.map { row ->
-//            row.chunked(1).map { it.toInt() }.toTypedArray()
-//        }.toTypedArray()
-//
-//
-//        val scores = mutableListOf<Int>()
-//        for (y in grid.indices) {
-//            for (x in grid[y].indices) {
-//                val point = Point(x, y)
-//                if (grid.valueAt(point) == 0) {
-//                    val visited = mutableSetOf<Point>()
-//                    val score = getTrailheadRating(grid, point, visited)
-//                    scores.add(score)
-//                }
-//            }
-//        }
-//        scores.sum().let { println(it) }
     }
 
     data class Point(val x: Int, val y: Int) {
