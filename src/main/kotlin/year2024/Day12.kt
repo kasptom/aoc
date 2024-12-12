@@ -2,63 +2,61 @@ package year2024
 
 import aoc.IAocTaskKt
 import utils.except
-import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 
 class Day12 : IAocTaskKt {
-//        override fun getFileName(): String = "aoc2024/input_12.txt"
-//    override fun getFileName(): String = "aoc2024/input_12_test.txt"
     override fun getFileName(): String = "aoc2024/input_12.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
-        val areas = mutableListOf<MutableSet<Point>>()
-
-        var visited = mutableSetOf<Point>()
-        for (y in grid.indices) {
-            for (x in grid[y].indices) {
-                var point = Point(x, y)
-                if (point !in visited) {
-                    val newArea = mutableSetOf(point)
-                    visit(point, visited, newArea, grid)
-                    areas.add(newArea)
-                }
-            }
-        }
+        val areas = getAreas(grid)
         var result = 0
 
         for (area in areas) {
             val size = area.size
-            val perimeter: Int = area.perimeter(grid)
-            println("AREA: ${area.first()} ${grid.valueAt(area.first())}, perim $perimeter, size $size")
+            val perimeter: Int = area.perimeter()
+//            println("AREA: ${area.first()} ${grid.valueAt(area.first())}, perim $perimeter, size $size")
             result += size * perimeter
         }
         println(result)
     }
 
     private fun visit(point: Point, visited: MutableSet<Point>, newArea: MutableSet<Point>, grid: Array<CharArray>) {
-        val neighs = point.neighs(grid)
+        val neighs = point.neighs()
         for (neigh in neighs) {
             if (!neigh.isInRange(grid)) {
                 continue
             }
-                if (neigh !in visited && grid.valueAt(neigh) == grid.valueAt(point)) {
-                    visited.add(neigh)
-                    newArea.add(neigh)
-                    visit(neigh, visited, newArea, grid)
-                }
+            if (neigh !in visited && grid.valueAt(neigh) == grid.valueAt(point)) {
+                visited.add(neigh)
+                newArea.add(neigh)
+                visit(neigh, visited, newArea, grid)
+            }
         }
     }
 
     override fun solvePartTwo(lines: List<String>) {
         val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
+        val areas = getAreas(grid)
+        var result = 0
+
+        for (area in areas) {
+            val size = area.size
+            val sides: Int = area.sides()
+//            println("AREA: ${area.first()} ${grid.valueAt(area.first())}, sides $sides, size $size")
+            result += size * sides
+        }
+        println(result)
+    }
+
+    private fun getAreas(grid: Array<CharArray>): MutableList<MutableSet<Point>> {
         val areas = mutableListOf<MutableSet<Point>>()
 
-        var visited = mutableSetOf<Point>()
+        val visited = mutableSetOf<Point>()
         for (y in grid.indices) {
             for (x in grid[y].indices) {
-                var point = Point(x, y)
+                val point = Point(x, y)
                 if (point !in visited) {
                     val newArea = mutableSetOf(point)
                     visit(point, visited, newArea, grid)
@@ -66,27 +64,17 @@ class Day12 : IAocTaskKt {
                 }
             }
         }
-        var result = 0
-
-        for (area in areas) {
-            val size = area.size
-            val sides: Int = area.sides(grid)
-            println("AREA: ${area.first()} ${grid.valueAt(area.first())}, sides $sides, size $size")
-            result += size * sides
-        }
-        println(result)
+        return areas
     }
 
 
     data class Point(val x: Int, val y: Int) {
-        fun neighs(grid: Array<CharArray>): Set<Point> {
+        fun neighs(): Set<Point> {
             val neighs = mutableSetOf<Point>()
 
             for (idx in DX.indices) {
                 val next = this + Point(DX[idx], DY[idx])
-//                if (next.isInRange(min, max)) {
-                    neighs.add(next)
-//                }
+                neighs.add(next)
             }
             return neighs
         }
@@ -118,9 +106,9 @@ class Day12 : IAocTaskKt {
     }
 }
 
-private fun MutableSet<Day12.Point>.sides(grid: Array<CharArray>): Int {
-    var YEdges = mutableListOf<YEdge>()
-    var XEdges = mutableListOf<XEdge>()
+private fun MutableSet<Day12.Point>.sides(): Int {
+    var xEdges = mutableListOf<Edge>()
+    var yEdges = mutableListOf<Edge>()
 
     for (point in this) {
         val up = point + Day12.Point(0, -1)
@@ -128,95 +116,66 @@ private fun MutableSet<Day12.Point>.sides(grid: Array<CharArray>): Int {
         val left = point + Day12.Point(-1, 0)
         val right = point + Day12.Point(1, 0)
         if (up !in this) {
-            YEdges.add(YEdge(up.y, up.x, up.x, -1))
+            xEdges.add(Edge(up.y, up.x, up.x, -1))
         }
         if (down !in this) {
-            YEdges.add(YEdge(down.y, down.x, down.x, 1))
+            xEdges.add(Edge(down.y, down.x, down.x, 1))
         }
         if (left !in this) {
-            XEdges.add(XEdge(left.x, left.y, left.y, -1))
+            yEdges.add(Edge(left.x, left.y, left.y, -1))
         }
         if (right !in this) {
-            XEdges.add(XEdge(right.x, right.y, right.y, 1))
+            yEdges.add(Edge(right.x, right.y, right.y, 1))
         }
     }
 
     var prevSize = -1
-    var size = YEdges.size + XEdges.size
+    var size = xEdges.size + yEdges.size
 
     while (prevSize != size) {
         prevSize = size
-        YEdges = mergeY(YEdges)
-        XEdges = mergeX(XEdges)
-        size = YEdges.size + XEdges.size
+        xEdges = merge(xEdges)
+        yEdges = merge(yEdges)
+        size = xEdges.size + yEdges.size
     }
 
     return size
 }
 
 
-fun mergeY(YEdges: MutableList<YEdge>): MutableList<YEdge> {
-    var updated: MutableList<YEdge> = mutableListOf<YEdge>()
-    for (edge in YEdges) {
-        var others = YEdges.except(edge)
-        var adjacents = others.filter { edge.isAdjacentTo(it) }
+fun merge(edges: MutableList<Edge>): MutableList<Edge> {
+    val updated: MutableList<Edge> = mutableListOf<Edge>()
+    for (edge in edges) {
+        val others = edges.except(edge)
+        val adjacents = others.filter { edge.isAdjacentTo(it) }
         if (adjacents.isNotEmpty()) {
             val adjacent = adjacents.first()
             val merged = edge.mergeWith(adjacent)
-            updated.addAll(YEdges.except(edge).except(adjacent))
+            updated.addAll(edges.except(edge).except(adjacent))
             updated.add(merged)
             return updated
         }
     }
-    return YEdges
+    return edges
 }
 
-fun mergeX(XEdges: MutableList<XEdge>): MutableList<XEdge> {
-    var updated: MutableList<XEdge> = mutableListOf<XEdge>()
-    for (edge in XEdges) {
-        var others = XEdges.except(edge)
-        var adjacents = others.filter { edge.isAdjacentTo(it) }
-        if (adjacents.isNotEmpty()) {
-            val adjacent = adjacents.first()
-            val merged = edge.mergeWith(adjacent)
-            updated.addAll(XEdges.except(edge).except(adjacent))
-            updated.add(merged)
-            return updated
-        }
-    }
-    return XEdges
-}
-
-data class YEdge(val x: Int, val fromY: Int, val toY: Int, val dir: Int) {
-    fun isAdjacentTo(it: YEdge): Boolean {
-        return it.x == x && dir == it.dir && (toY + 1 == it.fromY
-                || it.toY + 1 == fromY)
+data class Edge(val axis: Int, val from: Int, val to: Int, val dir: Int) {
+    fun isAdjacentTo(it: Edge): Boolean {
+        return it.axis == axis && dir == it.dir && (to + 1 == it.from
+                || it.to + 1 == from)
     }
 
-    fun mergeWith(other: YEdge): YEdge {
-        val newFromY = min(fromY, other.fromY)
-        val newToY = max(toY, other.toY)
-        return YEdge(x, newFromY, newToY, dir)
+    fun mergeWith(other: Edge): Edge {
+        val newFromY = min(from, other.from)
+        val newToY = max(to, other.to)
+        return Edge(axis, newFromY, newToY, dir)
     }
 }
 
-data class XEdge(val y: Int, val fromX: Int, val toX: Int, val dir: Int) {
-    fun isAdjacentTo(it: XEdge): Boolean {
-        return it.y == y && dir == it.dir && (toX + 1 == it.fromX
-                || it.toX + 1 == fromX)
-    }
-
-    fun mergeWith(other: XEdge): XEdge {
-        val newFromX = min(fromX, other.fromX)
-        val newToX = max(toX, other.toX)
-        return XEdge(y, newFromX, newToX, dir)
-    }
-}
-
-private fun MutableSet<Day12.Point>.perimeter(grid: Array<CharArray>): Int {
+private fun MutableSet<Day12.Point>.perimeter(): Int {
     var perimeter = 0
     for (point in this) {
-        val neighs = point.neighs(grid)
+        val neighs = point.neighs()
             .filter { it !in this }
         perimeter += neighs.size
     }
@@ -225,18 +184,4 @@ private fun MutableSet<Day12.Point>.perimeter(grid: Array<CharArray>): Int {
 
 private fun Array<CharArray>.valueAt(pos: Day12.Point): Char {
     return this[pos.y][pos.x]
-}
-
-private fun Array<CharArray>.print(antinodes: Set<Day12.Point>) {
-    for (y in this.indices) {
-        for (x in this[0].indices) {
-            val point = Day12.Point(y, x)
-            if (point in antinodes) {
-                print("#")
-            } else {
-                print(this[y][x])
-            }
-        }
-        println()
-    }
 }
