@@ -3,8 +3,8 @@ package year2024
 import aoc.IAocTaskKt
 
 class Day12 : IAocTaskKt {
-        override fun getFileName(): String = "aoc2024/input_12.txt"
-//    override fun getFileName(): String = "aoc2024/input_12_test.txt"
+//        override fun getFileName(): String = "aoc2024/input_12.txt"
+    override fun getFileName(): String = "aoc2024/input_12_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
@@ -47,6 +47,29 @@ class Day12 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
+        val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
+        val areas = mutableListOf<MutableSet<Point>>()
+
+        var visited = mutableSetOf<Point>()
+        for (y in grid.indices) {
+            for (x in grid[y].indices) {
+                var point = Point(x, y)
+                if (point !in visited) {
+                    val newArea = mutableSetOf(point)
+                    visit(point, visited, newArea, grid)
+                    areas.add(newArea)
+                }
+            }
+        }
+        var result = 0
+
+        for (area in areas) {
+            val size = area.size
+            val sides: Int = area.sides(grid)
+            println("AREA: ${area.first()} ${grid.valueAt(area.first())}, sides $sides, size $size")
+            result += size * sides
+        }
+        println(result)
     }
 
 
@@ -75,7 +98,7 @@ class Day12 : IAocTaskKt {
 
         fun isInRange(min: Point, max: Point): Boolean = x in min.x..max.x && y in min.y..max.y
 
-        private operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
+        operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
 
         private operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
         fun isInRange(grid: Array<CharArray>): Boolean {
@@ -88,6 +111,32 @@ class Day12 : IAocTaskKt {
         val DX = arrayOf(0, 1, 0, -1)
         val DY = arrayOf(-1, 0, 1, 0)
     }
+}
+
+private fun MutableSet<Day12.Point>.sides(grid: Array<CharArray>): Int {
+    val perimeterPoints = mutableListOf<Day12.Point>()
+    val perimYs = mutableSetOf<Int>()
+    val perimXs = mutableSetOf<Int>()
+    for (point in this) {
+        val up = point + Day12.Point(0, -1)
+        val down = point + Day12.Point(0, 1)
+        val left = point + Day12.Point(-1, 0)
+        val right = point + Day12.Point(1, 0)
+
+        if (up !in this) {
+            perimYs += up.y
+        }
+        if (down !in this) {
+            perimYs += down.y
+        }
+        if (left !in this) {
+            perimXs += left.x
+        }
+        if (right !in this) {
+            perimXs += right.x
+        }
+    }
+    return perimYs.size + perimXs.size
 }
 
 private fun MutableSet<Day12.Point>.perimeter(grid: Array<CharArray>): Int {
