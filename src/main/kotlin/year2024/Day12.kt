@@ -1,10 +1,15 @@
 package year2024
 
 import aoc.IAocTaskKt
+import utils.except
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class Day12 : IAocTaskKt {
 //        override fun getFileName(): String = "aoc2024/input_12.txt"
-    override fun getFileName(): String = "aoc2024/input_12_test.txt"
+//    override fun getFileName(): String = "aoc2024/input_12_test.txt"
+    override fun getFileName(): String = "aoc2024/input_12.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
@@ -114,29 +119,98 @@ class Day12 : IAocTaskKt {
 }
 
 private fun MutableSet<Day12.Point>.sides(grid: Array<CharArray>): Int {
-    val perimeterPoints = mutableListOf<Day12.Point>()
-    val perimYs = mutableSetOf<Int>()
-    val perimXs = mutableSetOf<Int>()
+    var YEdges = mutableListOf<YEdge>()
+    var XEdges = mutableListOf<XEdge>()
+
     for (point in this) {
         val up = point + Day12.Point(0, -1)
         val down = point + Day12.Point(0, 1)
         val left = point + Day12.Point(-1, 0)
         val right = point + Day12.Point(1, 0)
-
         if (up !in this) {
-            perimYs += up.y
+            YEdges.add(YEdge(up.y, up.x, up.x, -1))
         }
         if (down !in this) {
-            perimYs += down.y
+            YEdges.add(YEdge(down.y, down.x, down.x, 1))
         }
         if (left !in this) {
-            perimXs += left.x
+            XEdges.add(XEdge(left.x, left.y, left.y, -1))
         }
         if (right !in this) {
-            perimXs += right.x
+            XEdges.add(XEdge(right.x, right.y, right.y, 1))
         }
     }
-    return perimYs.size + perimXs.size
+
+    var prevSize = -1
+    var size = YEdges.size + XEdges.size
+
+    while (prevSize != size) {
+        prevSize = size
+        YEdges = mergeY(YEdges)
+        XEdges = mergeX(XEdges)
+        size = YEdges.size + XEdges.size
+    }
+
+    return size
+}
+
+
+fun mergeY(YEdges: MutableList<YEdge>): MutableList<YEdge> {
+    var updated: MutableList<YEdge> = mutableListOf<YEdge>()
+    for (edge in YEdges) {
+        var others = YEdges.except(edge)
+        var adjacents = others.filter { edge.isAdjacentTo(it) }
+        if (adjacents.isNotEmpty()) {
+            val adjacent = adjacents.first()
+            val merged = edge.mergeWith(adjacent)
+            updated.addAll(YEdges.except(edge).except(adjacent))
+            updated.add(merged)
+            return updated
+        }
+    }
+    return YEdges
+}
+
+fun mergeX(XEdges: MutableList<XEdge>): MutableList<XEdge> {
+    var updated: MutableList<XEdge> = mutableListOf<XEdge>()
+    for (edge in XEdges) {
+        var others = XEdges.except(edge)
+        var adjacents = others.filter { edge.isAdjacentTo(it) }
+        if (adjacents.isNotEmpty()) {
+            val adjacent = adjacents.first()
+            val merged = edge.mergeWith(adjacent)
+            updated.addAll(XEdges.except(edge).except(adjacent))
+            updated.add(merged)
+            return updated
+        }
+    }
+    return XEdges
+}
+
+data class YEdge(val x: Int, val fromY: Int, val toY: Int, val dir: Int) {
+    fun isAdjacentTo(it: YEdge): Boolean {
+        return it.x == x && dir == it.dir && (toY + 1 == it.fromY
+                || it.toY + 1 == fromY)
+    }
+
+    fun mergeWith(other: YEdge): YEdge {
+        val newFromY = min(fromY, other.fromY)
+        val newToY = max(toY, other.toY)
+        return YEdge(x, newFromY, newToY, dir)
+    }
+}
+
+data class XEdge(val y: Int, val fromX: Int, val toX: Int, val dir: Int) {
+    fun isAdjacentTo(it: XEdge): Boolean {
+        return it.y == y && dir == it.dir && (toX + 1 == it.fromX
+                || it.toX + 1 == fromX)
+    }
+
+    fun mergeWith(other: XEdge): XEdge {
+        val newFromX = min(fromX, other.fromX)
+        val newToX = max(toX, other.toX)
+        return XEdge(y, newFromX, newToX, dir)
+    }
 }
 
 private fun MutableSet<Day12.Point>.perimeter(grid: Array<CharArray>): Int {
