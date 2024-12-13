@@ -4,12 +4,12 @@ import aoc.IAocTaskKt
 import kotlin.math.ceil
 
 class Day13 : IAocTaskKt {
-//    override fun getFileName(): String = "aoc2024/input_13.txt"
-     override fun getFileName(): String = "aoc2024/input_13.txt"
+    //    override fun getFileName(): String = "aoc2024/input_13.txt"
+    override fun getFileName(): String = "aoc2024/input_13.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        val clawMachine = lines.windowed(4, 4, true).map {
-            clawLines -> ClawMachine.parse(clawLines)
+        val clawMachine = lines.windowed(4, 4, true).map { clawLines ->
+            ClawMachine.parse(clawLines)
         }
         clawMachine.onEach { println(it) }
             .map { it.smallestTokenCost() }
@@ -18,14 +18,23 @@ class Day13 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val clawMachine = lines.windowed(4, 4, true).map { clawLines ->
+            ClawMachine.parse(clawLines)
+        }
+        clawMachine.onEach { println(it) }
+            .map { it.modifyPrize() }
+            .map { it.smallestTokenCost2() }
+            .sumOf { it }
+            .let { println(it) }
     }
 
     data class ClawMachine(val a: Point, val b: Point, val prize: Point) {
-        fun smallestTokenCost(): Long {
+        fun smallestTokenCost(limit: Long = 100L): Long {
             var smallest = Long.MAX_VALUE
-            var bRange = 1..100L // Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
-            var aRange = 1..100L // Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
+            var bRange =
+                1..limit // Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
+            var aRange =
+                1..limit // Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
 
             for (bMul in bRange.reversed()) {
                 for (aMul in aRange) {
@@ -36,6 +45,26 @@ class Day13 : IAocTaskKt {
                 }
             }
             return if (smallest != Long.MAX_VALUE) smallest else 0
+        }
+
+        fun smallestTokenCost2(): Long {
+            var smallest = Long.MAX_VALUE
+            var bRange = 1..Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
+            var aRange = 1..Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
+
+            for (bMul in bRange.reversed()) {
+                for (aMul in aRange) {
+                    val target = Point(0, 0) + a * aMul + b * bMul
+                    if (prize == target) {
+                        smallest = Math.min(smallest, aMul * A_COST + bMul * B_COST)
+                    }
+                }
+            }
+            return if (smallest != Long.MAX_VALUE) smallest else 0
+        }
+
+        fun modifyPrize(): ClawMachine {
+            return copy(prize = prize + Point(10000000000000L, 10000000000000L))
         }
 
         companion object {
