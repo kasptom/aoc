@@ -24,18 +24,18 @@ class Day13 : IAocTaskKt {
     data class ClawMachine(val a: Point, val b: Point, val prize: Point) {
         fun smallestTokenCost(): Long {
             var smallest = Long.MAX_VALUE
-            var bRange = 1..Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
-            var aRange = 1..Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
+            var bRange = 1..100L // Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
+            var aRange = 1..100L // Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
 
             for (bMul in bRange.reversed()) {
                 for (aMul in aRange) {
                     val target = Point(0, 0) + a * aMul + b * bMul
                     if (prize == target) {
-                        return aMul * A_COST + bMul * B_COST
+                        smallest = Math.min(smallest, aMul * A_COST + bMul * B_COST)
                     }
                 }
             }
-            return 0
+            return if (smallest != Long.MAX_VALUE) smallest else 0
         }
 
         companion object {
