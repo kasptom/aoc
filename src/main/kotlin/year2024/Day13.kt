@@ -1,7 +1,6 @@
 package year2024
 
 import aoc.IAocTaskKt
-import kotlin.math.ceil
 
 class Day13 : IAocTaskKt {
     //    override fun getFileName(): String = "aoc2024/input_13.txt"
@@ -11,7 +10,8 @@ class Day13 : IAocTaskKt {
         val clawMachine = lines.windowed(4, 4, true).map { clawLines ->
             ClawMachine.parse(clawLines)
         }
-        clawMachine.onEach { println(it) }
+        clawMachine
+//            .onEach { println(it) }
             .map { it.smallestTokenCost() }
             .sumOf { it }
             .let { println(it) }
@@ -21,9 +21,10 @@ class Day13 : IAocTaskKt {
         val clawMachine = lines.windowed(4, 4, true).map { clawLines ->
             ClawMachine.parse(clawLines)
         }
-        clawMachine.onEach { println(it) }
-            .map { it.modifyPrize() }
+        clawMachine.map { it.modifyPrize() }
+//            .onEach { println(it) }
             .map { it.smallestTokenCost2() }
+//            .onEach { println(it) }
             .sumOf { it }
             .let { println(it) }
     }
@@ -31,9 +32,9 @@ class Day13 : IAocTaskKt {
     data class ClawMachine(val a: Point, val b: Point, val prize: Point) {
         fun smallestTokenCost(limit: Long = 100L): Long {
             var smallest = Long.MAX_VALUE
-            var bRange =
+            val bRange =
                 1..limit // Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
-            var aRange =
+            val aRange =
                 1..limit // Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
 
             for (bMul in bRange.reversed()) {
@@ -48,19 +49,27 @@ class Day13 : IAocTaskKt {
         }
 
         fun smallestTokenCost2(): Long {
-            var smallest = Long.MAX_VALUE
-            var bRange = 1..Math.max(ceil(prize.x / a.x.toDouble()).toLong(), ceil(prize.y / a.y.toDouble()).toLong())
-            var aRange = 1..Math.max(ceil(prize.x / b.x.toDouble()).toLong(), ceil(prize.y / b.y.toDouble()).toLong())
+            val determinant = a.x * b.y - b.x * a.y
 
-            for (bMul in bRange.reversed()) {
-                for (aMul in aRange) {
-                    val target = Point(0, 0) + a * aMul + b * bMul
-                    if (prize == target) {
-                        smallest = Math.min(smallest, aMul * A_COST + bMul * B_COST)
-                    }
-                }
+            if (determinant == 0L) {
+                return 0L
             }
-            return if (smallest != Long.MAX_VALUE) smallest else 0
+
+            val detX = prize.x * b.y - prize.y * b.x
+            val detY = prize.y * a.x - prize.x * a.y
+
+            if (detX % determinant != 0L || detY % determinant != 0L) {
+                return 0L
+            }
+
+            val mulA = detX / determinant
+            val mulB = detY / determinant
+
+            return if (mulA <= 0 || mulB <= 0) {
+                0L
+            } else {
+                A_COST * mulA + B_COST * mulB
+            }
         }
 
         fun modifyPrize(): ClawMachine {
