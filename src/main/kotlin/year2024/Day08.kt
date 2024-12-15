@@ -4,7 +4,7 @@ import aoc.IAocTaskKt
 
 class Day08 : IAocTaskKt {
 //    override fun getFileName(): String = "aoc2024/input_08.txt"
-     override fun getFileName(): String = "aoc2024/input_08.txt"
+     override fun getFileName(): String = "aoc2024/input_08_test_2.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val grid: Array<CharArray> = lines.map { it.toCharArray() }.toTypedArray()
@@ -135,18 +135,18 @@ class Day08 : IAocTaskKt {
 
         private operator fun minus(other: Point): Point = Point(x - other.x, y - other.y)
     }
-}
 
-private fun Array<CharArray>.print(antinodes: Set<Day08.Point>) {
-    for (y in this.indices) {
-        for (x in this[0].indices) {
-            val point = Day08.Point(y, x)
-            if (point in antinodes) {
-                print("#")
-            } else {
-                print(this[y][x])
+    private fun Array<CharArray>.print(antinodes: Set<Day08.Point>) {
+        for (y in this.indices) {
+            for (x in this[0].indices) {
+                val point = Day08.Point(y, x)
+                if (point in antinodes) {
+                    print("#")
+                } else {
+                    print(this[y][x])
+                }
             }
+            println()
         }
-        println()
     }
 }
