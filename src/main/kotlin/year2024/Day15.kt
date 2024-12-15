@@ -6,7 +6,7 @@ import year2024.Day15.Item.Type
 
 class Day15 : IAocTaskKt {
     //        override fun getFileName(): String = "aoc2024/input_15.txt"
-    override fun getFileName(): String = "aoc2024/input_15_test_3.txt"
+    override fun getFileName(): String = "aoc2024/input_15.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val separatorIdx = lines.indexOfFirst { it.isBlank() }
@@ -66,15 +66,15 @@ class Day15 : IAocTaskKt {
         var items: List<Item> = findItems(map)
         map.clear()
 
-        println("Initial state:")
-        println(map.print(robot, items))
+//        println("Initial state:")
+//        println(map.print(robot, items))
         for (code in moves) {
             val move = Point.fromMoveCode(code)
             val (i, r) = items.moveItems(robot, move)
             robot = r
             items = i
-            println("Move $code:")
-            println(map.print(robot, items))
+//            println("Move $code:")
+//            println(map.print(robot, items))
         }
 
         val gpsSum = items.gpsSum()
@@ -152,7 +152,10 @@ class Day15 : IAocTaskKt {
         }
 
         fun touchesX(other: Item): Boolean =
-            right + Point(1, 0)  == other.left || other.right + Point(1, 0) == this.left
+            right + Point(1, 0) == other.left || other.right + Point(1, 0) == this.left
+
+        fun overlapsXAndTouchesY(other: Item, move: Point): Boolean =
+            (right.x == other.right.x || left.x == other.left.x || right.x == other.left.x || left.x == other.right.x) && (left + move).y == other.left.y
 
         fun move(move: Point): Item {
             return copy(left = left + move, right = right + move)
@@ -228,7 +231,7 @@ class Day15 : IAocTaskKt {
                     result += "@"
                 } else if (items.any { it.left == point }) {
                     result += items.first { it.left == point }.mapRepresentation(0)
-                } else if (items.any { it.right == point} ) {
+                } else if (items.any { it.right == point }) {
                     result += items.first { it.right == point }.mapRepresentation(1)
                 } else {
                     result += '.'
@@ -256,9 +259,53 @@ class Day15 : IAocTaskKt {
             val moved = affected.map { it.move(move) }
             val updated = this.except(affected.toSet()) + moved
             return Pair(updated, nextPosition)
+        } else if (move.x == 1) { // left shift horizontal
+            val touched = this.first { it.left == nextPosition }
+            val affected = findAffectedHorizontal(this.except(touched), touched, move)
+            if (affected.any { it.type == Type.WALL }) {
+                return Pair(this, robot)
+            }
+
+            val moved = affected.map { it.move(move) }
+            val updated = this.except(affected.toSet()) + moved
+            return Pair(updated, nextPosition)
+        } else if (move.y == -1) {
+            val touched = this.first { it.left == nextPosition || it.right == nextPosition }
+            val affected = findAffectedVertical(this.except(touched), touched, move)
+            if (affected.any { it.type == Type.WALL }) {
+                return Pair(this, robot)
+            }
+
+            val moved = affected.map { it.move(move) }
+            val updated = this.except(affected.toSet()) + moved
+            return Pair(updated, nextPosition)
+        } else if (move.y == 1) {
+            val touched = this.first { it.left == nextPosition || it.right == nextPosition }
+            val affected = findAffectedVertical(this.except(touched), touched, move)
+            if (affected.any { it.type == Type.WALL }) {
+                return Pair(this, robot)
+            }
+
+            val moved = affected.map { it.move(move) }
+            val updated = this.except(affected.toSet()) + moved
+            return Pair(updated, nextPosition)
         }
 
         return Pair(this, robot)
+    }
+
+    private fun findAffectedVertical(other: List<Item>, touched: Item, move: Point): List<Item> {
+        val toCheck = other
+            .filter { it.left.y.compareTo(touched.left.y) == move.y }
+            .toMutableList()
+
+        val affected = mutableListOf(touched)
+        while (toCheck.any { tc -> affected.any { af -> af.overlapsXAndTouchesY(tc, move) } }) {
+            val touchedItems = toCheck.filter { tc -> affected.any { af -> af.overlapsXAndTouchesY(tc, move) } }
+            affected.addAll(touchedItems)
+            toCheck.removeAll(touchedItems)
+        }
+        return affected
     }
 
     private fun findAffectedHorizontal(other: List<Item>, touched: Item, move: Point): List<Item> {
