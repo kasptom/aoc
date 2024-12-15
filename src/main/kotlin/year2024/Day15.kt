@@ -5,7 +5,6 @@ import utils.except
 import year2024.Day15.Item.Type
 
 class Day15 : IAocTaskKt {
-    //        override fun getFileName(): String = "aoc2024/input_15.txt"
     override fun getFileName(): String = "aoc2024/input_15.txt"
 
     override fun solvePartOne(lines: List<String>) {
@@ -18,11 +17,8 @@ class Day15 : IAocTaskKt {
             .map { it.chunked(1) }
             .flatten()
 
-        println(moves)
-
         var robot: Point = findRobot(map)
         map.setValue(robot, '.')
-        println(map.print(robot))
 
 //        println("Initial state:")
 //        println(map.print(robot))
@@ -53,14 +49,12 @@ class Day15 : IAocTaskKt {
     override fun solvePartTwo(lines: List<String>) {
         val separatorIdx = lines.indexOfFirst { it.isBlank() }
         val map: Array<CharArray> = lines.subList(0, separatorIdx)
-            .map { it.map { wider(it) }.flatten().toCharArray() }
+            .map { cell -> cell.map { wider(it) }.flatten().toCharArray() }
             .toTypedArray()
 
         val moves = lines.subList(separatorIdx, lines.size)
             .map { it.chunked(1) }
             .flatten()
-
-        println(moves)
 
         var robot: Point = findRobot(map)
         var items: List<Item> = findItems(map)
@@ -106,6 +100,7 @@ class Day15 : IAocTaskKt {
         }
     }
 
+    @Suppress("unused")
     private fun Array<CharArray>.print(robot: Point): Any {
         var result = ""
         for (y in this.indices) {
@@ -222,6 +217,7 @@ class Day15 : IAocTaskKt {
         }
     }
 
+    @Suppress("unused")
     private fun Array<CharArray>.print(robot: Point, items: List<Item>): String {
         var result = ""
         for (y in this.indices) {
@@ -249,49 +245,40 @@ class Day15 : IAocTaskKt {
             return Pair(this, nextPosition)
         }
 
-        if (move.x == -1) { // left shift horizontal
+        if (move.x == -1) {
             val touched = this.first { it.right == nextPosition }
             val affected = findAffectedHorizontal(this.except(touched), touched, move)
-            if (affected.any { it.type == Type.WALL }) {
-                return Pair(this, robot)
-            }
-
-            val moved = affected.map { it.move(move) }
-            val updated = this.except(affected.toSet()) + moved
-            return Pair(updated, nextPosition)
-        } else if (move.x == 1) { // left shift horizontal
+            return update(affected, robot, move, nextPosition)
+        } else if (move.x == 1) {
             val touched = this.first { it.left == nextPosition }
             val affected = findAffectedHorizontal(this.except(touched), touched, move)
-            if (affected.any { it.type == Type.WALL }) {
-                return Pair(this, robot)
-            }
-
-            val moved = affected.map { it.move(move) }
-            val updated = this.except(affected.toSet()) + moved
-            return Pair(updated, nextPosition)
+            return update(affected, robot, move, nextPosition)
         } else if (move.y == -1) {
             val touched = this.first { it.left == nextPosition || it.right == nextPosition }
             val affected = findAffectedVertical(this.except(touched), touched, move)
-            if (affected.any { it.type == Type.WALL }) {
-                return Pair(this, robot)
-            }
-
-            val moved = affected.map { it.move(move) }
-            val updated = this.except(affected.toSet()) + moved
-            return Pair(updated, nextPosition)
+            return update(affected, robot, move, nextPosition)
         } else if (move.y == 1) {
             val touched = this.first { it.left == nextPosition || it.right == nextPosition }
             val affected = findAffectedVertical(this.except(touched), touched, move)
-            if (affected.any { it.type == Type.WALL }) {
-                return Pair(this, robot)
-            }
-
-            val moved = affected.map { it.move(move) }
-            val updated = this.except(affected.toSet()) + moved
-            return Pair(updated, nextPosition)
+            return update(affected, robot, move, nextPosition)
         }
 
         return Pair(this, robot)
+    }
+
+    private fun List<Item>.update(
+        affected: List<Item>,
+        robot: Point,
+        move: Point,
+        nextPosition: Point,
+    ): Pair<List<Item>, Point> {
+        if (affected.any { it.type == Type.WALL }) {
+            return Pair(this, robot)
+        }
+
+        val moved = affected.map { it.move(move) }
+        val updated = this.except(affected.toSet()) + moved
+        return Pair(updated, nextPosition)
     }
 
     private fun findAffectedVertical(other: List<Item>, touched: Item, move: Point): List<Item> {
