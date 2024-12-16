@@ -33,12 +33,12 @@ class Day16 : IAocTaskKt {
             }
         }
         val reindeer = Reindeer(reindeerPoint, E)
-        val shortest: Int = shortestPath(points, reindeer, target)
+        val shortest: Int = shortestPath(points, reindeer, target).toValue()
         println("shortest")
         println(shortest)
     }
 
-    private fun shortestPath(nodes: Set<Point>, initialReindeer: Reindeer, target: Point): Int {
+    private fun shortestPath(nodes: Set<Point>, initialReindeer: Reindeer, target: Point): Cost {
         val visited = mutableSetOf<State>()
         val queue = PriorityQueue<StateWithCost>()
 
@@ -51,7 +51,7 @@ class Day16 : IAocTaskKt {
 
             if (state.point == target) {
                 println(cost)
-                return cost.toValue()
+                return cost
             }
 
             val neighs: List<State> = state.point.getNeighs(visited, nodes)
@@ -60,11 +60,76 @@ class Day16 : IAocTaskKt {
                 StateWithCost(n, c)
             })
         }
-        return -1
+        return Cost(-1, -1)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val grid = lines.map { it.toCharArray() }.toTypedArray()
+        val points = mutableSetOf<Point>()
+        var reindeerPoint = Point(-1, -1)
+        var target = Point(-1, -1)
+        for (y in grid.indices) {
+            for (x in grid[0].indices) {
+                val point = Point(x, y)
+                if (grid.valueAt(point) in setOf('.', 'S', 'E')) {
+                    points.add(point)
+                }
+                if (grid.valueAt(point) == 'S') {
+                    reindeerPoint = point
+                } else if (grid.valueAt(point) == 'E') {
+                    target = point
+                }
+            }
+        }
+        val reindeer = Reindeer(reindeerPoint, E)
+        val shortest: Cost = shortestPath(points, reindeer, target)
+
+        val count: Int = countNodesOnBestPaths(points, reindeer, target, shortest)
+
+        println(count)
+    }
+
+    private fun countNodesOnBestPaths(
+        points: Set<Point>,
+        reindeer: Reindeer,
+        target: Point,
+        shortest: Cost
+    ): Int {
+        val path = mutableSetOf<Point>(reindeer.pos)
+        val stateWithCost = StateWithCost(reindeer.getState(), Cost(0, 0))
+        val (state, cost) = stateWithCost
+        val visited = mutableSetOf(stateWithCost)
+        val neighs = reindeer.pos.getNeighs2(path, points)
+        val bestPathsPoints = mutableSetOf<Point>()
+        for (neigh in neighs) {
+            val neighCost = neigh.toCost(cost, state)
+            visited.add(StateWithCost(neigh, neighCost))
+            dfsNeigh(neigh, path + neigh.point, points, neighCost, shortest, target, bestPathsPoints)
+        }
+        return bestPathsPoints.size
+    }
+
+    private fun dfsNeigh(
+        node: State,
+        path: Set<Point>,
+        points: Set<Point>,
+        currentCost: Cost,
+        shortest: Cost,
+        target: Point,
+        bestPathsPoints: MutableSet<Point>
+    ) {
+        if (currentCost.steps > shortest.steps || currentCost.rotations > shortest.rotations) {
+            return
+        }
+        if (node.point == target) {
+            bestPathsPoints.addAll(path)
+            return
+        }
+        val neighs = node.point.getNeighs2(path, points)
+        for (neigh in neighs) {
+            val neighCost = neigh.toCost(currentCost, node)
+            dfsNeigh(neigh, path + neigh.point, points, neighCost, shortest, target, bestPathsPoints)
+        }
     }
 
     data class StateWithCost(val state: State, val cost: Cost) : Comparable<StateWithCost> {
@@ -86,6 +151,17 @@ class Day16 : IAocTaskKt {
             )
             return states.filter { it !in visited && it.point in nodes }
         }
+
+        fun getNeighs2(visited: Set<Point>, nodes: Set<Point>): List<State> {
+            val states = listOf(
+                State(this + UP, N),
+                State(this + DOWN, S),
+                State(this + LEFT, W),
+                State(this + RIGHT, E)
+            )
+            return states.filter { it.point !in visited && it.point in nodes }
+        }
+
 
         private operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
 
