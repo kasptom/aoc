@@ -63,6 +63,36 @@ class Day16 : IAocTaskKt {
         return Cost(-1, -1)
     }
 
+    private fun shortestPathsCount(nodes: Set<Point>, initialReindeer: Reindeer, target: Point, shortest: Cost): Int {
+        val visited = mutableSetOf<State>()
+        val queue = PriorityQueue<StateWithCostAndPath>()
+        val nodesOnPaths = mutableSetOf<Point>()
+
+        val initialState: State = initialReindeer.getState()
+        queue.add(StateWithCostAndPath(initialState, Cost(0, 0), listOf(initialState.point)))
+
+        while (queue.isNotEmpty()) {
+            val (state, cost, path) = queue.remove()
+            visited.add(state)
+
+            if (cost.toValue() > shortest.toValue()) {
+                break
+            }
+
+            if (state.point == target) {
+                nodesOnPaths += path
+                continue
+            }
+
+            val neighs: List<State> = state.point.getNeighs(visited, nodes)
+            val neighCosts: List<Cost> = neighs.map { it.toCost(cost, state) }
+            queue.addAll(neighs.zip(neighCosts).map { (n, c) ->
+                StateWithCostAndPath(n, c, path + n.point)
+            })
+        }
+        return nodesOnPaths.size
+    }
+
     override fun solvePartTwo(lines: List<String>) {
         val grid = lines.map { it.toCharArray() }.toTypedArray()
         val points = mutableSetOf<Point>()
@@ -84,52 +114,9 @@ class Day16 : IAocTaskKt {
         val reindeer = Reindeer(reindeerPoint, E)
         val shortest: Cost = shortestPath(points, reindeer, target)
 
-        val count: Int = countNodesOnBestPaths(points, reindeer, target, shortest)
+        val count: Int = shortestPathsCount(points, reindeer, target, shortest)
 
         println(count)
-    }
-
-    private fun countNodesOnBestPaths(
-        points: Set<Point>,
-        reindeer: Reindeer,
-        target: Point,
-        shortest: Cost
-    ): Int {
-        val path = mutableSetOf<Point>(reindeer.pos)
-        val stateWithCost = StateWithCost(reindeer.getState(), Cost(0, 0))
-        val (state, cost) = stateWithCost
-        val visited = mutableSetOf(stateWithCost)
-        val neighs = reindeer.pos.getNeighs2(path, points)
-        val bestPathsPoints = mutableSetOf<Point>()
-        for (neigh in neighs) {
-            val neighCost = neigh.toCost(cost, state)
-            visited.add(StateWithCost(neigh, neighCost))
-            dfsNeigh(neigh, path + neigh.point, points, neighCost, shortest, target, bestPathsPoints)
-        }
-        return bestPathsPoints.size
-    }
-
-    private fun dfsNeigh(
-        node: State,
-        path: Set<Point>,
-        points: Set<Point>,
-        currentCost: Cost,
-        shortest: Cost,
-        target: Point,
-        bestPathsPoints: MutableSet<Point>
-    ) {
-        if (currentCost.toValue() > shortest.toValue()) {
-            return
-        }
-        if (node.point == target) {
-            bestPathsPoints.addAll(path)
-            return
-        }
-        val neighs = node.point.getNeighs2(path, points)
-        for (neigh in neighs) {
-            val neighCost = neigh.toCost(currentCost, node)
-            dfsNeigh(neigh, path + neigh.point, points, neighCost, shortest, target, bestPathsPoints)
-        }
     }
 
     data class StateWithCost(val state: State, val cost: Cost) : Comparable<StateWithCost> {
@@ -138,6 +125,18 @@ class Day16 : IAocTaskKt {
                 return cost.toValue().compareTo(other.cost.toValue())
             }
             return state.compareTo(other.state)
+        }
+    }
+
+    data class StateWithCostAndPath(val state: State, val cost: Cost, val path: List<Point>) : Comparable<StateWithCostAndPath> {
+        override fun compareTo(other: StateWithCostAndPath): Int {
+            if (cost.toValue() != other.cost.toValue()) {
+                return cost.toValue().compareTo(other.cost.toValue())
+            }
+            if (state != other.state) {
+                return state.compareTo(other.state)
+            }
+            return path.size.compareTo(other.path.size)
         }
     }
 
