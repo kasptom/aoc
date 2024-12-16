@@ -11,10 +11,15 @@ import java.util.*
 import kotlin.math.sqrt
 
 class Day16 : IAocTaskKt {
-    //    override fun getFileName(): String = "aoc2024/input_16.txt"
     override fun getFileName(): String = "aoc2024/input_16.txt"
 
     override fun solvePartOne(lines: List<String>) {
+        val (points, target, reindeer) = setup(lines)
+        val shortest: Int = shortestPath(points, reindeer, target).toValue()
+        println(shortest)
+    }
+
+    private fun setup(lines: List<String>): Triple<MutableSet<Point>, Point, Reindeer> {
         val grid = lines.map { it.toCharArray() }.toTypedArray()
         val points = mutableSetOf<Point>()
         var reindeerPoint = Point(-1, -1)
@@ -33,9 +38,7 @@ class Day16 : IAocTaskKt {
             }
         }
         val reindeer = Reindeer(reindeerPoint, E)
-        val shortest: Int = shortestPath(points, reindeer, target).toValue()
-        println("shortest")
-        println(shortest)
+        return Triple(points, target, reindeer)
     }
 
     private fun shortestPath(nodes: Set<Point>, initialReindeer: Reindeer, target: Point): Cost {
@@ -50,7 +53,6 @@ class Day16 : IAocTaskKt {
             visited.add(state)
 
             if (state.point == target) {
-                println(cost)
                 return cost
             }
 
@@ -94,28 +96,9 @@ class Day16 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        val grid = lines.map { it.toCharArray() }.toTypedArray()
-        val points = mutableSetOf<Point>()
-        var reindeerPoint = Point(-1, -1)
-        var target = Point(-1, -1)
-        for (y in grid.indices) {
-            for (x in grid[0].indices) {
-                val point = Point(x, y)
-                if (grid.valueAt(point) in setOf('.', 'S', 'E')) {
-                    points.add(point)
-                }
-                if (grid.valueAt(point) == 'S') {
-                    reindeerPoint = point
-                } else if (grid.valueAt(point) == 'E') {
-                    target = point
-                }
-            }
-        }
-        val reindeer = Reindeer(reindeerPoint, E)
+        val (points, target, reindeer) = setup(lines)
         val shortest: Cost = shortestPath(points, reindeer, target)
-
         val count: Int = shortestPathsCount(points, reindeer, target, shortest)
-
         println(count)
     }
 
@@ -128,7 +111,8 @@ class Day16 : IAocTaskKt {
         }
     }
 
-    data class StateWithCostAndPath(val state: State, val cost: Cost, val path: List<Point>) : Comparable<StateWithCostAndPath> {
+    data class StateWithCostAndPath(val state: State, val cost: Cost, val path: List<Point>) :
+        Comparable<StateWithCostAndPath> {
         override fun compareTo(other: StateWithCostAndPath): Int {
             if (cost.toValue() != other.cost.toValue()) {
                 return cost.toValue().compareTo(other.cost.toValue())
@@ -151,17 +135,6 @@ class Day16 : IAocTaskKt {
             return states.filter { it !in visited && it.point in nodes }
         }
 
-        fun getNeighs2(visited: Set<Point>, nodes: Set<Point>): List<State> {
-            val states = listOf(
-                State(this + UP, N),
-                State(this + DOWN, S),
-                State(this + LEFT, W),
-                State(this + RIGHT, E)
-            )
-            return states.filter { it.point !in visited && it.point in nodes }
-        }
-
-
         private operator fun plus(other: Point): Point = Point(x + other.x, y + other.y)
 
         companion object {
@@ -176,13 +149,12 @@ class Day16 : IAocTaskKt {
                 return dist().compareTo(other.dist())
             }
             if (x != other.x) {
-                return Integer.compare(x, other.x)
+                return x.compareTo(other.x)
             }
-            return Integer.compare(y, other.y)
+            return y.compareTo(other.y)
         }
 
-        fun dist(): Double = sqrt(0.0 + x * x + y * y)
-        fun distanceTo(target: Point): Double = (this - target).dist()
+        private fun dist(): Double = sqrt(0.0 + x * x + y * y)
 
         private operator fun minus(other: Point): Point {
             return Point(x - other.x, y - other.y)
@@ -222,8 +194,6 @@ class Day16 : IAocTaskKt {
         }
 
         companion object {
-            val DIR_TO_NEXT_CLOCKWISE = mapOf(N to E, E to S, S to W, W to N)
-            val DIR_TO_NEXT_COUNTER = mapOf(N to W, W to S, S to E, E to N)
             val DIR_TO_ROTATIONS = mapOf(
                 Pair(N, E) to 1,
                 Pair(N, W) to 1,
