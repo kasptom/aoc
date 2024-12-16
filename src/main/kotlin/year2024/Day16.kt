@@ -118,7 +118,7 @@ class Day16 : IAocTaskKt {
         target: Point,
         bestPathsPoints: MutableSet<Point>
     ) {
-        if (currentCost.steps > shortest.steps || currentCost.rotations > shortest.rotations) {
+        if (currentCost.toValue() > shortest.toValue()) {
             return
         }
         if (node.point == target) {
@@ -183,6 +183,11 @@ class Day16 : IAocTaskKt {
         }
 
         fun dist(): Double = sqrt(0.0 + x * x + y * y)
+        fun distanceTo(target: Point): Double = (this - target).dist()
+
+        private operator fun minus(other: Point): Point {
+            return Point(x - other.x, y - other.y)
+        }
     }
 
     data class State(val point: Point, val direction: Direction) : Comparable<State> {
