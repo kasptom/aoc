@@ -60,9 +60,14 @@ class Day17 : IAocTaskKt {
             while (true) {
                 val instruction = Instruction.parse(program[instructionPointer], program[instructionPointer + 1])
                 val output = instruction.execute(Instruction.Input(registerA, registerB, registerC))
-                println(instruction)
                 when (instruction) {
-                    is Jnz -> instructionPointer = output.pointerValue
+                    is Jnz -> {
+                        if (registerA != 0) {
+                            instructionPointer = output.pointerValue
+                        } else {
+                            instructionPointer += 2
+                        }
+                    }
                     is Out -> {
                         programOutput.add(output.a)
                         instructionPointer += 2
@@ -114,7 +119,7 @@ class Day17 : IAocTaskKt {
             val operandValue = Combo(operand, input).value
             val denominator = 2.0.pow(operandValue)
             val result = numerator / denominator
-            val truncated = (result - (result - floor(result))).toInt()
+            val truncated = floor(result).toInt()
             return Instruction.Output(a = truncated, b = input.b, c = input.c)
         }
     }
@@ -175,8 +180,8 @@ class Day17 : IAocTaskKt {
     */
     data class Out(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
-            val operand = Combo(operand, input)
-            val result = operand.value % 8
+            val comboOperand = Combo(operand, input)
+            val result = comboOperand.value % 8
             return Instruction.Output(a = result, b = result, c = result) // FIXME
         }
     }
@@ -190,7 +195,7 @@ class Day17 : IAocTaskKt {
             val numerator = input.a
             val denominator = 2.0.pow(Combo(operand, input).value)
             val result = (numerator / denominator)
-            val truncated = (result - floor(result)).toInt()
+            val truncated = floor(result).toInt()
             return Instruction.Output(a = input.a, b = truncated, c = input.c)
         }
     }
@@ -204,7 +209,7 @@ class Day17 : IAocTaskKt {
             val numerator = input.a
             val denominator = 2.0.pow(Combo(operand, input).value)
             val result = (numerator / denominator)
-            val truncated = (result - floor(result)).toInt()
+            val truncated = floor(result).toInt()
             return Instruction.Output(a = input.a, b = input.b, c = truncated)
         }
     }

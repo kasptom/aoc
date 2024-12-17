@@ -6,6 +6,18 @@ import org.junit.jupiter.api.Test
 class Day17Test {
 
     @Test
+    fun testCase0() {
+        // given
+        val sut = Day17.Program(listOf(0,1,5,4,3,0), registerA = 729, registerB = 0, registerC = 0)
+
+        // when
+        sut.execute()
+
+        // then
+        assertEquals("4,6,3,5,6,3,5,2,1,0", sut.outputStr())
+    }
+
+    @Test
     // If register C contains 9, the program 2,6 would set register B to 1.
     fun testCase1() {
         // given
@@ -69,5 +81,16 @@ class Day17Test {
 
         // then
         assertEquals(44354, sut.registerB)
+    }
+
+    @Test
+    fun inputTest() {
+        val sut = Day17.Program(listOf(2,4,1,5,7,5,0,3,4,1,1,6,5,5,3,0), registerA = 47719761, registerB = 0, registerC = 0)
+
+        // when
+        sut.execute()
+
+        // then
+        assertFalse("2,1,6,1,1,3,5,5,1".equals(sut.outputStr()))
     }
 }
