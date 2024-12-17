@@ -6,7 +6,7 @@ import kotlin.math.pow
 
 class Day17 : IAocTaskKt {
 //    override fun getFileName(): String = "aoc2024/input_17.txt"
-     override fun getFileName(): String = "aoc2024/input_17_test.txt"
+     override fun getFileName(): String = "aoc2024/input_17.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val registerA = lines[0].replace("Register A: ", "").trim().toInt()
@@ -15,10 +15,11 @@ class Day17 : IAocTaskKt {
         val program: Program = lines[4].replace("Program: ", "")
             .split(",").map { it.toInt() }
             .let { Program(it, registerA, registerB, registerC) }
-
+        println(program)
         program.execute()
-        program.output()
-            .joinToString(",")
+        println(program)
+
+        program.outputStr()
             .let { println(it) }
     }
 
@@ -27,20 +28,19 @@ class Day17 : IAocTaskKt {
     }
 
     sealed interface Instruction {
-        val opcode: Int
         val operand: Int
 
         companion object {
             fun parse(opcode: Int, operand: Int): Instruction {
                 return when (opcode) {
-                    0 -> Adv(opcode, operand)
-                    1 -> Bxl(opcode, operand)
-                    2 -> Bst(opcode, operand)
-                    3 -> Jnz(opcode, operand)
-                    4 -> Bxc(opcode, operand)
-                    5 -> Out(opcode, operand)
-                    6 -> Bdv(opcode, operand)
-                    7 -> Cdv(opcode, operand)
+                    0 -> Adv(operand)
+                    1 -> Bxl(operand)
+                    2 -> Bst(operand)
+                    3 -> Jnz(operand)
+                    4 -> Bxc(operand)
+                    5 -> Out(operand)
+                    6 -> Bdv(operand)
+                    7 -> Cdv(operand)
                     else -> throw IllegalArgumentException("Invalid opcode $opcode")
                 }
             }
@@ -53,14 +53,14 @@ class Day17 : IAocTaskKt {
         data class Output(val a: Int, val b: Int, val c: Int, val pointerValue: Int = -1)
     }
 
-    data class Program(val program: List<Int>, var registerA: Int, var registerB: Int, var registerC: Int) {
-        val programOutput: MutableList<Int> = mutableListOf()
-        var instructionPointer = 0
+    data class Program(val program: List<Int>, var registerA: Int, var registerB: Int, var registerC: Int, val programOutput: MutableList<Int> = mutableListOf()) {
+        private var instructionPointer = 0
 
         fun execute() {
             while (true) {
                 val instruction = Instruction.parse(program[instructionPointer], program[instructionPointer + 1])
                 val output = instruction.execute(Instruction.Input(registerA, registerB, registerC))
+                println(instruction)
                 when (instruction) {
                     is Jnz -> instructionPointer = output.pointerValue
                     is Out -> {
@@ -83,6 +83,8 @@ class Day17 : IAocTaskKt {
         fun output(): List<Int> {
             return programOutput.toList()
         }
+
+        fun outputStr(): String = output().joinToString(",")
     }
     /** each instruction specifies the type of its operand */
 
@@ -106,12 +108,12 @@ class Day17 : IAocTaskKt {
     (So, an operand of 2 would divide A by 4 (2^2); an operand of 5 would divide A by 2^B.)
     The result of the division operation is truncated to an integer and then written to the A register.
     */
-    data class Adv(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Adv(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val numerator = input.a
             val operandValue = Combo(operand, input).value
             val denominator = 2.0.pow(operandValue)
-            val result = (numerator / denominator)
+            val result = numerator / denominator
             val truncated = (result - (result - floor(result))).toInt()
             return Instruction.Output(a = truncated, b = input.b, c = input.c)
         }
@@ -120,7 +122,7 @@ class Day17 : IAocTaskKt {
     /** 1.
      * The bxl instruction (opcode 1) calculates the bitwise XOR of register B and the instruction's literal operand,
     then stores the result in register B. */
-    data class Bxl(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Bxl(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val toXor = input.b
             val operand = operand
@@ -133,7 +135,7 @@ class Day17 : IAocTaskKt {
     2. The bst instruction (opcode 2) calculates the value of its combo operand modulo 8
     (thereby keeping only its lowest 3 bits), then writes that value to the B register.
     */
-    data class Bst(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Bst(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val operand = Combo(operand, input)
             val result = operand.value % 8
@@ -146,7 +148,7 @@ class Day17 : IAocTaskKt {
     it jumps by setting the instruction pointer to the value of its literal operand; if this instruction jumps,
     the instruction pointer is not increased by 2 after this instruction.
      */
-    data class Jnz(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Jnz(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             if (input.a == 0) {
                 return Instruction.Output(a = input.a, b = input.b, c = input.c)
@@ -160,7 +162,7 @@ class Day17 : IAocTaskKt {
     4. The bxc instruction (opcode 4) calculates the bitwise XOR of register B and register C, then stores the result
     in register B. (For legacy reasons, this instruction reads an operand but ignores it.)
     */
-    data class Bxc(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Bxc(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val result = input.b.xor(input.c)
             return Instruction.Output(a = input.a, b = result, c = input.c)
@@ -171,7 +173,7 @@ class Day17 : IAocTaskKt {
     5. The out instruction (opcode 5) calculates the value of its combo operand modulo 8, then outputs that value.
     (If a program outputs multiple values, they are separated by commas.)
     */
-    data class Out(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Out(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val operand = Combo(operand, input)
             val result = operand.value % 8
@@ -183,7 +185,7 @@ class Day17 : IAocTaskKt {
     6. The bdv instruction (opcode 6) works exactly like the adv instruction except that the result is
     stored in the B register. (The numerator is still read from the A register.)
     */
-    data class Bdv(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Bdv(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val numerator = input.a
             val denominator = 2.0.pow(Combo(operand, input).value)
@@ -197,7 +199,7 @@ class Day17 : IAocTaskKt {
     7. The cdv instruction (opcode 7) works exactly like the adv instruction except that the result is
     stored in the C register. (The numerator is still read from the A register.)
      */
-    data class Cdv(override val opcode: Int, override val operand: Int) : Instruction {
+    data class Cdv(override val operand: Int) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val numerator = input.a
             val denominator = 2.0.pow(Combo(operand, input).value)
