@@ -9,11 +9,11 @@ class Day17 : IAocTaskKt {
      override fun getFileName(): String = "aoc2024/input_17.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        val registerA = lines[0].replace("Register A: ", "").trim().toInt()
-        val registerB = lines[1].replace("Register B: ", "").trim().toInt()
-        val registerC = lines[2].replace("Register C: ", "").trim().toInt()
+        val registerA = lines[0].replace("Register A: ", "").trim().toLong()
+        val registerB = lines[1].replace("Register B: ", "").trim().toLong()
+        val registerC = lines[2].replace("Register C: ", "").trim().toLong()
         val program: Program = lines[4].replace("Program: ", "")
-            .split(",").map { it.toInt() }
+            .split(",").map { it.toLong() }
             .let { Program(it, registerA, registerB, registerC) }
         println(program)
         program.execute()
@@ -24,23 +24,60 @@ class Day17 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val registerA = lines[0].replace("Register A: ", "").trim().toLong()
+        val registerB = lines[1].replace("Register B: ", "").trim().toLong()
+        val registerC = lines[2].replace("Register C: ", "").trim().toLong()
+
+        val expected = lines[4].replace("Program: ", "")
+            .split(",").map { it.toLong() }
+        val expectedStr = expected.joinToString(",")
+
+        var program: Program = expected
+            .let { Program(it, registerA, registerB, registerC) }
+
+        println(program)
+        program.execute()
+        println(program)
+
+        var value = 88787000000 // 2147000000L
+        var prevOpsCount = program.steps
+        var prevFitCount = 0
+        while (program.outputStr() != expectedStr) {
+            program = Program(expected, value, registerB, registerC)
+            val opsCount = program.steps
+            if (prevOpsCount < opsCount) {
+                println("ops count increased for $value")
+                prevOpsCount = opsCount
+            }
+            val fitCount = program.output().size
+            if (prevFitCount < fitCount) {
+                println("fits count increased for $value")
+                prevFitCount = fitCount
+            }
+
+            value++
+//            if (value % 100_000_000L == 0L) {
+//                println("must be bigger than $value")
+//            }
+        }
+
+        println(value)
     }
 
     sealed interface Instruction {
-        val operand: Int
+        val operand: Long
 
         companion object {
-            fun parse(opcode: Int, operand: Int): Instruction {
+            fun parse(opcode: Long, operand: Long): Instruction {
                 return when (opcode) {
-                    0 -> Adv(operand)
-                    1 -> Bxl(operand)
-                    2 -> Bst(operand)
-                    3 -> Jnz(operand)
-                    4 -> Bxc(operand)
-                    5 -> Out(operand)
-                    6 -> Bdv(operand)
-                    7 -> Cdv(operand)
+                    0L -> Adv(operand)
+                    1L -> Bxl(operand)
+                    2L -> Bst(operand)
+                    3L -> Jnz(operand)
+                    4L -> Bxc(operand)
+                    5L -> Out(operand)
+                    6L -> Bdv(operand)
+                    7L -> Cdv(operand)
                     else -> throw IllegalArgumentException("Invalid opcode $opcode")
                 }
             }
@@ -48,22 +85,27 @@ class Day17 : IAocTaskKt {
 
         fun execute(input: Input): Output
 
-        data class Input(val a: Int, val b: Int, val c: Int)
+        data class Input(val a: Long, val b: Long, val c: Long)
 
-        data class Output(val a: Int, val b: Int, val c: Int, val pointerValue: Int = -1)
+        data class Output(val a: Long, val b: Long, val c: Long, val pointerValue: Long = -1)
     }
 
-    data class Program(val program: List<Int>, var registerA: Int, var registerB: Int, var registerC: Int, val programOutput: MutableList<Int> = mutableListOf()) {
+    data class Program(val program: List<Long>, var registerA: Long, var registerB: Long, var registerC: Long, val programOutput: MutableList<Long> = mutableListOf()) {
         private var instructionPointer = 0
 
-        fun execute() {
+        var steps = 0
+        var stepsLimit = 1000
+        fun execute(expectedOutput: List<Long> = emptyList()) {
             while (true) {
+                steps++
                 val instruction = Instruction.parse(program[instructionPointer], program[instructionPointer + 1])
+                print(instruction)
+                print(" ")
                 val output = instruction.execute(Instruction.Input(registerA, registerB, registerC))
                 when (instruction) {
                     is Jnz -> {
-                        if (registerA != 0) {
-                            instructionPointer = output.pointerValue
+                        if (registerA != 0L) {
+                            instructionPointer = output.pointerValue.toInt()
                         } else {
                             instructionPointer += 2
                         }
@@ -71,6 +113,9 @@ class Day17 : IAocTaskKt {
                     is Out -> {
                         programOutput.add(output.a)
                         instructionPointer += 2
+                        if (expectedOutput.isNotEmpty() && (programOutput.size > expectedOutput.size || expectedOutput.subList(0, programOutput.size) != programOutput)) {
+                            break
+                        }
                     }
                     else -> {
                         registerA = output.a
@@ -82,10 +127,13 @@ class Day17 : IAocTaskKt {
                 if (instructionPointer >= program.size || instructionPointer < 0) {
                     break
                 }
+                if (stepsLimit < steps) {
+                    throw IllegalArgumentException("limit reached")
+                }
             }
         }
 
-        fun output(): List<Int> {
+        fun output(): List<Long> {
             return programOutput.toList()
         }
 
@@ -113,13 +161,13 @@ class Day17 : IAocTaskKt {
     (So, an operand of 2 would divide A by 4 (2^2); an operand of 5 would divide A by 2^B.)
     The result of the division operation is truncated to an integer and then written to the A register.
     */
-    data class Adv(override val operand: Int) : Instruction {
+    data class Adv(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val numerator = input.a
-            val operandValue = Combo(operand, input).value
+            val operandValue = Combo(operand, input).value.toInt()
             val denominator = 2.0.pow(operandValue)
             val result = numerator / denominator
-            val truncated = floor(result).toInt()
+            val truncated = floor(result).toLong()
             return Instruction.Output(a = truncated, b = input.b, c = input.c)
         }
     }
@@ -127,7 +175,7 @@ class Day17 : IAocTaskKt {
     /** 1.
      * The bxl instruction (opcode 1) calculates the bitwise XOR of register B and the instruction's literal operand,
     then stores the result in register B. */
-    data class Bxl(override val operand: Int) : Instruction {
+    data class Bxl(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val toXor = input.b
             val operand = operand
@@ -140,7 +188,7 @@ class Day17 : IAocTaskKt {
     2. The bst instruction (opcode 2) calculates the value of its combo operand modulo 8
     (thereby keeping only its lowest 3 bits), then writes that value to the B register.
     */
-    data class Bst(override val operand: Int) : Instruction {
+    data class Bst(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val operand = Combo(operand, input)
             val result = operand.value % 8
@@ -153,9 +201,9 @@ class Day17 : IAocTaskKt {
     it jumps by setting the instruction pointer to the value of its literal operand; if this instruction jumps,
     the instruction pointer is not increased by 2 after this instruction.
      */
-    data class Jnz(override val operand: Int) : Instruction {
+    data class Jnz(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
-            if (input.a == 0) {
+            if (input.a == 0L) {
                 return Instruction.Output(a = input.a, b = input.b, c = input.c)
             }
             val jump = operand
@@ -167,7 +215,7 @@ class Day17 : IAocTaskKt {
     4. The bxc instruction (opcode 4) calculates the bitwise XOR of register B and register C, then stores the result
     in register B. (For legacy reasons, this instruction reads an operand but ignores it.)
     */
-    data class Bxc(override val operand: Int) : Instruction {
+    data class Bxc(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val result = input.b.xor(input.c)
             return Instruction.Output(a = input.a, b = result, c = input.c)
@@ -178,7 +226,7 @@ class Day17 : IAocTaskKt {
     5. The out instruction (opcode 5) calculates the value of its combo operand modulo 8, then outputs that value.
     (If a program outputs multiple values, they are separated by commas.)
     */
-    data class Out(override val operand: Int) : Instruction {
+    data class Out(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val comboOperand = Combo(operand, input)
             val result = comboOperand.value % 8
@@ -190,12 +238,13 @@ class Day17 : IAocTaskKt {
     6. The bdv instruction (opcode 6) works exactly like the adv instruction except that the result is
     stored in the B register. (The numerator is still read from the A register.)
     */
-    data class Bdv(override val operand: Int) : Instruction {
+    data class Bdv(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val numerator = input.a
-            val denominator = 2.0.pow(Combo(operand, input).value)
+            val value = Combo(operand, input).value.toInt()
+            val denominator = 2.0.pow(value)
             val result = (numerator / denominator)
-            val truncated = floor(result).toInt()
+            val truncated = floor(result).toLong()
             return Instruction.Output(a = input.a, b = truncated, c = input.c)
         }
     }
@@ -204,12 +253,13 @@ class Day17 : IAocTaskKt {
     7. The cdv instruction (opcode 7) works exactly like the adv instruction except that the result is
     stored in the C register. (The numerator is still read from the A register.)
      */
-    data class Cdv(override val operand: Int) : Instruction {
+    data class Cdv(override val operand: Long) : Instruction {
         override fun execute(input: Instruction.Input): Instruction.Output {
             val numerator = input.a
-            val denominator = 2.0.pow(Combo(operand, input).value)
+            val value = Combo(operand, input).value
+            val denominator = 2.0.pow(value.toInt())
             val result = (numerator / denominator)
-            val truncated = floor(result).toInt()
+            val truncated = floor(result).toLong()
             return Instruction.Output(a = input.a, b = input.b, c = truncated)
         }
     }
@@ -221,13 +271,13 @@ class Day17 : IAocTaskKt {
     Combo operand 6 represents the value of register C.
     Combo operand 7 is reserved and will not appear in valid programs.
      */
-    data class Combo(val operand: Int, val input: Instruction.Input) {
-        val value: Int = when (operand) {
+    data class Combo(val operand: Long, val input: Instruction.Input) {
+        val value: Long = when (operand) {
             in 0..3 -> operand
-            4 -> input.a
-            5 -> input.b
-            6 -> input.c
-            7 -> throw IllegalArgumentException("Not a valid program")
+            4L -> input.a
+            5L -> input.b
+            6L -> input.c
+            7L -> throw IllegalArgumentException("Not a valid program")
             else -> throw IllegalStateException("Unknown state")
         }
     }
