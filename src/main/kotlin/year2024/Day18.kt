@@ -1,6 +1,7 @@
 package year2024
 
 import aoc.IAocTaskKt
+import utils.except
 import java.util.*
 import kotlin.math.sqrt
 
@@ -24,21 +25,31 @@ class Day18 : IAocTaskKt {
             .map { (1..width).map { '.' }.toCharArray() }
             .toTypedArray()
 
-        val obstacles = lines.map { line ->
+        val allObstacles = lines.map { line ->
             val (x, y) = line.split(",").map { it.toInt() }
             Point(x, y)
-        }.subList(0, bytes).toSet()
+        }.toList()
+
+        val obstacles = allObstacles.subList(0, bytes).toMutableSet()
 
         println(grid.print(obstacles, emptyList()))
+
 
         val start = Point(0, 0)
         val target = Point(width - 1, height - 1)
 
-        val visited = mutableSetOf(start)
-        val path = shortestPath(visited, start, target, obstacles, width, height, maxSize)
-//        println(grid.print(obstacles, path))
+        val toAdd = allObstacles.except(obstacles)
 
-        println(path - 1)
+        for (obstacle in toAdd) {
+            obstacles += obstacle
+            val visited = mutableSetOf(start)
+            val path = shortestPath(visited, start, target, obstacles, width, height, maxSize)
+            if (path == -1) {
+                println("${obstacle.x},${obstacle.y}")
+                return
+            }
+        }
+//        println(grid.print(obstacles, path))
     }
 
     private fun shortestPath(
@@ -67,7 +78,7 @@ class Day18 : IAocTaskKt {
                 queue.pollLast()
             }
         }
-        return 0
+        return -1
     }
 
     override fun solvePartTwo(lines: List<String>) {
