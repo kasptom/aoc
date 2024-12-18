@@ -21,35 +21,25 @@ class Day18 : IAocTaskKt {
             7
         }
 
-        val grid: Array<CharArray> = (1..height)
-            .map { (1..width).map { '.' }.toCharArray() }
-            .toTypedArray()
+//        val grid: Array<CharArray> = (1..height)
+//            .map { (1..width).map { '.' }.toCharArray() }
+//            .toTypedArray()
 
-        val allObstacles = lines.map { line ->
+        val obstacles = lines.map { line ->
             val (x, y) = line.split(",").map { it.toInt() }
             Point(x, y)
-        }.toList()
+        }.subList(0, bytes).toSet()
 
-        val obstacles = allObstacles.subList(0, bytes).toMutableSet()
-
-        println(grid.print(obstacles, emptyList()))
-
+//        println(grid.print(obstacles, emptyList()))
 
         val start = Point(0, 0)
         val target = Point(width - 1, height - 1)
 
-        val toAdd = allObstacles.except(obstacles)
-
-        for (obstacle in toAdd) {
-            obstacles += obstacle
-            val visited = mutableSetOf(start)
-            val path = shortestPath(visited, start, target, obstacles, width, height, maxSize)
-            if (path == -1) {
-                println("${obstacle.x},${obstacle.y}")
-                return
-            }
-        }
+        val visited = mutableSetOf(start)
+        val path = shortestPath(visited, start, target, obstacles, width, height, maxSize)
 //        println(grid.print(obstacles, path))
+
+        println(path - 1)
     }
 
     private fun shortestPath(
@@ -82,7 +72,45 @@ class Day18 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val (width, height, bytes) = if (getFileName() == "aoc2024/input_18.txt") {
+            Triple(71, 71, 1024)
+        } else {
+            Triple(7, 7, 12)
+        }
+        val maxSize = if (getFileName() == "aoc2024/input_18.txt") {
+            70
+        } else {
+            7
+        }
+
+        val grid: Array<CharArray> = (1..height)
+            .map { (1..width).map { '.' }.toCharArray() }
+            .toTypedArray()
+
+        val allObstacles = lines.map { line ->
+            val (x, y) = line.split(",").map { it.toInt() }
+            Point(x, y)
+        }.toList()
+
+        val obstacles = allObstacles.subList(0, bytes).toMutableSet()
+
+//        println(grid.print(obstacles, emptyList()))
+
+        val start = Point(0, 0)
+        val target = Point(width - 1, height - 1)
+
+        val toAdd = allObstacles.except(obstacles)
+
+        for (obstacle in toAdd) {
+            obstacles += obstacle
+            val visited = mutableSetOf(start)
+            val path = shortestPath(visited, start, target, obstacles, width, height, maxSize)
+            if (path == -1) {
+                println("${obstacle.x},${obstacle.y}")
+                return
+            }
+        }
+//        println(grid.print(obstacles, path))
     }
 
     data class Point(val x: Int, val y: Int) : Comparable<Point> {
