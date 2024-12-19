@@ -9,7 +9,6 @@ class Day19 : IAocTaskKt {
     override fun solvePartOne(lines: List<String>) {
         val patterns = lines[0].split(", ")
             .filter { it.isNotBlank() }
-        println()
 
         val designs = lines.subList(2, lines.size)
 
@@ -18,7 +17,14 @@ class Day19 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val patterns = lines[0].split(", ")
+            .filter { it.isNotBlank() }
+
+        val designs = lines.subList(2, lines.size)
+
+        val memo  = mutableMapOf<String, Long>()
+        designs.sumOf { countPossible(it, patterns, memo) }
+            .let { println(it) }
     }
 
     private fun isPossible(design: String, patterns: List<String>): Boolean {
@@ -30,6 +36,27 @@ class Day19 : IAocTaskKt {
                 return true
             }
         }
-        return false;
+        return false
+    }
+
+    private fun countPossible(
+        design: String,
+        patterns: List<String>,
+        memo: MutableMap<String, Long>
+    ): Long {
+        if (memo.containsKey(design)) {
+            return memo[design]!!
+        }
+        if (design.isEmpty()) {
+            return 1
+        }
+        var options = 0L
+        for (pattern in patterns) {
+            if (design.startsWith(pattern)) {
+                options += countPossible(design.substring(pattern.length), patterns, memo)
+            }
+        }
+        memo[design] = options
+        return options
     }
 }
