@@ -124,7 +124,7 @@ class Day20 : IAocTaskKt {
         private fun dist(): Double = sqrt(0.0 + x * x + y * y)
 
         fun isInCheatRange(other: Point): Boolean {
-            return abs(x - other.x) == 2 && y == other.y || abs(y - other.y) == 2 && x == other.x
+            return abs(x - other.x) in 2..20 && y == other.y || abs(y - other.y) in 2..20 && x == other.x
         }
 
         private operator fun minus(other: Point): Point {
