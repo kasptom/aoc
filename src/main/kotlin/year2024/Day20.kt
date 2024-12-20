@@ -1,7 +1,6 @@
 package year2024
 
 import aoc.IAocTaskKt
-import utils.except
 import java.util.*
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -13,16 +12,12 @@ class Day20 : IAocTaskKt {
     override fun solvePartOne(lines: List<String>) {
         val (points, start, end) = setup(lines)
         val shortest = shortestPath(points, start, end)
-        println(start)
-        println(end)
-        println(points)
         val path = shortest.path
 
         val threshold = 102
         var cheatPaths = 0
         val pointToIndex = path.map { Pair(it, path.indexOf(it))}
             .toMap()
-        val cheatToCount = mutableMapOf<Int, Int>()
 
         for (i in path.indices) {
             for (j in (i + 1) until path.size) {
@@ -31,19 +26,38 @@ class Day20 : IAocTaskKt {
                 if (point.isInCheatRange(other)) {
                     val diff = pointToIndex[other]!! - pointToIndex[point]!!
                     if (diff >= threshold) {
-                        cheatToCount.putIfAbsent(diff, 0)
-                        cheatToCount.computeIfPresent(diff) { _, c -> c + 1 }
                         cheatPaths++
                     }
                 }
             }
         }
-        cheatToCount.onEach { println(it) }
         println(cheatPaths)
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        val (points, start, end) = setup(lines)
+        val shortest = shortestPath(points, start, end)
+        val path = shortest.path
+
+        val threshold = 100
+        val cheatPoints = mutableSetOf<Pair<Point, Point>>()
+        val pointToIndex = path.map { Pair(it, path.indexOf(it))}
+            .toMap()
+
+        println(path.size)
+        for (i in path.indices) {
+            for (j in (i + 1) until path.size) {
+                val point = path[i]
+                val other = path[j]
+                if (point.isInCheatRange2(other)) {
+                    val diff = pointToIndex[other]!! - pointToIndex[point]!!
+                    if (diff >= threshold) {
+                        cheatPoints.add(Pair(point, other))
+                    }
+                }
+            }
+        }
+        println(cheatPoints.size)
     }
 
     private fun shortestPath(nodes: Set<Point>, start: Point, target: Point): PointWithCostAndPath {
@@ -124,7 +138,11 @@ class Day20 : IAocTaskKt {
         private fun dist(): Double = sqrt(0.0 + x * x + y * y)
 
         fun isInCheatRange(other: Point): Boolean {
-            return abs(x - other.x) in 2..20 && y == other.y || abs(y - other.y) in 2..20 && x == other.x
+            return abs(x - other.x) == 2 && y == other.y || abs(y - other.y) == 2 && x == other.x
+        }
+
+        fun isInCheatRange2(other: Point): Boolean {
+            return abs(x - other.x) + abs(y - other.y) in 2..20
         }
 
         private operator fun minus(other: Point): Point {
