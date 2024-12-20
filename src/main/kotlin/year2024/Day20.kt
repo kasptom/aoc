@@ -6,7 +6,7 @@ import kotlin.math.abs
 import kotlin.math.sqrt
 
 class Day20 : IAocTaskKt {
-        override fun getFileName(): String = "aoc2024/input_20.txt"
+    override fun getFileName(): String = "aoc2024/input_20.txt"
 //    override fun getFileName(): String = "aoc2024/input_20_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
@@ -14,23 +14,27 @@ class Day20 : IAocTaskKt {
         val shortest = shortestPath(points, start, end)
         val path = shortest.path
 
-        val threshold = 102
+        val threshold = 100
         var cheatPaths = 0
-        val pointToIndex = path.map { Pair(it, path.indexOf(it))}
+        val pointToIndex = path.map { Pair(it, path.indexOf(it)) }
             .toMap()
+        val cheatSizeToCount = mutableMapOf<Int, Int>()
 
         for (i in path.indices) {
             for (j in (i + 1) until path.size) {
                 val point = path[i]
                 val other = path[j]
                 if (point.isInCheatRange(other)) {
-                    val diff = pointToIndex[other]!! - pointToIndex[point]!!
+                    val diff = pointToIndex[other]!! - pointToIndex[point]!! - 2 // cheat cost
                     if (diff >= threshold) {
                         cheatPaths++
+                        cheatSizeToCount.putIfAbsent(diff, 0)
+                        cheatSizeToCount.computeIfPresent(diff) { _, c -> c + 1}
                     }
                 }
             }
         }
+        println(cheatSizeToCount)
         println(cheatPaths)
     }
 
@@ -41,22 +45,27 @@ class Day20 : IAocTaskKt {
 
         val threshold = 100
         val cheatPoints = mutableSetOf<Pair<Point, Point>>()
-        val pointToIndex = path.map { Pair(it, path.indexOf(it))}
+        val pointToIndex = path.map { Pair(it, path.indexOf(it)) }
             .toMap()
+
+        val cheatSizeToCount = mutableMapOf<Int, Int>()
 
         println(path.size)
         for (i in path.indices) {
             for (j in (i + 1) until path.size) {
                 val point = path[i]
                 val other = path[j]
-                if (point.isInCheatRange2(other)) {
-                    val diff = pointToIndex[other]!! - pointToIndex[point]!!
+                if (point.cheatCost(other) in 2..20) {
+                    val diff = pointToIndex[other]!! - pointToIndex[point]!! - point.cheatCost(other)
                     if (diff >= threshold) {
                         cheatPoints.add(Pair(point, other))
+                        cheatSizeToCount.putIfAbsent(diff, 0)
+                        cheatSizeToCount.computeIfPresent(diff) { _, c -> c + 1 }
                     }
                 }
             }
         }
+        println(cheatSizeToCount)
         println(cheatPoints.size)
     }
 
@@ -141,8 +150,8 @@ class Day20 : IAocTaskKt {
             return abs(x - other.x) == 2 && y == other.y || abs(y - other.y) == 2 && x == other.x
         }
 
-        fun isInCheatRange2(other: Point): Boolean {
-            return abs(x - other.x) + abs(y - other.y) in 2..20
+        fun cheatCost(other: Point): Int {
+            return abs(x - other.x) + abs(y - other.y)
         }
 
         private operator fun minus(other: Point): Point {
@@ -150,7 +159,8 @@ class Day20 : IAocTaskKt {
         }
     }
 
-    data class PointWithCostAndPath(val point: Point, val cost: Cost, val path: List<Point>) : Comparable<PointWithCostAndPath> {
+    data class PointWithCostAndPath(val point: Point, val cost: Cost, val path: List<Point>) :
+        Comparable<PointWithCostAndPath> {
         override fun compareTo(other: PointWithCostAndPath): Int {
             if (cost.toValue() != other.cost.toValue()) {
                 return cost.toValue().compareTo(other.cost.toValue())
