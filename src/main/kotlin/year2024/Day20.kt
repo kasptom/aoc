@@ -12,52 +12,33 @@ class Day20 : IAocTaskKt {
     override fun solvePartOne(lines: List<String>) {
         val (points, start, end) = setup(lines)
         val shortest = shortestPath(points, start, end)
-        val path = shortest.path
-
-        val threshold = 100
-        var cheatPaths = 0
-        val pointToIndex = path.map { Pair(it, path.indexOf(it)) }
-            .toMap()
-        val cheatSizeToCount = mutableMapOf<Int, Int>()
-
-        for (i in path.indices) {
-            for (j in (i + 1) until path.size) {
-                val point = path[i]
-                val other = path[j]
-                if (point.isInCheatRange(other)) {
-                    val diff = pointToIndex[other]!! - pointToIndex[point]!! - 2 // cheat cost
-                    if (diff >= threshold) {
-                        cheatPaths++
-                        cheatSizeToCount.putIfAbsent(diff, 0)
-                        cheatSizeToCount.computeIfPresent(diff) { _, c -> c + 1}
-                    }
-                }
-            }
-        }
-        println(cheatSizeToCount)
-        println(cheatPaths)
+        val allowedCheatCost = 2..2
+        val cheats = solve(shortest, allowedCheatCost)
+        println(cheats)
     }
 
     override fun solvePartTwo(lines: List<String>) {
         val (points, start, end) = setup(lines)
         val shortest = shortestPath(points, start, end)
+        val allowedCheatCost = 2..20
+        val cheats = solve(shortest, allowedCheatCost)
+        println(cheats)
+    }
+
+    private fun solve(shortest: PointWithCostAndPath, allowedCheatCost: IntRange): Int {
         val path = shortest.path
 
-        val threshold = 100
         val cheatPoints = mutableSetOf<Pair<Point, Point>>()
-        val pointToIndex = path.map { Pair(it, path.indexOf(it)) }
-            .toMap()
-
+        val pointToIndex = path.associateWith { path.indexOf(it) }
         val cheatSizeToCount = mutableMapOf<Int, Int>()
 
-        println(path.size)
         for (i in path.indices) {
             for (j in (i + 1) until path.size) {
                 val point = path[i]
                 val other = path[j]
-                if (point.cheatCost(other) in 2..20) {
+                if (point.cheatCost(other) in allowedCheatCost) {
                     val diff = pointToIndex[other]!! - pointToIndex[point]!! - point.cheatCost(other)
-                    if (diff >= threshold) {
+                    if (diff >= THRESHOLD) {
                         cheatPoints.add(Pair(point, other))
                         cheatSizeToCount.putIfAbsent(diff, 0)
                         cheatSizeToCount.computeIfPresent(diff) { _, c -> c + 1 }
@@ -65,8 +46,7 @@ class Day20 : IAocTaskKt {
                 }
             }
         }
-        println(cheatSizeToCount)
-        println(cheatPoints.size)
+        return cheatPoints.size
     }
 
     private fun shortestPath(nodes: Set<Point>, start: Point, target: Point): PointWithCostAndPath {
@@ -146,10 +126,6 @@ class Day20 : IAocTaskKt {
 
         private fun dist(): Double = sqrt(0.0 + x * x + y * y)
 
-        fun isInCheatRange(other: Point): Boolean {
-            return abs(x - other.x) == 2 && y == other.y || abs(y - other.y) == 2 && x == other.x
-        }
-
         fun cheatCost(other: Point): Int {
             return abs(x - other.x) + abs(y - other.y)
         }
@@ -176,5 +152,9 @@ class Day20 : IAocTaskKt {
 
     private fun Array<CharArray>.valueAt(point: Point): Char {
         return this[point.y][point.x]
+    }
+
+    companion object {
+        private const val THRESHOLD = 100
     }
 }
