@@ -12,15 +12,18 @@ class Day21 : IAocTaskKt {
     override fun getFileName(): String = "aoc2024/input_21.txt"
     // override fun getFileName(): String = "aoc2024/input_21_test.txt"
 
+    private val memo = mutableMapOf<State, Long>()
+
     override fun solvePartOne(lines: List<String>) {
+        memo.clear()
         val costs = lines.map { getNumCodeLength(it, 0, 2) }
         val complexities = costs.mapIndexed { idx, length -> Complexity.toComplexity(numPadCode = lines[idx], length) }
         println(complexities.sumOf { it.value() })
     }
 
-    fun getNumCodeLength(code: String, depth: Int, maxDepth: Int): Int {
+    fun getNumCodeLength(code: String, depth: Int, maxDepth: Int): Long {
         val prefixedCode = "A$code"
-        var length = 0
+        var length = 0L
         for (idx in 1 until prefixedCode.length) {
             val (prev, curr) = prefixedCode.substring(idx - 1, idx + 1).map { it }
             length += getDirCodeLength(prev, curr, NUM_PAD, depth, maxDepth)
@@ -28,17 +31,22 @@ class Day21 : IAocTaskKt {
         return length
     }
 
-    private fun getDirCodeLength(prev: Char, curr: Char, pad: Array<CharArray>, depth: Int, maxDepth: Int): Int {
+    private fun getDirCodeLength(prev: Char, curr: Char, pad: Array<CharArray>, depth: Int, maxDepth: Int): Long {
+        val state = State(prev, curr, depth)
+        if (memo.containsKey(state)) {
+            return memo[state]!!
+        }
+
         if (depth == maxDepth) {
-            return Pad().getMovementPaths("$prev$curr", pad).minOf { it.length }
+            return Pad().getMovementPaths("$prev$curr", pad).minOf { it.length }.toLong()
         }
         val options = Pad().getMovementPaths("$prev$curr", pad)
 
-        var minLength = Integer.MAX_VALUE
+        var minLength = Long.MAX_VALUE
 
         for (option in options) {
             val prefixedOption = "A$option"
-            var length = 0
+            var length = 0L
             for (idx in 1 until prefixedOption.length) {
                 val (nextPrev, nextCurr) = prefixedOption.substring(idx - 1, idx + 1).map { it }
                 length += getDirCodeLength(nextPrev, nextCurr, DIR_PAD, depth + 1, maxDepth)
@@ -46,21 +54,24 @@ class Day21 : IAocTaskKt {
             minLength = min(minLength, length)
         }
 
-        return minLength
+        memo[state] = minLength
+        return memo[state]!!
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        if (lines.isEmpty()) println("empty lines") else println(lines.size)
+        memo.clear()
+        val costs = lines.map { getNumCodeLength(it, 0, 25) }
+        val complexities = costs.mapIndexed { idx, length -> Complexity.toComplexity(numPadCode = lines[idx], length) }
+        println(complexities.sumOf { it.value() })
     }
 
     class Pad {
         fun getMovementPaths(dirPadCode: String, pad: Array<CharArray>): List<String> {
-            val prefixedNumPadCode = dirPadCode
             val paths = mutableListOf("")
 
-            for (idx in 1 until prefixedNumPadCode.length) {
-                val start = pad.positionOf(prefixedNumPadCode[idx - 1])
-                val end = pad.positionOf(prefixedNumPadCode[idx])
+            for (idx in 1 until dirPadCode.length) {
+                val start = pad.positionOf(dirPadCode[idx - 1])
+                val end = pad.positionOf(dirPadCode[idx])
                 val pathsPoints = Point.shortestPathsFrom(start, end, pad)
 
                 val newPaths = mutableListOf<String>()
@@ -120,7 +131,7 @@ class Day21 : IAocTaskKt {
 
         fun inRange(grid: Array<CharArray>): Boolean = inRange(grid[0].size, grid.size)
 
-        fun inRange(width: Int, height: Int): Boolean {
+        private fun inRange(width: Int, height: Int): Boolean {
             return x in 0 until width && y in 0 until height
         }
 
@@ -133,8 +144,7 @@ class Day21 : IAocTaskKt {
             val right = Point(1, 0)
 
             fun toDirButton(prev: Point, curr: Point): Char {
-                val diff = curr - prev
-                return when (diff) {
+                return when (val diff = curr - prev) {
                     up -> '^'
                     down -> 'v'
                     left -> '<'
@@ -151,7 +161,7 @@ class Day21 : IAocTaskKt {
                 val shortestPaths = mutableListOf<List<Point>>()
 
                 while (queue.isNotEmpty()) {
-                    val (node, dist, path) = queue.pollFirst()
+                    val (node, dist, path) = queue.pollFirst()!!
                     if (dist > shortest) {
                         break
                     }
@@ -195,17 +205,19 @@ class Day21 : IAocTaskKt {
         }
     }
 
-    data class Complexity(val length: Int, val numericPart: Int) {
-        fun value(): Int = length * numericPart
+    data class Complexity(val length: Long, val numericPart: Long) {
+        fun value(): Long = length * numericPart
 
         companion object {
-            fun toComplexity(numPadCode: String, length: Int): Complexity {
+            fun toComplexity(numPadCode: String, length: Long): Complexity {
                 val numericPart = numPadCode.replace("A", "")
-                    .toInt()
+                    .toLong()
                 return Complexity(length, numericPart)
             }
         }
     }
+
+    data class State(val prev: Char, val curr: Char, val depth: Int)
 }
 
 private fun Array<CharArray>.positionOf(c: Char): Point {
