@@ -1,9 +1,9 @@
 import aoc.IAocTaskKt
 import utils.InputReader
-import year2024.Day20
+import year2024.Day21
 
 fun main() {
-    val task: IAocTaskKt = Day20()
+    val task: IAocTaskKt = Day21()
     val lines: List<String> = InputReader(task.getFileName())
         .readLines()
 
@@ -15,4 +15,3 @@ fun main() {
     val secondPart = System.currentTimeMillis() - time - firstPart
     println("time 2nd part [s]: ${secondPart / 1000.0}")
 }
-
