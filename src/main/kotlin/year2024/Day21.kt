@@ -1,74 +1,67 @@
 package year2024
 
 import aoc.IAocTaskKt
-import utils.permutations
+import year2024.Day21.Pad.Companion.DIR_PAD
+import year2024.Day21.Pad.Companion.NUM_PAD
 import year2024.Day21.Point
 import java.util.*
+import kotlin.math.min
 import kotlin.math.sqrt
 
 class Day21 : IAocTaskKt {
-    //    override fun getFileName(): String = "aoc2024/input_21.txt"
     override fun getFileName(): String = "aoc2024/input_21.txt"
+    // override fun getFileName(): String = "aoc2024/input_21_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
-        val doorCodes = lines
-        doorCodes
-//            .onEach { println(it) }
-            .map { numPadToDirPadPath(it) }
-//            .onEach { println(it) }
-            .map { paths -> paths.map { path -> dirPadToDirPad(path) }.flatten() }
-            .map { paths -> paths.map { path -> dirPadToDirPad(path) }.flatten() }
-//            .onEach { println(it) }
-//            .onEachIndexed { idx, path -> println("${lines[idx]} --> $path ") }
-            .mapIndexed { idx, paths -> paths.map { path -> toComplexity(lines[idx], path) } }
-//            .onEachIndexed { idx, complexity -> println("${lines[idx]}: $complexity") }
-            .map { complexities -> complexities.minOf { it } }
-            .map { (len, code) -> len * code }
-            .sum()
-            .let { println(it) }
-
-
-        // (num) --> (dir) --> (dir) --> (dir)
+        val costs = lines.map { getNumCodeLength(it, 0, 2) }
+        val complexities = costs.mapIndexed { idx, length -> Complexity.toComplexity(numPadCode = lines[idx], length) }
+        println(complexities.sumOf { it.value() })
     }
 
-    private fun toComplexity(numPadCode: String, code: String): Complexity {
-        val length = code.length
-        val numericPart = numPadCode.replace("A", "")
-            .toInt()
-        return Complexity(length, numericPart)
-    }
-
-    data class Complexity(val length: Int, val numericPart: Int): Comparable<Complexity> {
-        override fun compareTo(other: Complexity): Int = if (numericPart != other.numericPart) {
-            numericPart.compareTo(other.numericPart)
-        } else {
-            length.compareTo(other.length)
+    fun getNumCodeLength(code: String, depth: Int, maxDepth: Int): Int {
+        val prefixedCode = "A$code"
+        var length = 0
+        for (idx in 1 until prefixedCode.length) {
+            val (prev, curr) = prefixedCode.substring(idx - 1, idx + 1).map { it }
+            length += getDirCodeLength(prev, curr, NUM_PAD, depth, maxDepth)
         }
+        return length
     }
 
-    private fun dirPadToDirPad(dirPadCode: String): List<String> {
-        val dirPad = DirectionalPad()
-        return dirPad.getMovementPaths(dirPadCode)
-    }
+    private fun getDirCodeLength(prev: Char, curr: Char, pad: Array<CharArray>, depth: Int, maxDepth: Int): Int {
+        if (depth == maxDepth) {
+            return Pad().getMovementPaths("$prev$curr", pad).minOf { it.length }
+        }
+        val options = Pad().getMovementPaths("$prev$curr", pad)
 
-    private fun numPadToDirPadPath(numPadCode: String): List<String> {
-        val numPad = NumPad()
-        return numPad.getMovementPaths(numPadCode)
+        var minLength = Integer.MAX_VALUE
+
+        for (option in options) {
+            val prefixedOption = "A$option"
+            var length = 0
+            for (idx in 1 until prefixedOption.length) {
+                val (nextPrev, nextCurr) = prefixedOption.substring(idx - 1, idx + 1).map { it }
+                length += getDirCodeLength(nextPrev, nextCurr, DIR_PAD, depth + 1, maxDepth)
+            }
+            minLength = min(minLength, length)
+        }
+
+        return minLength
     }
 
     override fun solvePartTwo(lines: List<String>) {
         if (lines.isEmpty()) println("empty lines") else println(lines.size)
     }
 
-    data class DirectionalPad(val pos: Point = Point(2, 0)) {
-        fun getMovementPaths(dirPadCode: String): List<String> {
-            val prefixedNumPadCode = "A$dirPadCode"
+    class Pad {
+        fun getMovementPaths(dirPadCode: String, pad: Array<CharArray>): List<String> {
+            val prefixedNumPadCode = dirPadCode
             val paths = mutableListOf("")
 
             for (idx in 1 until prefixedNumPadCode.length) {
-                val start = dirPad.positionOf(prefixedNumPadCode[idx - 1])
-                val end = dirPad.positionOf(prefixedNumPadCode[idx])
-                val pathsPoints = Point.shortestPathsFrom(start, end, dirPad)
+                val start = pad.positionOf(prefixedNumPadCode[idx - 1])
+                val end = pad.positionOf(prefixedNumPadCode[idx])
+                val pathsPoints = Point.shortestPathsFrom(start, end, pad)
 
                 val newPaths = mutableListOf<String>()
                 for (path in paths) {
@@ -85,42 +78,18 @@ class Day21 : IAocTaskKt {
             return paths
         }
 
-        val dirPad = arrayOf(
-            charArrayOf(' ', '^', 'A'),
-            charArrayOf('<', 'v', '>')
-        )
-    }
+        companion object {
+            val DIR_PAD = arrayOf(
+                charArrayOf(' ', '^', 'A'),
+                charArrayOf('<', 'v', '>')
+            )
 
-    data class NumPad(val pos: Point = Point(2, 3)) {
-        val numPad = arrayOf(
-            charArrayOf('7', '8', '9'),
-            charArrayOf('4', '5', '6'),
-            charArrayOf('1', '2', '3'),
-            charArrayOf(' ', '0', 'A'),
-        )
-
-        fun getMovementPaths(numPadCode: String): List<String> {
-            val prefixedNumPadCode = "A$numPadCode"
-            val paths = mutableListOf("")
-
-            for (idx in 1 until prefixedNumPadCode.length) {
-                val start = numPad.positionOf(prefixedNumPadCode[idx - 1])
-                val end = numPad.positionOf(prefixedNumPadCode[idx])
-                val pathsPoints = Point.shortestPathsFrom(start, end, numPad)
-
-                val newPaths = mutableListOf<String>()
-                for (path in paths) {
-                    for (pointPath in pathsPoints) {
-                        val newPath = path + pointPath.windowed(size = 2, step = 1)
-                            .map { (prev, curr) -> Point.toDirButton(prev, curr) }
-                            .joinToString("") + "A"
-                        newPaths += newPath
-                    }
-                }
-                paths.clear()
-                paths.addAll(newPaths)
-            }
-            return paths
+            val NUM_PAD = arrayOf(
+                charArrayOf('7', '8', '9'),
+                charArrayOf('4', '5', '6'),
+                charArrayOf('1', '2', '3'),
+                charArrayOf(' ', '0', 'A'),
+            )
         }
     }
 
@@ -204,26 +173,38 @@ class Day21 : IAocTaskKt {
             }
         }
     }
-}
 
-data class PointDistPath(val point: Point, val cost: Int, val path: List<Point>) :
-    Comparable<PointDistPath> {
-    override fun compareTo(other: PointDistPath): Int {
-        if (cost != other.cost) {
-            return cost.compareTo(other.cost)
+    data class PointDistPath(val point: Point, val cost: Int, val path: List<Point>) :
+        Comparable<PointDistPath> {
+        override fun compareTo(other: PointDistPath): Int {
+            if (cost != other.cost) {
+                return cost.compareTo(other.cost)
+            }
+            if (point != other.point) {
+                return point.compareTo(other.point)
+            }
+            if (path.size != other.path.size) {
+                path.size.compareTo(other.path.size)
+            }
+            for (idx in path.indices) {
+                if (path[idx] != other.path[idx]) {
+                    return path[idx].compareTo(other.path[idx])
+                }
+            }
+            return 0
         }
-        if (point != other.point) {
-            return point.compareTo(other.point)
-        }
-        if (path.size != other.path.size) {
-            path.size.compareTo(other.path.size)
-        }
-        for (idx in path.indices) {
-            if (path[idx] != other.path[idx]) {
-                return path[idx].compareTo(other.path[idx])
+    }
+
+    data class Complexity(val length: Int, val numericPart: Int) {
+        fun value(): Int = length * numericPart
+
+        companion object {
+            fun toComplexity(numPadCode: String, length: Int): Complexity {
+                val numericPart = numPadCode.replace("A", "")
+                    .toInt()
+                return Complexity(length, numericPart)
             }
         }
-        return 0
     }
 }
 
@@ -242,5 +223,3 @@ private fun Array<CharArray>.positionOf(c: Char): Point {
 private fun Array<CharArray>.valueAt(pos: Point): Char {
     return this[pos.y][pos.x]
 }
-
-

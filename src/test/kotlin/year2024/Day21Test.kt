@@ -1,24 +1,27 @@
 package year2024
 
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.CsvSource
 
 class Day21Test {
+    private val sut = Day21()
 
-    val sut = Day21.DirectionalPad()
-
-    @Test
-    fun testOutput() {
-        // given
-        val input = "v<<A>>^A<A>AvA<^AA>A<vAAA>^A"
-        val expected = "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A"
-
+    @CsvSource(
+        textBlock = """
+        029A | 68
+        980A | 60
+        179A | 68
+        456A | 64
+        379A | 64"""
+            , delimiterString = "|"
+    )
+    @ParameterizedTest
+    fun testOutput(input: String, expectedLength: Int) {
         // when
-        val result = sut.getMovementPaths(input)
+        val result = sut.getNumCodeLength(input, 0, 2)
 
         // then
-        assertTrue(result.any { it == expected })
-        assertTrue(result.first { it == expected}.length == result.minOf { it.length })
+        assertEquals(expectedLength, result)
     }
 }
