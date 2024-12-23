@@ -1,11 +1,10 @@
 package year2024
 
 import aoc.IAocTaskKt
-import kotlin.math.max
 
 class Day22 : IAocTaskKt {
+    //    override fun getFileName(): String = "aoc2024/input_22.txt"
     override fun getFileName(): String = "aoc2024/input_22.txt"
-    // override fun getFileName(): String = "aoc2024/input_22_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val secretNumbers = lines.map { it.toLong() }.toMutableList()
@@ -47,48 +46,40 @@ class Day22 : IAocTaskKt {
             }
         }
         for (sellerIdx in lines.indices) {
-            for (idx in 1 .. simTime) {
+            for (idx in 1..simTime) {
                 changes[sellerIdx][idx - 1] = pricesHistory[sellerIdx][idx] - pricesHistory[sellerIdx][idx - 1]
             }
         }
-        val possibleSequences = mutableSetOf<Sequence>()
+        val possibleSequencesAndCosts = mutableMapOf<Sequence, List<Long>>()
 
-        for (rowIdx in changes.indices) {
-            val row = changes[rowIdx]
-            val sequences = row.toList().windowed(4, 1)
-                .map { (a, b, c, d) -> Sequence(a, b, c, d) }
-            possibleSequences.addAll(sequences)
-        }
-        println(possibleSequences.size)
-        var mostBananas = 0L
-        for (sequence in possibleSequences) {
-            val bananasGot = getBananasForSequence(sequence, pricesHistory, changes)
-            if (mostBananas < bananasGot) {
-                mostBananas = max(mostBananas, bananasGot)
-            }
-        }
-        println(mostBananas)
-    }
-
-    private fun getBananasForSequence(
-        sequence: Sequence,
-        pricesHistory: Array<LongArray>,
-        changes: Array<LongArray>,
-    ): Long {
-        var bananasCollected = 0L
-
-        for (sellerIdx in changes.indices) {
-            val change = changes[sellerIdx]
-            for (timeIdx in 4..change.lastIndex) {
-                val currentSequence = Sequence(change[timeIdx - 3], change[timeIdx - 2], change[timeIdx - 1], change[timeIdx])
-                if (sequence == currentSequence) {
-                    val price = pricesHistory[sellerIdx][timeIdx + 1]
-                    bananasCollected += price
-                    break
+        for (sellerIdx in secretNumbers.indices) {
+            val sellerSequencesAndCost = mutableMapOf<Sequence, Long>()
+            val sellerChanges = changes[sellerIdx].toList()
+            val sellerHistory = pricesHistory[sellerIdx].toList()
+            sellerChanges
+                .zip(sellerHistory.subList(1, sellerHistory.size))
+                .windowed(4, 1)
+                .map { (p1, p2, p3, p4) ->
+                    val (a, _) = p1
+                    val (b, _) = p2
+                    val (c, _) = p3
+                    val (d, cost) = p4
+                    Pair(Sequence(a, b, c, d), cost)
+                }.onEach { (seq, cost) ->
+                    sellerSequencesAndCost.putIfAbsent(seq, cost)
                 }
+
+            for ((seq, cost) in sellerSequencesAndCost) {
+                possibleSequencesAndCosts.putIfAbsent(seq, emptyList())
+                possibleSequencesAndCosts.computeIfPresent(seq) { _, costs -> costs + cost }
             }
         }
-        return bananasCollected
+
+//        println(possibleSequencesAndCosts[Sequence(-2,1,-1,3)]) // FIXME value for secret "2" is missing
+
+        possibleSequencesAndCosts.entries.maxByOrNull { it.value.sum() }!!
+//            .also { println(it) }
+            .let { println(it.value.sum()) }
     }
 
     data class Sequence(val a: Long, val b: Long, val c: Long, val d: Long)
