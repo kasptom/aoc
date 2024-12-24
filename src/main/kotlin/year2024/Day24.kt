@@ -23,16 +23,16 @@ class Day24 : IAocTaskKt {
 
     private fun compute(
         wireToValue: MutableMap<String, Int>,
-        wirePairToEdges: Map<Set<String>, List<Edge>>,
+        wirePairToEdges: Map<String, List<Edge>>,
     ) {
         var prevCount = 0
 
         while (prevCount != wireToValue.size) {
-            val wires = wireToValue.keys.toList()
+            val wires = wireToValue.keys.toList().sorted()
             prevCount = wireToValue.size
-            for (a in wires) {
-                for (b in wires) {
-                    val wirePair = setOf(a, b)
+            for (i in 0 until wires.size) {
+                for (j in (i + 1) until wires.size) {
+                    val wirePair = wires[i] + ";" + wires[j]
                     if (wirePairToEdges.containsKey(wirePair)) {
                         val edges = wirePairToEdges[wirePair]!!
                         for (edge in edges) {
@@ -45,7 +45,38 @@ class Day24 : IAocTaskKt {
         }
     }
 
-    private fun parse(lines: List<String>): Pair<MutableMap<String, Int>, Map<Set<String>, List<Edge>>> {
+    private fun sumsCorrectly(
+        wirePairToEdges: Map<String, List<Edge>>,
+    ): Boolean {
+        val wireToValue: MutableMap<String, Int> = TEST_INPUT.toMutableMap()
+
+        var prevCount = 0
+
+        while (prevCount != wireToValue.size) {
+            val wires = wireToValue.keys.toList().sorted()
+            prevCount = wireToValue.size
+            for (i in 0 until wires.size) {
+                for (j in (i + 1) until wires.size) {
+                    val wirePair = wires[i] + ";" + wires[j]
+                    if (wirePairToEdges.containsKey(wirePair)) {
+                        val edges = wirePairToEdges[wirePair]!!
+                        for (edge in edges) {
+                            val (wire, value) = edge.compute(wireToValue)
+
+                            if (wire.startsWith("z") && wire != "z45" && value == 1) {
+                                return false
+                            }
+
+                            wireToValue[wire] = value
+                        }
+                    }
+                }
+            }
+        }
+        return true
+    }
+
+    private fun parse(lines: List<String>): Pair<MutableMap<String, Int>, Map<String, List<Edge>>> {
         val wireToValue = mutableMapOf<String, Int>()
         val values = lines.subList(0, lines.indexOfFirst { it.isBlank() })
             .associate { wireValue ->
@@ -101,27 +132,12 @@ class Day24 : IAocTaskKt {
 
         // visualization
         val vertices = (initialWirePairToEdges.values.flatten().map { it.left }
-                        + initialWirePairToEdges.values.flatten().map { it.right }
-                        + initialWirePairToEdges.values.flatten().map { it.dest }).toSet()
+                + initialWirePairToEdges.values.flatten().map { it.right }
+                + initialWirePairToEdges.values.flatten().map { it.dest }).toSet()
         val edges = initialWirePairToEdges.values.flatten().toSet()
-        // visualisation
 //        viewGraph(vertices, edges)
-        // x =   ...111111
-        // y =  ...000001
-        // expected =
-        // z = 1...0000000
-        val input = initialWireToValue.map { (key, _) ->
-            if (key.startsWith("y")) {
-                Pair(key, 1)
-            } else if (key == "x00") {
-                Pair(key, 1)
-            } else if (key.startsWith("x")) {
-                Pair(key, 0)
-            } else {
-                throw IllegalStateException()
-            }
-        }.toMap()
-            .toMutableMap()
+
+        val input = testingInput(initialWireToValue)
         compute(input, wirePairToEdges)
         println(" x=${valueOfWires(input, "x")}")
         println(" y=${valueOfWires(input, "y")}")
@@ -135,12 +151,74 @@ class Day24 : IAocTaskKt {
 
         println(edgesWith06End)
         println(edgesWith23End)
+        val edgeWithZ06 = edgesWith06End[0]
+        val edgeWithZ23 = edgesWith23End[0]
+
+        var newWirePairToEdges = swapEdges(wirePairToEdges, edgeWithZ06, edgeWithZ23)
+        compute(input, newWirePairToEdges)
+
+        println(" x=${valueOfWires(input, "x")}")
+        println(" y=${valueOfWires(input, "y")}")
+        println("z=${valueOfWires(input, "z")}")
+
+        val edgesWithoutDirectInputs = wirePairToEdges.values.flatten()
+            .filter { it.isDirectInputEdge().not() }
+        println("no direct input edges: ${edgesWithoutDirectInputs.size}")
+
+        val selectedEdges = edgesWithoutDirectInputs.groupBy { it.operation }
+        selectedEdges.onEach {
+            println("${it.key} --> ${it.value.size}")
+        }
+
+        for (i in 0 until edgesWithoutDirectInputs.size) {
+            for (j in i + 1 until edgesWithoutDirectInputs.size) {
+                for (k in j + 1 until edgesWithoutDirectInputs.size ) {
+                    for (m in k + 1 until edgesWithoutDirectInputs.size) {
+                        val e1 = edgesWithoutDirectInputs[i]
+                        val e2 = edgesWithoutDirectInputs[j]
+                        val e3 = edgesWithoutDirectInputs[k]
+                        val e4 = edgesWithoutDirectInputs[m]
+
+                        val (f1, f2) = e1.swapOutput(e2)
+                        val (f3, f4) = e3.swapOutput(e4)
+
+
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * x =   ...111111
+     * y =  ...000001
+     * expected =
+     * z = 1...0000000
+     */
+    private fun testingInput(initialWireToValue: MutableMap<String, Int>): MutableMap<String, Int> {
+        val input = initialWireToValue.map { (key, _) ->
+            if (key.startsWith("y")) {
+                Pair(key, 1)
+            } else if (key == "x00") {
+                Pair(key, 1)
+            } else if (key.startsWith("x")) {
+                Pair(key, 0)
+            } else {
+                throw IllegalStateException()
+            }
+        }.toMap()
+            .toMutableMap()
+        return input
+    }
+
+    private fun swapEdges(
+        wirePairToEdges: Map<String, List<Edge>>,
+        edgeWithZ06: Edge,
+        edgeWithZ23: Edge,
+    ): MutableMap<String, MutableList<Edge>> {
         var newWirePairToEdges = wirePairToEdges
             .mapValues { (_, v) -> v.toMutableList() }
             .toMutableMap()
-
-        val edgeWithZ06 = edgesWith06End[0]
-        val edgeWithZ23 = edgesWith23End[0]
 
         val (swappedA, swappedB) = edgeWithZ06.swapOutput(edgeWithZ23)
         newWirePairToEdges[swappedA.wirePair()]!!.remove(edgeWithZ06)
@@ -148,16 +226,16 @@ class Day24 : IAocTaskKt {
 
         newWirePairToEdges[swappedB.wirePair()]!!.remove(edgeWithZ23)
         newWirePairToEdges[swappedB.wirePair()]!!.add(swappedB)
-
-        compute(input, newWirePairToEdges)
-        println(" x=${valueOfWires(input, "x")}")
-        println(" y=${valueOfWires(input, "y")}")
-        println("z=${valueOfWires(input, "z")}")
+        return newWirePairToEdges
     }
 
     data class Edge(val left: String, val right: String, val operation: Operation, val dest: String) {
-        fun wirePair(): Set<String> {
-            return setOf(left, right)
+        fun wirePair(): String {
+            return if (left < right) {
+                "$left;$right"
+            } else {
+                "$right;$left"
+            }
         }
 
         fun compute(wireToValue: MutableMap<String, Int>): Pair<String, Int> {
@@ -175,6 +253,9 @@ class Day24 : IAocTaskKt {
 
         fun operationEdge(): GraphEdge = GraphEdge(left, right, operation.toSymbol())
         fun rightToDestEdge(): GraphEdge = GraphEdge(right, dest, "=")
+        fun isDirectInputEdge(): Boolean =
+            left.startsWith("x") || left.startsWith("y")
+                    || right.startsWith("x") || right.startsWith("y")
 
         enum class Operation {
             XOR, OR, AND;
@@ -245,5 +326,14 @@ class Day24 : IAocTaskKt {
         val writer: Writer = StringWriter()
         exporter.exportGraph(graph, writer)
         println(writer)
+    }
+
+    companion object {
+        val TEST_INPUT = (listOf(Pair("x00", 1)) +
+                (1..44).map {
+                    Pair("x" + it.toString().padStart(2, '0'), 0)
+                } + (0..44).map {
+                    Pair("y" + it.toString().padStart(2, '0'), 1)
+                }).toMap()
     }
 }
