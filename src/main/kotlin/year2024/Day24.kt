@@ -45,9 +45,9 @@ class Day24 : IAocTaskKt {
         }
     }
 
-    private fun sumsCorrectly(
+    private fun findLeastSignificantOne(
         wirePairToEdges: Map<String, List<Edge>>,
-    ): Boolean {
+    ): Int {
         val wireToValue: MutableMap<String, Int> = TEST_INPUT.toMutableMap()
 
         var prevCount = 0
@@ -64,7 +64,7 @@ class Day24 : IAocTaskKt {
                             val (wire, value) = edge.compute(wireToValue)
 
                             if (wire.startsWith("z") && wire != "z45" && value == 1) {
-                                return false
+                                return -1
                             }
 
                             wireToValue[wire] = value
@@ -73,7 +73,8 @@ class Day24 : IAocTaskKt {
                 }
             }
         }
-        return true
+        val zValue = valueOfWires(wireToValue)
+        return zValue.reversed().indexOfFirst { it == '1' }
     }
 
     private fun parse(lines: List<String>): Pair<MutableMap<String, Int>, Map<String, List<Edge>>> {
@@ -109,7 +110,7 @@ class Day24 : IAocTaskKt {
          * A gate can only be in at most one such pair
          *
          * */
-        val (wireToValue, wirePairToEdges) = parse(lines)
+        var (wireToValue, wirePairToEdges) = parse(lines)
 
         compute(wireToValue, wirePairToEdges)
 
@@ -142,24 +143,6 @@ class Day24 : IAocTaskKt {
         println(" x=${valueOfWires(input, "x")}")
         println(" y=${valueOfWires(input, "y")}")
         println("z=${valueOfWires(input, "z")}")
-        // z06 and z023
-        val edgesWith06End = wirePairToEdges.values.flatten().filter { it.dest == "z06" }
-        val edgesWith23End = wirePairToEdges.values.flatten().filter { it.dest == "z23" }
-
-        assert(edgesWith06End.size == 1)
-        assert(edgesWith23End.size == 1)
-
-        println(edgesWith06End)
-        println(edgesWith23End)
-        val edgeWithZ06 = edgesWith06End[0]
-        val edgeWithZ23 = edgesWith23End[0]
-
-        var newWirePairToEdges = swapEdges(wirePairToEdges, edgeWithZ06, edgeWithZ23)
-        compute(input, newWirePairToEdges)
-
-        println(" x=${valueOfWires(input, "x")}")
-        println(" y=${valueOfWires(input, "y")}")
-        println("z=${valueOfWires(input, "z")}")
 
         val edgesWithoutDirectInputs = wirePairToEdges.values.flatten()
             .filter { it.isDirectInputEdge().not() }
@@ -170,23 +153,78 @@ class Day24 : IAocTaskKt {
             println("${it.key} --> ${it.value.size}")
         }
 
-        for (i in 0 until edgesWithoutDirectInputs.size) {
+        val corrected = mutableSetOf<String>()
+        var firstIterationBestEdges = mutableListOf<Triple<Edge, Edge, Int>>()
+        // first iteration
+        var currentBrokenBit = findLeastSignificantOne(wirePairToEdges)
+        for (i in edgesWithoutDirectInputs.indices) {
             for (j in i + 1 until edgesWithoutDirectInputs.size) {
-                for (k in j + 1 until edgesWithoutDirectInputs.size ) {
-                    for (m in k + 1 until edgesWithoutDirectInputs.size) {
-                        val e1 = edgesWithoutDirectInputs[i]
-                        val e2 = edgesWithoutDirectInputs[j]
-                        val e3 = edgesWithoutDirectInputs[k]
-                        val e4 = edgesWithoutDirectInputs[m]
+                val e1 = edgesWithoutDirectInputs[i]
+                val e2 = edgesWithoutDirectInputs[j]
 
-                        val (f1, f2) = e1.swapOutput(e2)
-                        val (f3, f4) = e3.swapOutput(e4)
+                val wires = e1.wires() + e2.wires()
 
+                if (wires.size != 4) {
+                    continue
+                }
 
-                    }
+                val swappedEdges = swapEdges(wirePairToEdges, e1, e2)
+                val firstBrokenBitAfterSwap = findLeastSignificantOne(swappedEdges)
+
+                if (currentBrokenBit < firstBrokenBitAfterSwap) {
+                    println("broken bit increased ($currentBrokenBit -> $firstBrokenBitAfterSwap) for $e1, $e2")
+//                        currentBrokenBit = firstBrokenBitAfterSwap
+                    firstIterationBestEdges.add(Triple(e1, e2, firstBrokenBitAfterSwap))
+//                        currentBrokenBit = firstBrokenBitAfterSwap
+//                        wirePairToEdges = swappedEdges
+//                        break
                 }
             }
+//                if (found) {
+//                    break
+//                }
         }
+        println("SECOND iteration started - candidates")
+        firstIterationBestEdges = firstIterationBestEdges.sortedByDescending { it.third }.toMutableList()
+        firstIterationBestEdges.onEach {
+            println(it)
+        }
+
+        assert(wirePairToEdges == initialWirePairToEdges) { "should be initial but are changed"}
+        for ((it1E1, it1E2) in firstIterationBestEdges) {
+            val secondIterationEdges = swapEdges(wirePairToEdges, it1E1, it1E2)
+            for (i in edgesWithoutDirectInputs.indices) {
+                for (j in i + 1 until edgesWithoutDirectInputs.size) {
+                    val e1 = edgesWithoutDirectInputs[i]
+                    val e2 = edgesWithoutDirectInputs[j]
+
+                    val wires = e1.wires() + e2.wires() + it1E1.wires() + it1E2.wires()
+
+                    if (wires.size != 8) {
+                        continue
+                    }
+
+                    val swappedEdges = swapEdges(secondIterationEdges, e1, e2)
+                    val firstBrokenBitAfterSwap = findLeastSignificantOne(swappedEdges)
+
+                    if (currentBrokenBit < firstBrokenBitAfterSwap) {
+                        println("broken bit increased ($currentBrokenBit -> $firstBrokenBitAfterSwap) for $e1, $e2")
+                        currentBrokenBit = firstBrokenBitAfterSwap
+                        corrected.clear()
+                        corrected.addAll(wires)
+                        println("current corrected: ${corrected.sorted().joinToString(",")}, broken bit: $currentBrokenBit")
+//                        currentBrokenBit = firstBrokenBitAfterSwap
+//                        wirePairToEdges = swappedEdges
+//                        break
+                    }
+                }
+//                if (found) {
+//                    break
+//                }
+            }
+        }
+
+        println(corrected.sorted().joinToString(","))
     }
 
     /**
@@ -213,19 +251,20 @@ class Day24 : IAocTaskKt {
 
     private fun swapEdges(
         wirePairToEdges: Map<String, List<Edge>>,
-        edgeWithZ06: Edge,
-        edgeWithZ23: Edge,
+        e1: Edge,
+        e2: Edge,
     ): MutableMap<String, MutableList<Edge>> {
         var newWirePairToEdges = wirePairToEdges
             .mapValues { (_, v) -> v.toMutableList() }
             .toMutableMap()
 
-        val (swappedA, swappedB) = edgeWithZ06.swapOutput(edgeWithZ23)
-        newWirePairToEdges[swappedA.wirePair()]!!.remove(edgeWithZ06)
-        newWirePairToEdges[swappedA.wirePair()]!!.add(swappedA)
+        val (f1, f2) = e1.swapOutput(e2)
+        newWirePairToEdges[f1.wirePair()]!!.remove(e1)
+        newWirePairToEdges[f1.wirePair()]!!.add(f1)
 
-        newWirePairToEdges[swappedB.wirePair()]!!.remove(edgeWithZ23)
-        newWirePairToEdges[swappedB.wirePair()]!!.add(swappedB)
+        newWirePairToEdges[f2.wirePair()]!!.remove(e2)
+        newWirePairToEdges[f2.wirePair()]!!.add(f2)
+
         return newWirePairToEdges
     }
 
@@ -237,6 +276,8 @@ class Day24 : IAocTaskKt {
                 "$right;$left"
             }
         }
+
+        fun wires() = setOf(left, right)
 
         fun compute(wireToValue: MutableMap<String, Int>): Pair<String, Int> {
             val leftVal = wireToValue[left]!!
@@ -333,7 +374,7 @@ class Day24 : IAocTaskKt {
                 (1..44).map {
                     Pair("x" + it.toString().padStart(2, '0'), 0)
                 } + (0..44).map {
-                    Pair("y" + it.toString().padStart(2, '0'), 1)
-                }).toMap()
+            Pair("y" + it.toString().padStart(2, '0'), 1)
+        }).toMap()
     }
 }
