@@ -11,6 +11,9 @@ import java.io.Writer
 class GraphVisualisation {
     interface GraphVertex : Comparable<GraphVertex> {
         val v: String
+        val label: String
+
+        override fun compareTo(other: GraphVertex): Int = v.compareTo(other.v)
     }
 
     interface GraphEdge {
@@ -44,7 +47,7 @@ class GraphVisualisation {
         exporter.setVertexAttributeProvider { v ->
             val map: MutableMap<String, Attribute> =
                 LinkedHashMap()
-            map["label"] = DefaultAttribute.createAttribute(v.toString())
+            map["label"] = DefaultAttribute.createAttribute(v.label)
 //            map["orientation"] = DefaultAttribute.createAttribute("portrait")
             map
         }
