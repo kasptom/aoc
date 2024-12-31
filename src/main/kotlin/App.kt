@@ -1,6 +1,6 @@
 import aoc.IAocTaskKt
 import utils.InputReader
-import year2023.Day25
+import year2024.Day25
 
 fun main() {
     val task: IAocTaskKt = Day25()
@@ -15,4 +15,3 @@ fun main() {
     val secondPart = System.currentTimeMillis() - time - firstPart
     println("time 2nd part [s]: ${secondPart / 1000.0}")
 }
-
