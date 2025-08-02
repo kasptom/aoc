@@ -2,6 +2,7 @@ package year2021
 
 import aoc.IAocTaskKt
 import kotlin.math.abs
+import java.util.Objects
 
 // Beacon Scanner
 val INITIAL_ROTATION: List<String> = listOf("x", "y", "z")
@@ -31,13 +32,11 @@ class Day19 : IAocTaskKt {
     val translations = mutableListOf<Point3d>()
 
     override fun solvePartOne(lines: List<String>) {
+        val startTime = System.currentTimeMillis()
         val scanners = parseScanners(lines).toMutableList()
-        scanners.forEach(::println)
 
         var scannerX = scanners.removeFirst()
-
         val threshold = 12
-
         val scannersSize = scanners.size
 
         while (scanners.isNotEmpty()) {
@@ -46,18 +45,15 @@ class Day19 : IAocTaskKt {
 
             val foundWithRemovedRotations = foundScanner.withOnlyRotation(rotationCode)
             scannerX = scannerX.mergeWith(foundWithRemovedRotations)
-            println(scannerX)
-            println(scannerX.cubeGrid.rotations[INITIAL_ROTATION])
+
             scanners.removeIf { it.id == foundScanner.id }
             println("progress: ${scannersSize - scanners.size}/$scannersSize (${100.0 * (scannersSize - scanners.size) / scannersSize}[%])")
         }
 
         val allBeacons = scannerX.cubeGrid.rotations.values.first()
 
-        allBeacons.map { it.toString().replace("(", "").replace(")", "") }
-            .sorted().forEach(::println)
-
         println("done: ${allBeacons.size}")
+        println("Execution time: ${(System.currentTimeMillis() - startTime) / 1000.0} seconds")
     }
 
     @Suppress("SameParameterValue")
@@ -68,31 +64,35 @@ class Day19 : IAocTaskKt {
     ): Pair<Scanner, List<String>>? {
 
         for (scanner in scanners.filter { it.id != scannerX.id }) {
-
-
             val scannerXPoints = scannerX.cubeGrid.rotations[INITIAL_ROTATION]!!
-            val otherScannerPoints = scanner.cubeGrid.rotations.values.flatten()
-//            val translations = otherScannerPoints
-//                .map { point -> scannerXPoints.map { it - point } }
-//                .flatten()
-//            for (translation in translations) {
+            val translationFrequency = mutableMapOf<Point3d, Int>()
 
-            println("possible translations count: ${scannerXPoints.size * otherScannerPoints.size}")
-            for (scannerXPoint in scannerXPoints) {
-                for (otherScannerPoint in otherScannerPoints) {
-                    val translation = scannerXPoint - otherScannerPoint
-                    val translatedScanner = scanner.translate(translation)
-                    val commonPointsRotationCode = scannerX.commonPoints(translatedScanner, threshold)
-                    val commonPointsCount: Int = translatedScanner.getRotationByCode(commonPointsRotationCode).count()
-                    if (commonPointsCount >= threshold) {
-    //                    println("for $scannerX")
-                        println("found scanner $translatedScanner ")
-                        println("with $commonPointsCount")
-                        println("with code $commonPointsRotationCode")
-                        return Pair(translatedScanner, commonPointsRotationCode)
+            for ((rotationCode, otherScannerRotatedPoints) in scanner.cubeGrid.rotations) {
+                translationFrequency.clear()
+
+                for (scannerXPoint in scannerXPoints) {
+                    for (otherPoint in otherScannerRotatedPoints) {
+                        val translation = scannerXPoint - otherPoint
+                        translationFrequency[translation] = translationFrequency.getOrDefault(translation, 0) + 1
+                    }
                 }
-            }
-//                }
+
+                val mostCommonTranslation = translationFrequency.entries
+                    .filter { it.value >= threshold }
+                    .maxByOrNull { it.value }
+
+                if (mostCommonTranslation != null) {
+                    val translation = mostCommonTranslation.key
+                    val translatedScanner = scanner.translate(translation)
+
+                    // Verify the match
+                    val commonPoints = scannerXPoints.intersect(translatedScanner.cubeGrid.rotations[rotationCode]!!)
+                    if (commonPoints.size >= threshold) {
+                        // Reduce logging to improve performance
+                        println("Found scanner ${scanner.id} with ${commonPoints.size} common points")
+                        return Pair(translatedScanner, rotationCode)
+                    }
+                }
             }
         }
         return null
@@ -112,37 +112,41 @@ class Day19 : IAocTaskKt {
         }.map(Scanner::parse)
 
     data class Scanner(val id: Int, val cubeGrid: CubeGrid) {
+        private val translationCache = mutableMapOf<Point3d, Scanner>()
+        private val rotationCache = mutableMapOf<List<String>, Scanner>()
+
         fun translate(translation: Point3d): Scanner {
-            val newCubeGrid = cubeGrid.translate(translation)
-            return Scanner(id, newCubeGrid)
+            return translationCache.getOrPut(translation) {
+                val newCubeGrid = cubeGrid.translate(translation)
+                Scanner(id, newCubeGrid)
+            }
         }
 
         fun withOnlyRotation(defaultRotationKey: List<String> = INITIAL_ROTATION): Scanner {
-            val initialRotation = cubeGrid.rotations[defaultRotationKey]!!
-            val newGrid = CubeGrid(initialRotation,
-                cubeGrid.translation,
-                rotations = mapOf(defaultRotationKey to initialRotation))
-            return Scanner(id, newGrid)
-        }
-
-        fun commonPoints(other: Scanner, threshold: Int): List<String> {
-            return cubeGrid.commonPointsRotationKey(other.cubeGrid, threshold)
+            return rotationCache.getOrPut(defaultRotationKey) {
+                val initialRotation = cubeGrid.rotations[defaultRotationKey]!!
+                val newGrid = CubeGrid(initialRotation,
+                    cubeGrid.translation,
+                    rotations = mapOf(defaultRotationKey to initialRotation))
+                Scanner(id, newGrid)
+            }
         }
 
         override fun toString(): String {
             return "Scanner(id=$id, $cubeGrid)"
         }
 
-        fun getRotationByCode(code: List<String>): Set<Point3d> {
-            return cubeGrid.rotations[code] ?: emptySet()
-        }
-
         fun mergeWith(foundScanner: Scanner): Scanner {
-            val mergedSingleRotation =
-                cubeGrid.rotations.values.first() + foundScanner.cubeGrid.rotations.values.first()
-            val newGrid = CubeGrid(mergedSingleRotation,
+            val myPoints = cubeGrid.rotations.values.first()
+            val otherPoints = foundScanner.cubeGrid.rotations.values.first()
+
+            val mergedPoints = HashSet<Point3d>(myPoints.size + otherPoints.size)
+            mergedPoints.addAll(myPoints)
+            mergedPoints.addAll(otherPoints)
+
+            val newGrid = CubeGrid(mergedPoints,
                 cubeGrid.translation,
-                rotations = mapOf(INITIAL_ROTATION to mergedSingleRotation))
+                rotations = mapOf(INITIAL_ROTATION to mergedPoints))
 
             return Scanner(id, cubeGrid = newGrid)
         }
@@ -161,7 +165,11 @@ class Day19 : IAocTaskKt {
     }
 
     data class Point3d(val x: Int, val y: Int, val z: Int) {
-        fun toVector(): List<Int> = listOf(x, y, z)
+        private val cachedHashCode: Int = Objects.hash(x, y, z)
+        private val cachedVector by lazy { listOf(x, y, z) }
+
+        fun toVector(): List<Int> = cachedVector
+
         override fun toString(): String {
             return "($x,$y,$z)"
         }
@@ -169,10 +177,21 @@ class Day19 : IAocTaskKt {
         operator fun plus(point: Point3d) = Point3d(x + point.x, y + point.y, z + point.z)
         operator fun minus(point: Point3d) = Point3d(x - point.x, y - point.y, z - point.z)
 
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is Point3d) return false
+            return x == other.x && y == other.y && z == other.z
+        }
+
+        override fun hashCode(): Int = cachedHashCode
+
         companion object {
+            private val parseCache = mutableMapOf<String, Point3d>()
             fun parse(line: String): Point3d {
-                val (x, y, z) = line.split(",").filter(String::isNotBlank).map(String::toInt)
-                return Point3d(x, y, z)
+                return parseCache.getOrPut(line) {
+                    val (x, y, z) = line.split(",").filter(String::isNotBlank).map(String::toInt)
+                    Point3d(x, y, z)
+                }
             }
         }
 
@@ -184,22 +203,12 @@ class Day19 : IAocTaskKt {
         val translation: Point3d,
         val rotations: Map<List<String>, Set<Point3d>> = createRotations(points, translation),
     ) {
+        private val translationCache = mutableMapOf<Point3d, CubeGrid>()
+
         fun translate(translation: Point3d): CubeGrid {
-            return CubeGrid(rotations[INITIAL_ROTATION]!!, translation)
-        }
-
-        fun commonPointsRotationKey(other: CubeGrid, threshold: Int): List<String> {
-            val firstRotation = rotations.values.first()
-
-            val fittingRotation = other.rotations
-                .keys
-                .firstOrNull { key ->
-                    other.rotations[key]!!
-                        .intersect(firstRotation)
-                        .count() >= threshold
-                }
-
-            return fittingRotation ?: emptyList()
+            return translationCache.getOrPut(translation) {
+                CubeGrid(rotations[INITIAL_ROTATION]!!, translation)
+            }
         }
 
         override fun toString(): String {
@@ -207,6 +216,7 @@ class Day19 : IAocTaskKt {
         }
 
         companion object {
+            private val rotationCache = mutableMapOf<Set<Point3d>, Map<List<String>, Set<Point3d>>>()
             private val RIGHT_HAND_ROTATIONS = listOf(
                 listOf("x", "y", "z"), listOf("x", "-y", "-z"), listOf("-x", "y", "-z"), listOf("-x", "-y", "z"),
                 listOf("y", "x", "-z"), listOf("-y", "x", "z"), listOf("y", "-x", "z"), listOf("-y", "-x", "-z"),
@@ -217,14 +227,32 @@ class Day19 : IAocTaskKt {
             ).map(Rotation::create)
 
             fun createRotations(points: Set<Point3d>, translation: Point3d): Map<List<String>, Set<Point3d>> {
-                return RIGHT_HAND_ROTATIONS.map { rotation -> rotate(points, rotation) }
-                    .map { Pair(it.first.code, it.second.map { point -> point + translation }) }
-                    .groupBy({ it.first }) { it.second }
-                    .mapValues { it.value.flatten().toSet() }
-            }
+                if (translation == Point3d(0, 0, 0)) {
+                    points
+                } else {
+                    points.map { it + translation }.toSet()
+                }
 
-            private fun rotate(points: Set<Point3d>, rotation: Rotation): Pair<Rotation, Set<Point3d>> =
-                Pair(rotation, points.map { point -> rotation.rotate(point) }.toSet())
+                return rotationCache.getOrPut(points) {
+                    val rotationsMap = mutableMapOf<List<String>, MutableSet<Point3d>>()
+                    for (point in points) {
+                        for (rotation in RIGHT_HAND_ROTATIONS) {
+                            val rotatedPoint = rotation.rotate(point)
+                            rotationsMap.getOrPut(rotation.code) { mutableSetOf() }.add(rotatedPoint)
+                        }
+                    }
+
+                    rotationsMap
+                }.let { rotationsMap ->
+                    if (translation == Point3d(0, 0, 0)) {
+                        rotationsMap
+                    } else {
+                        rotationsMap.mapValues { (_, points) -> 
+                            points.map { it + translation }.toSet() 
+                        }
+                    }
+                }
+            }
         }
 
         data class Rotation(
@@ -270,12 +298,23 @@ class Day19 : IAocTaskKt {
 
     override fun solvePartTwo(lines: List<String>) {
         val distance = findLargestManhattanDistance(translations)
-        println("translations: $translations")
         println(distance)
     }
 
     fun findLargestManhattanDistance(translations: MutableList<Point3d>): Int {
-        return (translations)
-            .maxOf { point -> translations.maxOf { other -> (point - other).manhattan() } }
+        var maxDistance = 0
+
+        for (i in 0 until translations.size - 1) {
+            val point = translations[i]
+            for (j in i + 1 until translations.size) {
+                val other = translations[j]
+                val distance = (point - other).manhattan()
+                if (distance > maxDistance) {
+                    maxDistance = distance
+                }
+            }
+        }
+
+        return maxDistance
     }
 }
