@@ -6,7 +6,7 @@ plugins {
 group 'com.github.kasptom'
 version '1.0-SNAPSHOT'
 
-sourceCompatibility = 17
+sourceCompatibility = 11
 
 repositories {
     mavenCentral()
