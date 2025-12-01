@@ -6,17 +6,18 @@ import kotlin.math.max
 import kotlin.math.min
 
 class Day23 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2021/input_23.txt"
+    override fun getFileName(): String = "aoc2021/input_23_test.txt"
 
-    /**
-     * That's not the right answer; your answer is too high. If you're stuck, make sure you're using the full input data;
-     * there are also some general tips on the about page, or you can ask for hints on the subreddit.
-     * Please wait one minute before trying again. (You guessed 15556.) [Return to Day 23]
-     */
     override fun solvePartOne(lines: List<String>) {
+        // reset state for part 1
+        vertexToMinEnergy.clear()
+        childToParent.clear()
+        MAX_COST = Int.MAX_VALUE / 2
+        HEIGHT = 5
+        grid = Array(5) { CharArray(13) }
         loadGrid(lines)
         fillPadding(grid)
-        displayGrid(grid)
+        // displayGrid(grid)
 
         val startVertex = createInitialState()
 
@@ -34,9 +35,9 @@ class Day23 : IAocTaskKt {
 
         for (edge in fromParentToChild.windowed(2)) {
             setGrid(edge[1])
-            println(edge[0])
-            println("cost delta ${edge[1].energy() - edge[0].energy()}")
-            displayGrid(grid)
+//            println(edge[0])
+//            println("cost delta ${edge[1].energy() - edge[0].energy()}")
+//            displayGrid(grid)
         }
 
         println("Smallest cost found: ${vertexToMinEnergy.getOrDefault(endVertex, -1)}")
@@ -64,15 +65,8 @@ class Day23 : IAocTaskKt {
         notVisited.add(initialVertex)
 
         while (notVisited.isNotEmpty()) {
-            val notVisitedSize = notVisited.size
-            if (notVisitedSize % 100 == 0 || notVisitedSize < 1000) {
-                println("not visited vertices: $notVisitedSize")
-            }
 
             val toVisit = notVisited.pollFirst()!!
-
-//            println("next visited $toVisit")
-//            displayGrid(grid)
             setGrid(toVisit)
 
             val toVisitList = toVisit.toList()
@@ -86,7 +80,6 @@ class Day23 : IAocTaskKt {
 
                     if (amphipod.isBlockedInOtherRoom()) continue
                     if (amphipod.shouldStayInTheBottomOfTheRoom()) continue
-                    if (amphipod.cheaperLetterHasOpenWay(toVisitList)) continue
 
                     val movedAmphipod = amphipod.move(move)
 
@@ -162,6 +155,7 @@ class Day23 : IAocTaskKt {
         }
     }
 
+    @Suppress("unused")
     private fun displayGrid(grid: Array<CharArray>) {
         for (y in 0 until HEIGHT) {
             for (x in 0 until WIDTH) {
@@ -183,6 +177,9 @@ class Day23 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
+        vertexToMinEnergy.clear()
+        childToParent.clear()
+
         val modifiedLines = lines.subList(0, 3) +
                 listOf("###D#C#B#A###", "###D#B#A#C###") +
                 lines.subList(3, 5)
@@ -220,7 +217,6 @@ class Day23 : IAocTaskKt {
 
         loadGrid(modifiedLines)
         fillPadding(grid)
-        displayGrid(grid)
 
         val startVertex = createInitialState()
 
@@ -238,29 +234,31 @@ class Day23 : IAocTaskKt {
 
         for (edge in fromParentToChild.windowed(2)) {
             setGrid(edge[1])
-            println(edge[0])
-            println("cost delta ${edge[1].energy() - edge[0].energy()}")
-            displayGrid(grid)
+//            println(edge[0])
+//            println("cost delta ${edge[1].energy() - edge[0].energy()}")
+//            displayGrid(grid)
         }
 
         println("Smallest cost found: ${vertexToMinEnergy.getOrDefault(endVertex, -1)}")
     }
 
     data class Amphipod(val position: Position, val type: Char, val usedEnergy: Int, val stepsFromParent: Int) {
-        fun isFree(move: Position): Boolean {
-            return grid[move.y][move.x] == '.'
+        private fun hallwayClear(fromX: Int, toX: Int): Boolean {
+            val start = min(fromX, toX)
+            val end = max(fromX, toX)
+            for (x in start..end) {
+                if (x == fromX) continue
+                if (grid[1][x] != '.') return false
+            }
+            return true
         }
-
-        fun isHallwayPosition(pos: Position) = HALLWAY_ENTRANCES.contains(pos)
 
         fun move(destination: Position): Amphipod {
             if (position == destination) throw IllegalStateException("moving to the same position $position")
-            val energyToUse =
-                if (position.manhattan(destination) > 1) AMPHIPOD_TO_ENERGY_STEP[type]!! * 2 else AMPHIPOD_TO_ENERGY_STEP[type]!!
-//            println("moving $this: $position -> $destination")
+            val distance = position.manhattan(destination)
+            val energyToUse = AMPHIPOD_TO_ENERGY_STEP[type]!! * distance
             if (usedEnergy + energyToUse < 0) throw IllegalStateException("used + toUse < 0")
-            val stepIncr = if (position.manhattan(destination) > 1) 2 else 1
-            return Amphipod(destination, type, usedEnergy + energyToUse, stepsFromParent + stepIncr)
+            return Amphipod(destination, type, usedEnergy + energyToUse, stepsFromParent + 1)
         }
 
         override fun equals(other: Any?): Boolean {
@@ -280,29 +278,92 @@ class Day23 : IAocTaskKt {
         }
 
         fun nextPossiblePositions(): List<Position> {
-            val nextPositions = MOVES.map { move -> move + position }
-                .filter { pos -> isFree(pos) && isNotCurrent(pos) }
-                .map { pos ->
-                    if (isHallwayPosition(pos))
-                        listOf(pos + Position(-1, 0), pos + Position(1, 0), pos + Position(0, 1))
-                            .filter { offset -> isFree(offset) && isNotCurrent(offset) }
-                    else if (isNotCurrent(pos)) listOf(pos)
-                    else emptyList()
-                }
-                .flatten()
-                .filter { pos -> !isForbiddenMoveIntoOtherRoom(pos) }
-                .filter { pos -> !isRoomOccupiedByIntruderMove(pos) }
+            val results = mutableListOf<Position>()
 
-            return nextPositions
+            // If in hallway, try to go directly into own room (if possible)
+            if (position.y == 1) {
+                val roomX = LETTER_TO_ROOM[type]!!
+                if (!isRoomOccupiedByIntruder()) {
+                    checkHallwayBetweenXAndRoomEntranceIsClear(roomX, results)
+                }
+                return results
+            }
+
+            // If in a room
+            if (position.y >= 2) {
+                if (shouldStayInTheBottomOfTheRoom()) {
+                    return emptyList()
+                }
+
+                for (y in position.y - 1 downTo 2) {
+                    if (grid[y][position.x] != '.') {
+                        return emptyList()
+                    }
+                }
+                if (grid[1][position.x] != '.') {
+                    return emptyList()
+                }
+                scanLeft(position.x, results)
+                scanRight(position.x, results)
+            }
+
+            return results
         }
 
-        private fun isRoomOccupiedByIntruderMove(pos: Position): Boolean {
-            val roomIdx = LETTER_TO_ROOM[type]!!
-            if (pos.x != roomIdx || pos.y == 1) return false
-            for (y in 2..HEIGHT - 2) {
-                if (grid[y][roomIdx] != '.' && grid[y][roomIdx] != type) return true
+        private fun checkHallwayBetweenXAndRoomEntranceIsClear(roomX: Int, results: MutableList<Position>) {
+            if (hallwayClear(position.x, roomX)) {
+                val targetY = findDeepestSpotInRoomColumn(roomX)
+                if (targetY != -1) {
+                    var clear = true
+                    for (y in 2..targetY) {
+                        if (grid[y][roomX] != '.') {
+                            clear = false; break
+                        }
+                    }
+                    if (clear) {
+                        results.add(Position(roomX, targetY))
+                    }
+                }
             }
-            return false
+        }
+
+        private fun findDeepestSpotInRoomColumn(roomX: Int): Int {
+            var targetY = -1
+            for (y in HEIGHT - 2 downTo 2) {
+                if (grid[y][roomX] == '.') {
+                    targetY = y
+                    break
+                }
+                if (grid[y][roomX] != type && grid[y][roomX] != '.') {
+                    targetY = -1
+                    break
+                }
+            }
+            return targetY
+        }
+
+        private fun scanRight(x: Int, results: MutableList<Position>): Int {
+            var x1 = x
+            while (x1 < WIDTH - 2) {
+                x1++
+                if (grid[1][x1] != '.') break
+                if (!LETTER_TO_ROOM.values.contains(x1)) {
+                    results.add(Position(x1, 1))
+                }
+            }
+            return x1
+        }
+
+        private fun scanLeft(x: Int, results: MutableList<Position>): Int {
+            var x1 = x
+            while (x > 1) {
+                x1--
+                if (grid[1][x1] != '.') break
+                if (!LETTER_TO_ROOM.values.contains(x1)) {
+                    results.add(Position(x1, 1))
+                }
+            }
+            return x1
         }
 
         private fun isRoomOccupiedByIntruder(): Boolean {
@@ -311,16 +372,6 @@ class Day23 : IAocTaskKt {
                 if (grid[y][roomIdx] != '.' && grid[y][roomIdx] != type) return true
             }
             return false
-        }
-
-        private fun isForbiddenMoveIntoOtherRoom(pos: Position): Boolean {
-            if (position.y >= 2) return false // already in a room - good or bad
-            if (pos.y >= 2 && pos.x != LETTER_TO_ROOM[type]!!) return true
-            return false
-        }
-
-        private fun isNotCurrent(pos: Position): Boolean {
-            return pos != position
         }
 
         override fun toString(): String {
@@ -334,25 +385,6 @@ class Day23 : IAocTaskKt {
 
             for (y in position.y + 1..HEIGHT - 2) {
                 if (grid[y][roomIdx] != type) return false
-            }
-            return true
-        }
-
-        fun cheaperLetterHasOpenWay(toVisitList: List<Amphipod>): Boolean {
-            for (letter in 'A'..type) {
-                val toCheck = toVisitList.filter { it.type == letter && it.position.y == 1 && it.position != position }
-                if (toCheck.any { !it.isRoomOccupiedByIntruder() && it.hasFreeWayToRoom() }) return true
-            }
-            return false
-        }
-
-        private fun hasFreeWayToRoom(): Boolean {
-            val fromPosition = min(position.x, LETTER_TO_ROOM[type]!!)
-            val targetPosition = max(position.x, LETTER_TO_ROOM[type]!!)
-            for (x in fromPosition..targetPosition) {
-                if (x == position.x) continue
-                if (grid[1][x] == '.') continue
-                return false
             }
             return true
         }
@@ -398,16 +430,7 @@ class Day23 : IAocTaskKt {
             'D' to 1000
         )
 
-        val HALLWAY_ENTRANCES = listOf(
-            Position(3, 1),
-            Position(5, 1),
-            Position(7, 1),
-            Position(9, 1),
-        )
-
         const val WIDTH = 13
-
-        val MOVES = listOf(Position(0, 1), Position(1, 0), Position(0, -1), Position(-1, 0))
     }
 
 
