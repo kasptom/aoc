@@ -8,14 +8,14 @@ class Day02 : IAocTaskKt{
 
     override fun solvePartOne(lines: List<String>) {
         val invalidIds = lines.first().trim().split(",").map {
-            findIvalidIds(it.trim())
+            findInvalidIds(it.trim())
         }
-        println(invalidIds)
+        // println(invalidIds)
         val sum = invalidIds.flatten().sum()
         println(sum)
     }
 
-    private fun findIvalidIds(it: String): List<Long> {
+    private fun findInvalidIds(it: String): List<Long> {
         val (fromStr, toStr) = it.split("-")
         val (from, to) = Pair(fromStr.toLong(), toStr.toLong())
         val invalid = mutableListOf<Long>()
@@ -32,6 +32,30 @@ class Day02 : IAocTaskKt{
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        println("part 2 - 02")
+        val invalidIds = lines.first().trim().split(",").map {
+            findInvalidIds2(it.trim())
+        }
+        // println(invalidIds)
+        val sum = invalidIds.flatten().sum()
+        println(sum)
+    }
+
+    private fun findInvalidIds2(line: String): List<Long> {
+        val (fromStr, toStr) = line.split("-")
+        val (from, to) = Pair(fromStr.toLong(), toStr.toLong())
+        val invalid = mutableListOf<Long>()
+        for (i in from..to) {
+            val idStr = i.toString()
+            for (length in 1..(idStr.length / 2)) {
+                if (idStr.length % length == 1) {
+                    continue
+                }
+                if (idStr.take(length).repeat(idStr.length / length) == idStr) {
+                    invalid.add(idStr.toLong())
+                    break
+                }
+            }
+        }
+        return invalid
     }
 }
