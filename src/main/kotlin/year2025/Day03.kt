@@ -20,23 +20,16 @@ class Day03 : IAocTaskKt {
         val digits = line.chunked(1)
             .filter { it.isNotBlank() }
             .map(String::toInt)
-        var maxIdx1 = 0
-        var maxIdx2 = 1
-        var i = 0
-        while (i < digits.size - 1) {
-            if (digits[i] > digits[maxIdx1]) {
-                maxIdx1 = i
+        var maxValue = digits[0] * 10 + digits[1]
+        for (i in 0 until digits.size) {
+            for (j in i + 1 until digits.size) {
+                val value = 10 * digits[i] + digits[j]
+                if (value > maxValue) {
+                    maxValue = value
+                }
             }
-            i++
         }
-        var j = maxIdx1 + 1
-        while (j < digits.size) {
-            if (digits[j] > digits[maxIdx2]) {
-                maxIdx2 = j
-            }
-            j++
-        }
-        return 10 * digits[maxIdx1] + digits[maxIdx2]
+        return maxValue
     }
 
     override fun solvePartTwo(lines: List<String>) {
