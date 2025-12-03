@@ -9,31 +9,41 @@ class Day03 : IAocTaskKt {
         val maxJoltages = lines
             .filter { it.isNotBlank() }
             .map {
-            Pair(it, maxJoltage(it))
+            Pair(it, maxJoltage(it, 2))
         }
-            .onEach { println(it) }
-            .map { it.second }
+            // .onEach { println(it) }
+            .map { it.second.toLong() }
         println(maxJoltages.sum())
     }
 
-    private fun maxJoltage(line: String): Int {
-        val digits = line.chunked(1)
+    override fun solvePartTwo(lines: List<String>) {
+        val maxJoltages = lines
             .filter { it.isNotBlank() }
-            .map(String::toInt)
-        var maxValue = digits[0] * 10 + digits[1]
-        for (i in 0 until digits.size) {
-            for (j in i + 1 until digits.size) {
-                val value = 10 * digits[i] + digits[j]
-                if (value > maxValue) {
-                    maxValue = value
+            .map {
+                Pair(it, maxJoltage(it, 12))
+            }
+            // .onEach { println(it) }
+            .map { it.second.toLong() }
+        println(maxJoltages.sum())
+    }
+
+    private fun maxJoltage(digits: String, length: Int): String {
+        val n = digits.length
+        val result = StringBuilder()
+        var start = 0
+        for (i in 0 until length) {
+            val end = n - (length - i) + 1
+            var maxChar = '0'
+            var maxIdx = start
+            for (j in start until end) {
+                if (digits[j] > maxChar) {
+                    maxChar = digits[j]
+                    maxIdx = j
                 }
             }
+            result.append(maxChar)
+            start = maxIdx + 1
         }
-        return maxValue
+        return result.toString()
     }
-
-    override fun solvePartTwo(lines: List<String>) {
-        println("TODO")
-    }
-
 }
