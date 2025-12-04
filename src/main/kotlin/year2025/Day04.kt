@@ -23,7 +23,11 @@ class Day04 : IAocTaskKt {
         for (idx in DX.indices) {
             val neighY = y + DY[idx]
             val neighX = x + DX[idx]
-            if (neighX in 0 until grid[0].size && neighY in 0 until grid.size && grid[neighY][neighX] == "@") {
+            if (neighX in 0 until grid[0].size && neighY in 0 until grid.size && grid[neighY][neighX] in setOf(
+                    "@",
+                    "x"
+                )
+            ) {
                 count++
             }
         }
@@ -31,7 +35,31 @@ class Day04 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val grid = lines.map { it.chunked(1).toMutableList() }
+            .toMutableList()
+
+        var atLeastOneRemoved = true
+        var total = 0
+        while (atLeastOneRemoved) {
+            atLeastOneRemoved = false
+            for (y in grid.indices) {
+                for (x in grid[y].indices) {
+                    if (grid[y][x] == "@" && countAdjacent(grid, x, y) < 4) {
+                        grid[y][x] = "x"
+                        atLeastOneRemoved = true
+                        total++
+                    }
+                }
+            }
+            for (y in grid.indices) {
+                for (x in grid[y].indices) {
+                    if (grid[y][x] == "x") {
+                        grid[y][x] = "."
+                    }
+                }
+            }
+        }
+        println(total)
     }
 
     companion object {
