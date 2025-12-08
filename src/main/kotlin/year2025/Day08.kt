@@ -5,7 +5,7 @@ import java.util.*
 import kotlin.math.sqrt
 
 class Day08 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2025/input_08.txt"
+    override fun getFileName(): String = "aoc2025/input_08_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val connections = if (getFileName() == "aoc2025/input_08_test.txt") 10 else 1000
@@ -28,17 +28,48 @@ class Day08 : IAocTaskKt {
             }
         }
 //        distanceToPair.forEach { (distance, pairs) -> println("$distance -> $pairs") }
-        val topConnections = mutableListOf<Pair<Point, Point>>()
 
-        (1..connections).forEach { _ ->
-            val (dist, list) = distanceToPair.firstEntry()
-            val first = list.removeFirst()
-            if (list.isEmpty()) {
-                distanceToPair.remove(dist)
+        val groups = mutableListOf<MutableSet<Point>>()
+        var counter = 0
+
+        while (counter < connections) {
+            val connection = getNextConnection(distanceToPair)
+            val existingGroup = groups.firstOrNull { it.contains(connection.first) }
+            val existingSecondGroup = groups.firstOrNull { it.contains(connection.second) }
+            if (existingGroup != null && existingSecondGroup != null && existingGroup.first() == existingSecondGroup.first()) {
+                continue
             }
-            topConnections.add(first)
+
+            counter++
+            if (existingGroup != null && existingSecondGroup != null) {
+                groups.remove(existingSecondGroup)
+                existingGroup.addAll(existingSecondGroup)
+            } else
+                if (existingGroup != null){
+                existingGroup.add(connection.second)
+            } else if (existingSecondGroup != null) {
+                existingSecondGroup.add(connection.first)
+            } else {
+                val set = mutableSetOf<Point>()
+                set.add(connection.first)
+                set.add(connection.second)
+                groups.add(set)
+            }
         }
-        println(topConnections)
+        val topThree = groups.sortedByDescending { it.size }
+            .subList(0, 3)
+        println(topThree)
+        println(topThree.map { it.size })
+        println(topThree.map { it.size }.fold(1) { acc, i -> acc * i })
+    }
+
+    private fun getNextConnection(distanceToPair: TreeMap<Double, MutableList<Pair<Point, Point>>>): Pair<Point, Point> {
+        val (dist, list) = distanceToPair.firstEntry()
+        val first = list.removeFirst()
+        if (list.isEmpty()) {
+            distanceToPair.remove(dist)
+        }
+        return first
     }
 
     override fun solvePartTwo(lines: List<String>) {
