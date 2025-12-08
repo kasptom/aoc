@@ -5,7 +5,7 @@ import java.util.*
 import kotlin.math.sqrt
 
 class Day08 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2025/input_08_test.txt"
+    override fun getFileName(): String = "aoc2025/input_08.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val connections = if (getFileName() == "aoc2025/input_08_test.txt") 10 else 1000
@@ -34,18 +34,19 @@ class Day08 : IAocTaskKt {
 
         while (counter < connections) {
             val connection = getNextConnection(distanceToPair)
+            counter++
+
             val existingGroup = groups.firstOrNull { it.contains(connection.first) }
             val existingSecondGroup = groups.firstOrNull { it.contains(connection.second) }
-            if (existingGroup != null && existingSecondGroup != null && existingGroup.first() == existingSecondGroup.first()) {
+
+            if (existingGroup != null && existingSecondGroup != null && existingGroup === existingSecondGroup) {
                 continue
             }
 
-            counter++
             if (existingGroup != null && existingSecondGroup != null) {
                 groups.remove(existingSecondGroup)
                 existingGroup.addAll(existingSecondGroup)
-            } else
-                if (existingGroup != null){
+            } else if (existingGroup != null) {
                 existingGroup.add(connection.second)
             } else if (existingSecondGroup != null) {
                 existingSecondGroup.add(connection.first)
