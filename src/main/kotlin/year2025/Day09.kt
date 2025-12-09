@@ -22,9 +22,13 @@ class Day09 : IAocTaskKt {
     override fun solvePartTwo(lines: List<String>) {
         val points = lines.map(Point::parse)
         var maxSurface = 0L
-        for (a in points) {
-            for (b in points) {
-                if (a != b && rectangleIsWithinShoelace(a, b, points)) {
+
+        for (i in points.indices) {
+            for (j in (i + 1) until points.size) {
+                val a = points[i]
+                val b = points[j]
+
+                if (rectangleIsWithinShoelace(a, b, points)) {
                     maxSurface = maxSurface.coerceAtLeast(a * b)
                 }
             }
@@ -38,6 +42,8 @@ class Day09 : IAocTaskKt {
         val y1 = kotlin.math.min(a.y, b.y)
         val y2 = kotlin.math.max(a.y, b.y)
 
+        if (x1 == x2 || y1 == y2) return false
+
         val corners = listOf(
             Point(x1, y1),
             Point(x2, y1),
@@ -49,19 +55,27 @@ class Day09 : IAocTaskKt {
     }
 
     private fun pointInOrOnPolygon(point: Point, polygon: List<Point>): Boolean {
+        for (i in polygon.indices) {
+            val p1 = polygon[i]
+            val p2 = polygon[(i + 1) % polygon.size]
+            if (isPointOnLineSegment(point, p1, p2)) {
+                return true
+            }
+        }
+
+        return pointInPolygonInteger(point, polygon)
+    }
+
+    private fun pointInPolygonInteger(point: Point, polygon: List<Point>): Boolean {
         var inside = false
         var p1 = polygon.last()
 
         for (p2 in polygon) {
-            if (isPointOnLineSegment(point, p1, p2)) {
-                return true
-            }
-
-            // ray casting
-            if ((p2.y > point.y) != (p1.y > point.y) &&
-                point.x < (p1.x - p2.x).toDouble() * (point.y - p2.y).toDouble() / (p1.y - p2.y).toDouble() + p1.x
-            ) {
-                inside = !inside
+            if ((p2.y > point.y) != (p1.y > point.y)) {
+                val crossX = (p1.x - p2.x) * (point.y - p2.y) / (p1.y - p2.y) + p2.x
+                if (point.x < crossX) {
+                    inside = !inside
+                }
             }
             p1 = p2
         }
@@ -70,8 +84,8 @@ class Day09 : IAocTaskKt {
     }
 
     private fun isPointOnLineSegment(point: Point, p1: Point, p2: Point): Boolean {
-        val scalarProduct = (point.y - p1.y) * (p2.x - p1.x) - (point.x - p1.x) * (p2.y - p1.y)
-        if (scalarProduct != 0L) {
+        val crossProduct = (point.y - p1.y) * (p2.x - p1.x) - (point.x - p1.x) * (p2.y - p1.y)
+        if (crossProduct != 0L) {
             return false
         }
 
