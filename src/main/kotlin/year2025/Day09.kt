@@ -2,7 +2,6 @@ package year2025
 
 import aoc.IAocTaskKt
 import kotlin.math.abs
-import kotlin.math.max
 
 class Day09 : IAocTaskKt {
     override fun getFileName(): String = "aoc2025/input_09.txt"
@@ -21,12 +20,70 @@ class Day09 : IAocTaskKt {
     }
 
     override fun solvePartTwo(lines: List<String>) {
-        TODO("Not yet implemented")
+        val points = lines.map(Point::parse)
+        var maxSurface = 0L
+        for (a in points) {
+            for (b in points) {
+                if (a != b && rectangleIsWithinShoelace(a, b, points)) {
+                    maxSurface = maxSurface.coerceAtLeast(a * b)
+                }
+            }
+        }
+        println(maxSurface)
     }
 
-    data class Point(val x: Long, val y: Long): Comparable<Point> {
+    private fun rectangleIsWithinShoelace(a: Point, b: Point, points: List<Point>): Boolean {
+        val x1 = kotlin.math.min(a.x, b.x)
+        val x2 = kotlin.math.max(a.x, b.x)
+        val y1 = kotlin.math.min(a.y, b.y)
+        val y2 = kotlin.math.max(a.y, b.y)
+
+        val corners = listOf(
+            Point(x1, y1),
+            Point(x2, y1),
+            Point(x2, y2),
+            Point(x1, y2)
+        )
+
+        return corners.all { corner -> pointInOrOnPolygon(corner, points) }
+    }
+
+    private fun pointInOrOnPolygon(point: Point, polygon: List<Point>): Boolean {
+        var inside = false
+        var p1 = polygon.last()
+
+        for (p2 in polygon) {
+            if (isPointOnLineSegment(point, p1, p2)) {
+                return true
+            }
+
+            // ray casting
+            if ((p2.y > point.y) != (p1.y > point.y) &&
+                point.x < (p1.x - p2.x).toDouble() * (point.y - p2.y).toDouble() / (p1.y - p2.y).toDouble() + p1.x
+            ) {
+                inside = !inside
+            }
+            p1 = p2
+        }
+
+        return inside
+    }
+
+    private fun isPointOnLineSegment(point: Point, p1: Point, p2: Point): Boolean {
+        val scalarProduct = (point.y - p1.y) * (p2.x - p1.x) - (point.x - p1.x) * (p2.y - p1.y)
+        if (scalarProduct != 0L) {
+            return false
+        }
+
+        return point.x >= kotlin.math.min(p1.x, p2.x) &&
+                point.x <= kotlin.math.max(p1.x, p2.x) &&
+                point.y >= kotlin.math.min(p1.y, p2.y) &&
+                point.y <= kotlin.math.max(p1.y, p2.y)
+    }
+
+    data class Point(val x: Long, val y: Long) : Comparable<Point> {
         override fun compareTo(other: Point): Int {
-            if(x != other.x) return x.compareTo(other.x)
+            if (x != other.x) return x.compareTo(other.x)
             return y.compareTo(other.y)
         }
 
