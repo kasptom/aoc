@@ -7,13 +7,15 @@ class Day10 : IAocTaskKt {
 
     override fun solvePartOne(lines: List<String>) {
         val machines = lines.map(Machine::parse)
-            .map { it.copy(pressLimit = if (getFileName().endsWith("test.txt")) 10 else 50) }
 
         machines.onEach {
             println(it)
         }
         val fewestPresses = machines.map { it.getFewestPresses() }
         println(fewestPresses)
+        if (fewestPresses.any { it == 10 }) {
+            throw IllegalArgumentException("too low limit")
+        }
         val sum = fewestPresses.sum()
         println(sum)
     }
@@ -25,21 +27,30 @@ class Day10 : IAocTaskKt {
     data class Machine(val lightDiagram: List<Indicator>, val buttons: List<List<Int>>, val joltReqs: List<Int>, val pressLimit: Int = 10) {
         fun getFewestPresses(): Int {
             val lights = lightDiagram.map { Indicator.OFF }
-            var minPresses = Int.MAX_VALUE
+            var minPresses = pressLimit
             for (buttonIdx in buttons.indices) {
+                val newLights = lights.toMutableList()
+                for (button in buttons[buttonIdx]) {
+                    newLights[button] = lights[button].opposite()
+                }
+
                 minPresses = minOf(minPresses, fewestPresses(lights, buttonIdx, 0))
             }
             return minPresses
         }
 
-        private fun fewestPresses(lights: List<Indicator>, buttonIdx: Int, pressCount: Int): Int {
+        private fun fewestPresses(
+            lights: List<Indicator>,
+            buttonIdx: Int,
+            pressCount: Int,
+        ): Int {
             if (pressCount > pressLimit) {
-                return Int.MAX_VALUE
+                return pressLimit
             }
             if (lights == lightDiagram) {
-                return pressCount
+                return 0
             }
-            var minPresses = Int.MAX_VALUE
+            var minPresses = pressLimit
 
             for (nextButtonIdx in buttons.indices) {
                 if (nextButtonIdx == buttonIdx) {
@@ -50,9 +61,11 @@ class Day10 : IAocTaskKt {
                     newLights[button] = lights[button].opposite()
                 }
 
-                minPresses = minOf(minPresses, fewestPresses(newLights, nextButtonIdx, pressCount + 1))
+                minPresses = minOf(minPresses, 1 + fewestPresses(newLights, nextButtonIdx, pressCount + 1))
             }
-
+            if (minPresses >= pressLimit) {
+                return pressLimit
+            }
             return minPresses
         }
 
