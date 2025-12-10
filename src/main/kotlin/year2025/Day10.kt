@@ -3,7 +3,7 @@ package year2025
 import aoc.IAocTaskKt
 
 class Day10 : IAocTaskKt {
-    override fun getFileName(): String = "aoc2025/input_10_test.txt"
+    override fun getFileName(): String = "aoc2025/input_10.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val machines = lines.map(Machine::parse)
@@ -25,16 +25,19 @@ class Day10 : IAocTaskKt {
     }
 
     data class Machine(val lightDiagram: List<Indicator>, val buttons: List<List<Int>>, val joltReqs: List<Int>, val pressLimit: Int = 10) {
+        private lateinit var memo: MutableMap<String, Int>
+
         fun getFewestPresses(): Int {
+            memo = HashMap()
             val lights = lightDiagram.map { Indicator.OFF }
             var minPresses = pressLimit
             for (buttonIdx in buttons.indices) {
                 val newLights = lights.toMutableList()
                 for (button in buttons[buttonIdx]) {
-                    newLights[button] = lights[button].opposite()
+                    newLights[button] = newLights[button].opposite()
                 }
 
-                minPresses = minOf(minPresses, fewestPresses(lights, buttonIdx, 0))
+                minPresses = minOf(minPresses, 1 + fewestPresses(newLights, buttonIdx, 1))
             }
             return minPresses
         }
@@ -50,6 +53,9 @@ class Day10 : IAocTaskKt {
             if (lights == lightDiagram) {
                 return 0
             }
+            val key = encode(lights) + "|" + buttonIdx + "|" + (pressLimit - pressCount)
+            memo[key]?.let { return it }
+
             var minPresses = pressLimit
 
             for (nextButtonIdx in buttons.indices) {
@@ -58,15 +64,25 @@ class Day10 : IAocTaskKt {
                 }
                 val newLights = lights.toMutableList()
                 for (button in buttons[nextButtonIdx]) {
-                    newLights[button] = lights[button].opposite()
+                    newLights[button] = newLights[button].opposite()
                 }
 
                 minPresses = minOf(minPresses, 1 + fewestPresses(newLights, nextButtonIdx, pressCount + 1))
             }
             if (minPresses >= pressLimit) {
+                memo[key] = pressLimit
                 return pressLimit
             }
+            memo[key] = minPresses
             return minPresses
+        }
+
+        private fun encode(lights: List<Indicator>): String {
+            val sb = StringBuilder(lights.size)
+            for (l in lights) {
+                sb.append(if (l == Indicator.ON) '1' else '0')
+            }
+            return sb.toString()
         }
 
         companion object {
