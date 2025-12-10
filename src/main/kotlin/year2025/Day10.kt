@@ -1,20 +1,60 @@
 package year2025
 
 import aoc.IAocTaskKt
+import kotlin.math.min
 
 class Day10 : IAocTaskKt {
     override fun getFileName(): String = "aoc2025/input_10_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val machines = lines.map(Machine::parse)
-        println(machines)
+        machines.onEach {
+            println(it)
+        }
+        val fewestPresses = machines.map { it.getFewestPresses() }
+        println(fewestPresses)
+        val sum = fewestPresses.sum()
+        println(sum)
     }
 
     override fun solvePartTwo(lines: List<String>) {
         TODO("Not yet implemented")
     }
 
-    data class Machine(val lightDiagram: List<Indicator>, val schematics: List<List<Int>>, val joltReqs: List<Int>) {
+    data class Machine(val lightDiagram: List<Indicator>, val buttons: List<List<Int>>, val joltReqs: List<Int>, val pressLimit: Int = 10) {
+        fun getFewestPresses(): Int {
+            val lights = lightDiagram.map { Indicator.OFF }
+            var minPresses = Int.MAX_VALUE
+            for (buttonIdx in buttons.indices) {
+                minPresses = minOf(minPresses, fewestPresses(lights, buttonIdx, mutableListOf()))
+            }
+            return minPresses
+        }
+
+        private fun fewestPresses(lights: List<Indicator>, buttonIdx: Int, pressHistory: List<Int>): Int {
+            if (pressHistory.size > pressLimit) {
+                return Int.MAX_VALUE
+            }
+            if (lights == lightDiagram) {
+                return pressHistory.size
+            }
+            var minPresses = Int.MAX_VALUE
+
+            for (nextButtonIdx in buttons.indices) {
+                if (nextButtonIdx == buttonIdx) {
+                    continue
+                }
+                val newLights = lights.toMutableList()
+                for (button in buttons[nextButtonIdx]) {
+                    newLights[button] = lights[button].opposite()
+                }
+
+                minPresses = minOf(minPresses, fewestPresses(newLights, nextButtonIdx, pressHistory + nextButtonIdx))
+            }
+
+            return minPresses
+        }
+
         companion object {
             fun parse(line: String): Machine {
                 val (strDiagram, strSchema, strReqs) = line.split("] (", ") {")
@@ -27,17 +67,23 @@ class Day10 : IAocTaskKt {
                             else -> throw IllegalArgumentException(it)
                         }
                     }
-                val schema = strSchema.split(") (")
+                val buttons = strSchema.split(") (")
                     .map { it.split(",").map(String::toInt) }
 
                 val reqs = strReqs
                     .substring(0, strReqs.length - 1)
                     .split(",")
                     .map { it.toInt() }
-                return Machine(diagram, schema, reqs)
+                return Machine(diagram, buttons, reqs)
             }
         }
     }
 
-    enum class Indicator { ON, OFF }
+    enum class Indicator { ON, OFF;
+
+        fun opposite(): Indicator = when (this) {
+            ON -> OFF
+            OFF -> ON
+        }
+    }
 }
