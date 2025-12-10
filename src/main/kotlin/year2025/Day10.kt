@@ -1,10 +1,12 @@
 package year2025
 
 import aoc.IAocTaskKt
-import java.util.PriorityQueue
-import kotlin.collections.get
-import kotlin.div
-import kotlin.text.toDouble
+import com.microsoft.z3.ArithExpr
+import com.microsoft.z3.Context
+import com.microsoft.z3.IntExpr
+import com.microsoft.z3.IntNum
+import com.microsoft.z3.Status
+import java.util.*
 
 class Day10 : IAocTaskKt {
     override fun getFileName(): String = "aoc2025/input_10.txt"
@@ -16,7 +18,7 @@ class Day10 : IAocTaskKt {
 //            println(it)
 //        }
         val fewestPresses = machines.map { it.getFewestPresses() }
-        println(fewestPresses)
+//        println(fewestPresses)
         if (fewestPresses.any { it == 10 }) {
             throw IllegalArgumentException("too low limit")
         }
@@ -30,8 +32,8 @@ class Day10 : IAocTaskKt {
 //        machines.onEach {
 //            println(it)
 //        }
-        val fewestPresses = machines.map { it.getFewestPresses2() }
-        println(fewestPresses)
+        val fewestPresses = machines.map { it.getFewestPressesZ3() }
+//        println(fewestPresses)
         val sum = fewestPresses.sum()
         println(sum)
     }
@@ -117,6 +119,7 @@ class Day10 : IAocTaskKt {
             return sum.toInt()
         }
 
+        @Suppress("unused")
         fun getFewestPresses2(): Int {
             val start = joltReqs.map { 0 }
             val stateToDist: MutableMap<String, Int> = HashMap()
@@ -168,6 +171,60 @@ class Day10 : IAocTaskKt {
                 }
             }
             return Int.MAX_VALUE
+        }
+
+        fun getFewestPressesZ3(): Int {
+            Context().use { ctx ->
+                val opt = ctx.mkOptimize()
+                val xVars: Array<IntExpr> = Array(buttons.size) { i -> ctx.mkIntConst("x$i") }
+
+                // x_b >= 0
+                for (x in xVars) {
+                    opt.Add(ctx.mkGe(x, ctx.mkInt(0)))
+                }
+
+                for (i in joltReqs.indices) {
+                    val contributing = mutableListOf<IntExpr>()
+                    for (bIdx in buttons.indices) {
+                        if (buttons[bIdx].contains(i)) {
+                            contributing.add(xVars[bIdx])
+                        }
+                    }
+                    val sumExpr: ArithExpr<*> = if (contributing.isEmpty()) {
+                        ctx.mkInt(0)
+                    } else if (contributing.size == 1) {
+                        contributing[0]
+                    } else {
+                        val arr: Array<ArithExpr<*>> = Array(contributing.size) { contributing[it] }
+                        ctx.mkAdd(*arr)
+                    }
+                    opt.Add(ctx.mkEq(sumExpr, ctx.mkInt(joltReqs[i])))
+                }
+
+                val totalSum: ArithExpr<*> = if (xVars.isEmpty()) {
+                    ctx.mkInt(0)
+                } else {
+                    val arr: Array<ArithExpr<*>> = Array(xVars.size) { xVars[it] }
+                    ctx.mkAdd(*arr)
+                }
+                opt.MkMinimize(totalSum)
+
+                return when (opt.Check()) {
+                    Status.SATISFIABLE, Status.UNKNOWN -> {
+                        val model = opt.model
+                        var total = 0L
+                        for (x in xVars) {
+                            val v = model.evaluate(x, false)
+                            val intVal = (v as IntNum).int64
+                            total += intVal
+                        }
+                        if (total > Int.MAX_VALUE) Int.MAX_VALUE else total.toInt()
+                    }
+
+                    Status.UNSATISFIABLE -> Int.MAX_VALUE
+                    else -> Int.MAX_VALUE
+                }
+            }
         }
 
         companion object {
