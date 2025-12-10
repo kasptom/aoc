@@ -1,13 +1,14 @@
 package year2025
 
 import aoc.IAocTaskKt
-import kotlin.math.min
 
 class Day10 : IAocTaskKt {
     override fun getFileName(): String = "aoc2025/input_10_test.txt"
 
     override fun solvePartOne(lines: List<String>) {
         val machines = lines.map(Machine::parse)
+            .map { it.copy(pressLimit = if (getFileName().endsWith("test.txt")) 10 else 50) }
+
         machines.onEach {
             println(it)
         }
@@ -26,17 +27,17 @@ class Day10 : IAocTaskKt {
             val lights = lightDiagram.map { Indicator.OFF }
             var minPresses = Int.MAX_VALUE
             for (buttonIdx in buttons.indices) {
-                minPresses = minOf(minPresses, fewestPresses(lights, buttonIdx, mutableListOf()))
+                minPresses = minOf(minPresses, fewestPresses(lights, buttonIdx, 0))
             }
             return minPresses
         }
 
-        private fun fewestPresses(lights: List<Indicator>, buttonIdx: Int, pressHistory: List<Int>): Int {
-            if (pressHistory.size > pressLimit) {
+        private fun fewestPresses(lights: List<Indicator>, buttonIdx: Int, pressCount: Int): Int {
+            if (pressCount > pressLimit) {
                 return Int.MAX_VALUE
             }
             if (lights == lightDiagram) {
-                return pressHistory.size
+                return pressCount
             }
             var minPresses = Int.MAX_VALUE
 
@@ -49,7 +50,7 @@ class Day10 : IAocTaskKt {
                     newLights[button] = lights[button].opposite()
                 }
 
-                minPresses = minOf(minPresses, fewestPresses(newLights, nextButtonIdx, pressHistory + nextButtonIdx))
+                minPresses = minOf(minPresses, fewestPresses(newLights, nextButtonIdx, pressCount + 1))
             }
 
             return minPresses
