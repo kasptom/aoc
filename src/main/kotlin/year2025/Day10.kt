@@ -1,6 +1,10 @@
 package year2025
 
 import aoc.IAocTaskKt
+import java.util.PriorityQueue
+import kotlin.collections.get
+import kotlin.div
+import kotlin.text.toDouble
 
 class Day10 : IAocTaskKt {
     override fun getFileName(): String = "aoc2025/input_10.txt"
@@ -22,7 +26,6 @@ class Day10 : IAocTaskKt {
 
     override fun solvePartTwo(lines: List<String>) {
         val machines = lines.map(Machine::parse)
-            .map { it.copy(pressLimit = 1000) }
 
 //        machines.onEach {
 //            println(it)
@@ -33,9 +36,13 @@ class Day10 : IAocTaskKt {
         println(sum)
     }
 
-    data class Machine(val lightDiagram: List<Indicator>, val buttons: List<List<Int>>, val joltReqs: List<Int>, val pressLimit: Int = 10) {
+    data class Machine(
+        val lightDiagram: List<Indicator>,
+        val buttons: List<List<Int>>,
+        val joltReqs: List<Int>,
+        val pressLimit: Int = 10,
+    ) {
         private lateinit var memo: MutableMap<String, Int>
-        private lateinit var memo2: MutableMap<String, Int>
 
         fun getFewestPresses(): Int {
             memo = HashMap()
@@ -87,42 +94,6 @@ class Day10 : IAocTaskKt {
             return minPresses
         }
 
-        private fun fewestPresses2(
-            joltages: List<Int>,
-            buttonIdx: Int,
-        ): Int {
-            if (joltages.indices.any { joltages[it] > joltReqs[it] }) {
-                return pressLimit
-            }
-            if (joltages == joltReqs) {
-                return 0
-            }
-            val key = encode2(joltages) + "|" + buttonIdx
-            memo2[key]?.let { return it }
-
-            var minPresses = pressLimit
-
-            for (nextButtonIdx in buttons.indices) {
-                if (nextButtonIdx == buttonIdx) {
-                    continue
-                }
-                val newJoltages = joltages.toMutableList()
-                for (button in buttons[nextButtonIdx]) {
-                    newJoltages[button] = newJoltages[button] + 1
-                }
-
-                minPresses = minOf(minPresses, 1 + fewestPresses2(newJoltages, nextButtonIdx))
-            }
-            if (minPresses >= pressLimit) {
-                memo2[key] = pressLimit
-                return pressLimit
-            }
-
-            memo2[key] = minPresses
-            return minPresses
-        }
-
-
         private fun encode(lights: List<Indicator>): String {
             val sb = StringBuilder(lights.size)
             for (l in lights) {
@@ -135,19 +106,68 @@ class Day10 : IAocTaskKt {
             return joltages.joinToString(",")
         }
 
+        private fun heuristic(state: List<Int>): Int {
+            var sum = 0.0
+            for (i in state.indices) {
+                if (state[i] > joltReqs[i]) {
+                    return Int.MAX_VALUE
+                }
+                sum += (joltReqs[i] - state[i]) / joltReqs[i].toDouble()
+            }
+            return sum.toInt()
+        }
+
         fun getFewestPresses2(): Int {
-            memo2 = HashMap()
-            val joltageCounters = joltReqs.map { 0 }
-            var minPresses = pressLimit
-            for (buttonIdx in buttons.indices) {
-                val newJoltages = joltageCounters.toMutableList()
-                for (button in buttons[buttonIdx]) {
-                    newJoltages[button] = newJoltages[button] + 1
+            val start = joltReqs.map { 0 }
+            val stateToDist: MutableMap<String, Int> = HashMap()
+            val queue = PriorityQueue(
+                compareBy<Node> { it.dist }
+                    .thenBy { heuristic(it.state) }
+            )
+
+            val startKey = encode2(start)
+            stateToDist[startKey] = 0
+            queue.add(Node(start, 0))
+
+            while (queue.isNotEmpty()) {
+                val (state, dist) = queue.poll()
+                val key = encode2(state)
+                val bestKnown = stateToDist[key]
+                if (bestKnown == null || dist != bestKnown) {
+                    continue
                 }
 
-                minPresses = minOf(minPresses, 1 + fewestPresses2(newJoltages, buttonIdx))
+                for (button in buttons) {
+                    val next = state.toMutableList()
+                    var valid = true
+                    for (idx in button) {
+                        val joltage = next[idx] + 1
+                        if (joltage > joltReqs[idx]) {
+                            valid = false
+                            break
+                        }
+                        next[idx] = joltage
+                    }
+                    if (!valid) {
+                        continue
+                    }
+
+                    if (next == joltReqs) {
+                        println("Fewer presses for $this: ${dist + 1}")
+                        return dist + 1
+                    }
+
+                    val nextStateKey = encode2(next)
+                    val nextDist = dist + 1
+                    val prev = stateToDist[nextStateKey]
+
+                    if (prev == null || nextDist < prev) {
+                        stateToDist[nextStateKey] = nextDist
+                        queue.add(Node(next, nextDist))
+                    }
+                }
             }
-            return minPresses
+            return Int.MAX_VALUE
         }
 
         companion object {
@@ -174,11 +194,14 @@ class Day10 : IAocTaskKt {
         }
     }
 
-    enum class Indicator { ON, OFF;
+    enum class Indicator {
+        ON, OFF;
 
         fun opposite(): Indicator = when (this) {
             ON -> OFF
             OFF -> ON
         }
     }
+
+    data class Node(val state: List<Int>, val dist: Int)
 }
