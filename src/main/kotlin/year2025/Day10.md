@@ -12,29 +12,22 @@ Variables
 - For each button $b \in B$, introduce an integer variable $x_b$ (how many times button $b$ is pressed).
 
 Domain
-- $x_b \in {Z},\ x_b \ge 0$ for all $b \in B$.
+- $x_b \in {Z},\ x_b \ge 0$ for all $b \in B$
 
 Parameters
 - $A_{i,b} \in \{0,1\}$ indicates whether button $b$ affects indicator $i$ (1 if it does, 0 otherwise).
 
 Constraints (exact target per indicator)
 - For every $i \in I$:
+  $$\sum_{b \in B} A_{i,b} \cdot x_b = r_i$$
 
-  $$
-  \sum_{b \in B} A_{i,b} \, x_b = r_i.
-  $$
-
-Objective (fewest total presses)
-
-$$
-\min \sum_{b \in B} x_b.
-$$
-
+Objective (fewest total presses):
+$$\min \sum_{b \in B} x_b$$
 
 ## Z3 formula mapping
 
 - Variables $x_b$ (one per button)
--  s $x_0, x_1, \ldots$ stored in `xVars` (one `IntExpr` per button).
+- xs $x_0, x_1, \ldots$ stored in `xVars` (one `IntExpr` per button).
 - Domain $x_b \ge 0$ (non-negativity)
 - For each `x in xVars` add constraint `mkGe(x, 0)`
 - Parameters $A_{i,b}$ and $r_i$ 
