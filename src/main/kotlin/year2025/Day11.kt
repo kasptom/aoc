@@ -53,8 +53,9 @@ class Day11 : IAocTaskKt{
         }
         val visited = mutableSetOf<String>()
         visited.add("svr")
+        val targetToCode = mapOf("dac" to 1, "fft" to 2)
 //        println(nodeToNeigh)
-        val pathsCount = dfs2(nodeToNeigh, "svr", "out", setOf("dac", "fft"), visited)
+        val pathsCount = dfs2(nodeToNeigh, "svr", "out", 3, targetToCode, visited)
         println(pathsCount)
     }
 
@@ -62,23 +63,25 @@ class Day11 : IAocTaskKt{
         nodeToNeigh: MutableMap<String, Set<String>>,
         src: String,
         dest: String,
-        target: Set<String>,
+        target: Int,
+        targetToCode: Map<String, Int>,
         visited: MutableSet<String>,
     ): Int {
         if (src == dest) {
-            return if (visited.containsAll(target)) 1 else 0
+            return if (target == 3) 1 else 0
         }
         val neighs = nodeToNeigh[src] ?: emptySet()
         var count = 0
         for (next in neighs) {
             if (next == dest) {
-                return if (visited.containsAll(target)) 1 else 0
+                return if (target == 3) 1 else 0
             }
             if (visited.contains(next)) {
                 continue
             }
             visited.add(next)
-            count += dfs2(nodeToNeigh, next, dest, target, visited)
+            val newTarget = target + (targetToCode[next] ?: 0)
+            count += dfs2(nodeToNeigh, next, dest, newTarget, targetToCode, visited)
             visited.remove(next)
         }
         return count
