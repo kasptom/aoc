@@ -32,3 +32,5 @@ fun <T> List<T>.permutations(): List<List<T>> {
 
 fun <T> List<T>.except(vararg elem: T): List<T> = filter { it !in elem }
 fun <T> List<T>.except(elems: Set<T>): List<T> = filter { it !in elems }
+
+fun <T> List<List<T>>.rotateClockwise(): List<List<T>> = this.transpose().map { it.reversed() }
