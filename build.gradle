@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.4.2.Final'
     implementation group: 'net.sf.jung', name: 'jung-graph-impl', version: '2.1.1'
     implementation group: 'net.sf.jung', name: 'jung-algorithms', version: '2.1.1'
-
+    implementation 'tools.aqua:z3-turnkey:latest.release'
 
     annotationProcessor 'org.projectlombok:lombok:1.18.22'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final' // must be under lombok ap
