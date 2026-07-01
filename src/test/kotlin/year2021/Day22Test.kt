@@ -1,152 +1,126 @@
 package year2021
 
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import year2021.Day22.Cuboid
-import year2021.Day22.Operation.State.OFF
-import year2021.Day22.Operation.State.ON
+import year2021.Day22.Operation
 import year2021.Day22.Point3d
+import kotlin.random.Random
 
 internal class Day22Test {
 
+    private val day22 = Day22()
+
     @Test
-    fun testCollide01() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(1, 1, 1), ON)
-        val second = Cuboid(Point3d(0, 0, 0), Point3d(1, 1, 1), ON)
-
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-
-        assertEquals(8, (firstLeftovers + secondLeftovers + common).sumOf { it.volume() })
+    fun `volume counts inclusive cubes`() {
+        assertEquals(8, Cuboid(Point3d(0, 0, 0), Point3d(1, 1, 1)).volume())
+        assertEquals(1, Cuboid(Point3d(5, 5, 5), Point3d(5, 5, 5)).volume())
+        assertEquals(64, Cuboid(Point3d(0, 0, 0), Point3d(3, 3, 3)).volume())
     }
 
     @Test
-    fun testCollide02() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(1, 1, 1), ON)
-        val second = Cuboid(Point3d(0, 0, 0), Point3d(1, 1, 1), OFF)
+    fun `intersect returns the shared region`() {
+        val first = Cuboid(Point3d(0, 0, 0), Point3d(3, 3, 3))
+        val second = Cuboid(Point3d(2, 2, 2), Point3d(5, 5, 5))
 
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-        val collisionResult = firstLeftovers + secondLeftovers + common
+        val overlap = first.intersect(second)
 
-        assertTrue(collisionResult.all { it.isOff() })
-        assertEquals(0, collisionResult.filter { it.isOn() }.sumOf { it.volume() })
+        assertEquals(Cuboid(Point3d(2, 2, 2), Point3d(3, 3, 3)), overlap)
+        assertEquals(8, overlap!!.volume())
     }
 
     @Test
-    // 4x4x4 cube with removed 2x2x2 middle
-    fun testCollide1() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(3, 3, 3), ON) // 64
-        val second = Cuboid(Point3d(1, 1, 1), Point3d(2, 2, 2), OFF) // 8
+    fun `intersect at a shared corner has volume 1`() {
+        val first = Cuboid(Point3d(0, 0, 0), Point3d(2, 2, 2))
+        val second = Cuboid(Point3d(2, 2, 2), Point3d(4, 4, 4))
 
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-
-        assertTrue(firstLeftovers.all { it.isOn() })
-        assertEquals(26, firstLeftovers.size)
-        assertEquals(56, firstLeftovers.filter { it.isOn() }.sumOf { it.volume() })
+        assertEquals(1, first.intersect(second)!!.volume())
     }
 
     @Test
-    // 4x4x4 cube with all elements because second is on
-    fun testCollide2() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(3, 3, 3), ON)
-        val second = Cuboid(Point3d(1, 1, 1), Point3d(2, 2, 2), ON)
+    fun `intersect returns null when cuboids are disjoint`() {
+        val first = Cuboid(Point3d(0, 0, 0), Point3d(2, 2, 2))
+        val second = Cuboid(Point3d(3, 3, 3), Point3d(5, 5, 5))
 
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-        val collisionResult = firstLeftovers + secondLeftovers + common
-
-        assertTrue(collisionResult.all { it.isOn() })
-        assertEquals(64, collisionResult.filter { it.isOn() }.sumOf { it.volume() })
+        assertNull(first.intersect(second))
     }
 
     @Test
-    // rubiks intersecting at one corner
-    fun testCollide3() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(2, 2, 2), ON)
-        val second = Cuboid(Point3d(2, 2, 2), Point3d(4, 4, 4), ON)
+    fun `small example with re-on yields 39`() {
+        val lines = listOf(
+            "on x=10..12,y=10..12,z=10..12",
+            "on x=11..13,y=11..13,z=11..13",
+            "off x=9..11,y=9..11,z=9..11",
+            "on x=10..10,y=10..10,z=10..10",
+        )
+        val operations = lines.map(Operation::parse)
 
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-        val collisionResult = firstLeftovers + secondLeftovers + common
-
-        assertTrue(collisionResult.all { it.isOn() })
-//        assertEquals(53, collisionResult.size)
-        assertEquals(53, collisionResult.filter { it.isOn() }.sumOf { it.volume() })
+        assertEquals(39, day22.countOn(operations))
     }
 
     @Test
-    // rubiks intersecting at one corner one off
-    fun testCollide4() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(2, 2, 2), ON)
-        val second = Cuboid(Point3d(2, 2, 2), Point3d(4, 4, 4), OFF)
+    fun `part one larger example within init range yields 590784`() {
+        val operations = LARGER_EXAMPLE.map(Operation::parse).filter(Operation::inInitRange)
 
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-
-        assertEquals(26, secondLeftovers.sumOf { it.volume() })
-        assertEquals(26, firstLeftovers.sumOf { it.volume() })
-        assertEquals(1, common.sumOf { it.volume() })
-        assertTrue(firstLeftovers.all { it.isOn() })
-        assertTrue(secondLeftovers.all { it.isOff() })
+        assertEquals(590784, day22.countOn(operations))
     }
 
     @Test
-    @Disabled
-    // separate
-    fun `collide should throw when cuboids are separate`() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(2, 2, 2), ON)
-        val second = Cuboid(Point3d(3, 3, 3), Point3d(5, 5, 5), OFF)
+    fun `inclusion-exclusion matches brute-force grid for random inputs`() {
+        val random = Random(42)
+        repeat(40) {
+            val operations = (0..random.nextInt(4, 12)).map { randomOperation(random) }
 
-        assertThrows<IllegalStateException> { first.collide(second) }
+            assertEquals(bruteForceOn(operations), day22.countOn(operations))
+        }
     }
 
-    @Test
-    fun testCollide6() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(2, 2, 2), ON)
-        val second = Cuboid(Point3d(2, 0, 0), Point3d(3, 2, 2), OFF)
-
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-
-        assertTrue(firstLeftovers.all { it.isOn() })
-        assertTrue(secondLeftovers.all { it.isOff() })
-        assertEquals(18, firstLeftovers.sumOf { it.volume() })
+    private fun randomOperation(random: Random): Operation {
+        val state = if (random.nextBoolean()) "on" else "off"
+        fun axis(): String {
+            val a = random.nextInt(-6, 7)
+            val b = random.nextInt(-6, 7)
+            return "${minOf(a, b)}..${maxOf(a, b)}"
+        }
+        return Operation.parse("$state x=${axis()},y=${axis()},z=${axis()}")
     }
 
-    @Test
-    fun testIsInRange() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(3, 3, 3), ON)
-        val second = Cuboid(Point3d(2, 0, 0), Point3d(5, 3, 3), OFF)
-
-        assertTrue(first.isInRange(second))
-        assertTrue(second.isInRange(first))
+    /** Ground truth: literally toggle a bounded grid of cubes. */
+    private fun bruteForceOn(operations: List<Operation>): Long {
+        val on = HashSet<Triple<Int, Int, Int>>()
+        for (op in operations) {
+            for (x in op.x) for (y in op.y) for (z in op.z) {
+                val cell = Triple(x, y, z)
+                if (op.state == Operation.State.ON) on.add(cell) else on.remove(cell)
+            }
+        }
+        return on.size.toLong()
     }
 
-    @Test
-    fun testIsInRange2() {
-        val first = Cuboid(Point3d(0, 0, 0), Point3d(3, 3, 3), ON)
-        val second = Cuboid(Point3d(3, 3, 3), Point3d(5, 5, 5), OFF)
-
-        assertTrue(first.isInRange(second))
-        assertTrue(second.isInRange(first))
-    }
-
-    @Test
-    /**
-    overlapping cuboids detected
-    ((-20, -29, -38) - (26, -22, -27), ON) vs
-    ((-22, -29, -38) - (26, 17, 7), ON)
-    history: [((-20, -36, -47) - (26, 17, 7), ON), ((-20, -21, -26) - (33, 23, 28), ON)]
-     */
-    fun cornerCase() {
-
-    }
-
-    @Test
-    fun testCollideExample4Cuboids() {
-        val first = Cuboid(Point3d(10, 10, 10), Point3d(12, 12, 12), ON)
-        val second = Cuboid(Point3d(11, 11, 11), Point3d(13, 13, 13), ON)
-
-        val (firstLeftovers, common, secondLeftovers) = first.collide(second)
-        val collisionResult = firstLeftovers + secondLeftovers + common
-
-        assertEquals(46, collisionResult.sumOf { it.volume() })
+    companion object {
+        private val LARGER_EXAMPLE = listOf(
+            "on x=-20..26,y=-36..17,z=-47..7",
+            "on x=-20..33,y=-21..23,z=-26..28",
+            "on x=-22..28,y=-29..23,z=-38..16",
+            "on x=-46..7,y=-6..46,z=-50..-1",
+            "on x=-49..1,y=-3..46,z=-24..28",
+            "on x=2..47,y=-22..22,z=-23..27",
+            "on x=-27..23,y=-28..26,z=-21..29",
+            "on x=-39..5,y=-6..47,z=-3..44",
+            "on x=-30..21,y=-8..43,z=-13..34",
+            "on x=-22..26,y=-27..20,z=-29..19",
+            "off x=-48..-32,y=26..41,z=-47..-37",
+            "on x=-12..35,y=6..50,z=-50..-2",
+            "off x=-48..-32,y=-32..-16,z=-15..-5",
+            "on x=-18..26,y=-33..15,z=-7..46",
+            "off x=-40..-22,y=-38..-28,z=23..41",
+            "on x=-16..35,y=-41..10,z=-47..6",
+            "off x=-32..-23,y=11..30,z=-14..3",
+            "on x=-49..-5,y=-3..45,z=-29..18",
+            "off x=18..30,y=-20..-8,z=-3..13",
+            "on x=-41..9,y=-7..43,z=-33..15",
+            "on x=-54112..-39298,y=-85059..-49293,z=-27449..7877",
+            "on x=967..23432,y=45373..81175,z=27513..53682",
+        )
     }
 }
